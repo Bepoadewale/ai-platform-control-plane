@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -102,6 +103,27 @@ def test_idempotency_returns_original_environment(tmp_path: Path):
         idempotency_key="dedupe-key-123",
     )
     assert service.create(developer(), request).id == service.create(developer(), request).id
+
+
+def test_expired_environment_is_destroyed_and_audited(tmp_path: Path):
+    service = EnvironmentService(tmp_path / "environments")
+    environment = service.create(
+        developer(),
+        EnvironmentRequest(
+            name="ttl-api",
+            team="team-demo",
+            environment_type=EnvironmentType.DEVELOPMENT,
+            ttl_hours=1,
+            cost_center="ENG",
+            idempotency_key="ttl-reap-request-001",
+        ),
+    )
+    environment.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    expired = service.expire_due(developer())
+
+    assert [item.id for item in expired] == [environment.id]
+    assert environment.state is LifecycleState.DESTROYED
+    assert service.audit.list(environment.request.request_id)[-1].action == "destroy.complete"
 
 
 def test_lifecycle_and_audit_survive_service_restart(tmp_path: Path):

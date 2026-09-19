@@ -34,16 +34,19 @@ class RenderOnlyReconciler:
 class KindHelmReconciler:
     """Apply rendered state through Helm and wait for Kubernetes readiness."""
 
-    def __init__(self, chart_path: Path, release_namespace: str = "platform-system") -> None:
+    def __init__(
+        self, chart_path: Path, release_namespace: str = "platform-system", wait_seconds: int = 150
+    ) -> None:
         self.chart_path = chart_path
         self.release_namespace = release_namespace
+        self.wait_seconds = wait_seconds
 
     @classmethod
     def from_environment(cls) -> Reconciler:
         if os.getenv("PLATFORM_RECONCILER", "render-only") != "kind":
             return RenderOnlyReconciler()
         chart_path = Path(os.getenv("PLATFORM_HELM_CHART", "platform/helm/golden-path"))
-        return cls(chart_path)
+        return cls(chart_path, wait_seconds=int(os.getenv("PLATFORM_RECONCILIATION_TIMEOUT_SECONDS", "150")))
 
     @staticmethod
     def _run(command: list[str]) -> None:
@@ -80,7 +83,7 @@ class KindHelmReconciler:
                 "ingress.enabled=false",
                 "--wait",
                 "--timeout",
-                "150s",
+                f"{self.wait_seconds}s",
             ]
         )
         self._run(
@@ -91,7 +94,7 @@ class KindHelmReconciler:
                 f"deployment/{environment.request.name}",
                 "--namespace",
                 namespace,
-                "--timeout=120s",
+                f"--timeout={self.wait_seconds}s",
             ]
         )
         return f"http://{environment.request.name}.{namespace}.svc.cluster.local"

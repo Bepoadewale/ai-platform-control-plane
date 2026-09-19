@@ -110,6 +110,13 @@ def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
         raise HTTPException(403, detail=str(error)) from error
 
 
+@app.post("/api/v1/maintenance/ttl-reap")
+def reap_expired(actor: Actor = Depends(actor_from_request)):
+    if not ({"platform-operator", "platform-admin"} & {role.value for role in actor.roles}):
+        raise HTTPException(403, detail="platform operator role required")
+    return service.expire_due(actor)
+
+
 @app.get("/api/v1/environments/{environment_id}/audit-events")
 def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     environment = service.get(actor, environment_id)

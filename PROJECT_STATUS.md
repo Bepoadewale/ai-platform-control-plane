@@ -16,11 +16,14 @@ PARTIALLY VALIDATED
 - The FastAPI request path was executed with live OPA and kind: request → OPA allow → plan → Helm
   reconciliation → Kubernetes readiness → persisted audit → API-driven destroy. A production agent
   request was denied by OPA with no Kubernetes mutation.
+- A real kind TTL lifecycle was executed: Ready workload → persisted expiry → reaper → verified
+  namespace deletion. A deliberately unhealthy workload persisted as `FAILED` with a
+  `reconciliation.failed` audit event before cleanup.
 
 ## Implemented but Not End-to-End Validated
 
-- Prometheus endpoint. Local PostgreSQL, Argo CD, OpenTelemetry, Grafana, TTL reaping, and the
-  approval workflow have not yet been exercised through a complete local infrastructure lifecycle.
+- Prometheus endpoint. Local PostgreSQL, Argo CD, OpenTelemetry, and Grafana have not yet been
+  exercised through a complete local infrastructure lifecycle.
 
 ## Simulated
 
@@ -39,12 +42,11 @@ PARTIALLY VALIDATED
 
 ## Current P0 Objective
 
-Bind persisted approvals to immutable plans, then execute approval, TTL, restart, and failed-workload
-paths through the authenticated HTTP API.
+Add versioned SQLite migrations and a reproducible signed-JWT + OPA + kind integration script.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 14 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q`: 20 passed (2 upstream TestClient deprecation warnings).
 - `.venv/bin/python -m ruff check control-plane/src control-plane/tests cli/src`: passed.
 - `opa test platform/policies tests/policy`: 1/1 passed with OPA 1.20.2.
 - Docker Engine 29.0.1 is available; Helm lint and Terraform validation passed earlier in this run.
@@ -52,7 +54,10 @@ paths through the authenticated HTTP API.
 - `PLATFORM_RECONCILER=kind ... EnvironmentService.destroy(...)`: namespace deletion verified.
 - FastAPI on `127.0.0.1:8001` + OPA container + kind: API-created Deployment reached `READY`, audit
   timeline was retrieved, OPA denied autonomous production, and API destroy removed the namespace.
+- `PLATFORM_RECONCILER=kind ... expire_due(...)`: TTL workload cleanup and namespace deletion verified.
+- `PLATFORM_RECONCILER=kind ... create(image=busybox:1.36)`: unhealthy workload reached `FAILED` and
+  recorded `reconciliation.failed` before cleanup.
 
 ## Last Updated
 
-2026-09-19, uncommitted live OPA/kind API increment.
+2026-09-19, uncommitted TTL and failed-workload kind increment.
