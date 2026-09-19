@@ -68,7 +68,10 @@ def plan(request: EnvironmentRequest, actor: Actor = Depends(actor_from_request)
 
 @app.post("/api/v1/environments", status_code=201)
 def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_request)):
-    env = service.create(actor, request)
+    try:
+        env = service.create(actor, request)
+    except ValueError as error:
+        raise HTTPException(409, detail=str(error)) from error
     if env.state == LifecycleState.REJECTED:
         POLICY_DENIALS.labels("policy").inc()
         REQUESTS.labels("create", "rejected").inc()

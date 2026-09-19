@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | Control-plane API/lifecycle | ✅ Executed locally | FastAPI + OPA + kind manual integration |
 | Durable lifecycle/audit state | ✅ Executed | SQLite restart-recovery test |
+| Tenant boundaries and idempotency | ✅ Executed | lifecycle tests cover cross-tenant denial and conflicting-key rejection |
 | Signed JWT/JWKS | ✅ Executed locally | FastAPI authentication integration tests |
 | OPA policy enforcement | ✅ Executed locally | OPA 1.20.2 HTTP decision and API integration |
 | GitOps rendering | ✅ Executed locally | rendered Helm values consumed by kind reconciler |

@@ -130,6 +130,43 @@ def test_idempotency_returns_original_environment(tmp_path: Path):
     assert service.create(developer(), request).id == service.create(developer(), request).id
 
 
+def test_idempotency_key_cannot_be_reused_for_a_different_request(tmp_path: Path):
+    service = EnvironmentService(tmp_path / "environments", tmp_path / "state.db")
+    request = EnvironmentRequest(
+        name="first-api",
+        team="team-demo",
+        environment_type=EnvironmentType.DEVELOPMENT,
+        cost_center="ENG",
+        idempotency_key="conflicting-key-001",
+    )
+    service.create(developer(), request)
+    conflicting = request.model_copy(update={"name": "other-api"})
+
+    with pytest.raises(ValueError, match="IDEMPOTENCY_CONFLICT"):
+        service.create(developer(), conflicting)
+
+
+def test_tenant_boundary_blocks_cross_tenant_read_mutate_and_destroy(tmp_path: Path):
+    service = EnvironmentService(tmp_path / "environments", tmp_path / "state.db")
+    created = service.create(
+        developer(),
+        EnvironmentRequest(
+            name="tenant-api",
+            team="team-demo",
+            environment_type=EnvironmentType.DEVELOPMENT,
+            cost_center="ENG",
+            idempotency_key="tenant-boundary-001",
+        ),
+    )
+    other_tenant = Actor(subject="other", tenant_id="team-other", roles={Role.DEVELOPER})
+
+    with pytest.raises(PermissionError, match="tenant boundary"):
+        service.get(other_tenant, created.id)
+    with pytest.raises(PermissionError, match="tenant boundary"):
+        service.destroy(other_tenant, created.id)
+    assert service.list(other_tenant) == []
+
+
 def test_expired_environment_is_destroyed_and_audited(tmp_path: Path):
     service = EnvironmentService(tmp_path / "environments")
     environment = service.create(

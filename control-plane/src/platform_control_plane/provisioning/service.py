@@ -60,7 +60,12 @@ class EnvironmentService:
     def create(self, actor: Actor, request: EnvironmentRequest) -> Environment:
         key = (actor.tenant_id, request.idempotency_key)
         if key in self._keys:
-            return self._environments[self._keys[key]]
+            existing = self._environments[self._keys[key]]
+            requested = request.model_dump(mode="json", exclude={"request_id"})
+            original = existing.request.model_dump(mode="json", exclude={"request_id"})
+            if requested != original:
+                raise ValueError("IDEMPOTENCY_CONFLICT: key is already bound to another request")
+            return existing
         env = Environment.from_request(request, actor)
         self._environments[env.id] = env
         self._keys[key] = env.id

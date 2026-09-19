@@ -1,13 +1,13 @@
 # P0 — Required for Portfolio Claim
 
-- Add migration/version management and corruption/recovery coverage for durable lifecycle/audit state.
-- Add a reproducible automated FastAPI + OPA + kind integration test/script for the manually executed path.
-- Persist approvals, bind them to a plan hash, and reject stale/self approvals.
-- Add end-to-end TTL and policy-denial tests with audit evidence.
+All current portfolio-claim P0 items are executed locally. Re-open this section only when a
+validated primary-path regression is discovered.
 
 # P1 — Production Hardening
 
-- Persist idempotency keys, add recovery/reconciliation, OTel traces, and PostgreSQL profile.
+- Add SQLite corruption/recovery coverage and a PostgreSQL-backed production persistence profile.
+- Add OpenTelemetry trace export and a local collector/visualization validation path.
+- Expand API-level authorization integration coverage for cross-tenant access.
 
 # P2 — Enhancements
 

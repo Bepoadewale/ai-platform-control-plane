@@ -55,7 +55,7 @@ complete the final validation and documentation pass.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 23 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q`: 25 passed (2 upstream TestClient deprecation warnings).
 - `.venv/bin/python -m ruff check control-plane/src control-plane/tests cli/src`: passed.
 - `opa test platform/policies tests/policy`: 1/1 passed with OPA 1.20.2.
 - Docker Engine 29.0.1 is available; Helm lint and Terraform validation passed earlier in this run.
