@@ -1,4 +1,4 @@
-FROM python:3.12-slim@sha256:8a4b6e8c0a17ba086aa1440a9c9d6b40f0b27e3d24709bcdb4b28993ef6f54df
+FROM python:3.12-slim
 WORKDIR /app
 COPY pyproject.toml ./
 COPY control-plane/src ./control-plane/src
