@@ -1,2 +1,0 @@
-[console_scripts]
-platformctl = platform_control_plane.cli:app
