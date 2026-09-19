@@ -1,19 +1,24 @@
-.PHONY: install test lint run demo bootstrap-local terraform-validate helm-lint
+.PHONY: install test lint run demo demo-local bootstrap-local terraform-validate helm-lint
+
+PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
 install:
-	python3 -m pip install -e '.[dev]'
+	$(PYTHON) -m pip install -e '.[dev]'
 
 test:
-	python3 -m pytest -q
+	$(PYTHON) -m pytest -q
 
 lint:
-	python3 -m ruff check control-plane/src control-plane/tests cli/src
+	$(PYTHON) -m ruff check control-plane/src control-plane/tests cli/src
 
 run:
-	PYTHONPATH=control-plane/src uvicorn platform_control_plane.api.main:app --reload
+	PYTHONPATH=control-plane/src $(PYTHON) -m uvicorn platform_control_plane.api.main:app --reload
 
 demo:
-	PYTHONPATH=control-plane/src python3 examples/demo.py
+	PYTHONPATH=control-plane/src $(PYTHON) examples/demo.py
+
+demo-local:
+	PYTHONPATH=control-plane/src $(PYTHON) scripts/demo-local.py
 
 bootstrap-local:
 	./scripts/bootstrap-local.sh

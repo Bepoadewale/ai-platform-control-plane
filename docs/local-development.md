@@ -1,7 +1,9 @@
 # Local development
 
-`make install && make test && make demo` runs the core workflow without Docker, Kubernetes, AWS, or credentials. `make run` starts the API.
+`make install && make test && make demo` runs the rendered-state workflow without Docker, Kubernetes, AWS, or credentials. `make run` starts the API.
 
-For a cluster demo, install kind/kubectl/Helm then run `make bootstrap-local`; it creates `ai-platform-local` only if absent and applies the golden path. Install Argo CD and Prometheus using their official, version-pinned release instructions, then point the included Application manifest at your fork. The Helm chart is the local data-plane artifact. Use `docker compose up --build` for the API plus local PostgreSQL boundary.
+For the full executed local control loop, start Docker Desktop and install kind, kubectl, and Helm, then run `make demo-local`. It uses temporary local signing material and never needs cloud credentials. It starts and stops OPA automatically, retains the `ai-platform-local` cluster for subsequent runs, and removes the demo workload before exiting.
+
+`make bootstrap-local` remains a manual chart bootstrap. Argo CD and PostgreSQL are production-path adapters and are not required for the executed local demo. Use `docker compose up --build` for the API plus local OPA/PostgreSQL services when exploring components manually.
 
 For Codex MCP, point a project MCP configuration at `mcp-server` after installing its optional SDK dependency. Example prompt: “Use the platform MCP tools to create a temporary dev environment for demo-api with PostgreSQL and Redis.”
