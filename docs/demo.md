@@ -1,6 +1,6 @@
 # Demo scenarios
 
-**A — full local acceptance.** Run `make demo-local` with Docker Desktop, kind, kubectl, and Helm installed. It generates a temporary RS256 signing key/JWKS, starts OPA, starts FastAPI, creates a real kind workload, waits for `READY`, retrieves its audit, checks Prometheus metrics, destroys it, and verifies namespace deletion.
+**A — full local acceptance.** Run `make demo-local` with Docker Desktop, kind, kubectl, and Helm installed. It generates a temporary RS256 signing key/JWKS, starts OPA, starts FastAPI, creates a real kind workload, waits for `READY`, retrieves its audit, checks Prometheus metrics, destroys it, and verifies namespace deletion. It also executes a production request through independent exact-plan approval and independently approved destruction.
 
 **B — rejected.** Submit a request as `agent-requester` with production, privileged workload, or disabled observability. It becomes `REJECTED` with a precise audit reason.
 

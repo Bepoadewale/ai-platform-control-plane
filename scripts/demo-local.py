@@ -76,7 +76,16 @@ def main() -> None:
         token = jwt.encode(claims, private_key, algorithm="RS256", headers={"kid": "demo-key"})
         agent_claims = {**claims, "sub": "agent:demo", "roles": ["agent-requester"], "principal_type": "agent"}
         agent_token = jwt.encode(agent_claims, private_key, algorithm="RS256", headers={"kid": "demo-key"})
+        operator_claims = {
+            **claims,
+            "sub": "human:demo-operator",
+            "roles": ["platform-operator"],
+        }
+        operator_token = jwt.encode(
+            operator_claims, private_key, algorithm="RS256", headers={"kid": "demo-key"}
+        )
         service_name = f"demo-api-{int(time.time()) % 1_000_000}"
+        production_service_name = f"demo-prod-{int(time.time()) % 1_000_000}"
 
         run("docker", "compose", "up", "-d", "opa")
         clusters = run("kind", "get", "clusters").stdout.split()
@@ -140,6 +149,54 @@ def main() -> None:
             ).json()
             assert denied["state"] == "REJECTED", denied
 
+            production = httpx.post(
+                "http://127.0.0.1:8010/api/v1/environments",
+                headers=headers,
+                json={
+                    "name": production_service_name,
+                    "team": "team-demo",
+                    "environment_type": "production",
+                    "cost_center": "DEMO",
+                    "idempotency_key": "local-demo-production-001",
+                },
+                timeout=10,
+            )
+            production.raise_for_status()
+            production_result = production.json()
+            assert production_result["state"] == "APPROVAL_REQUIRED", production_result
+            production_id = production_result["id"]
+            self_approval = httpx.post(
+                f"http://127.0.0.1:8010/api/v1/environments/{production_id}/approve",
+                headers=headers,
+                json={"plan_hash": production_result["plan"]["plan_hash"]},
+                timeout=10,
+            )
+            assert self_approval.status_code == 403, self_approval.text
+            approved = httpx.post(
+                f"http://127.0.0.1:8010/api/v1/environments/{production_id}/approve",
+                headers={"Authorization": f"Bearer {operator_token}"},
+                json={"plan_hash": production_result["plan"]["plan_hash"]},
+                timeout=180,
+            )
+            approved.raise_for_status()
+            assert approved.json()["state"] == "READY", approved.text
+            destroy_pending = httpx.post(
+                f"http://127.0.0.1:8010/api/v1/environments/{production_id}/destroy",
+                headers=headers,
+                timeout=10,
+            )
+            destroy_pending.raise_for_status()
+            destroy_result = destroy_pending.json()
+            assert destroy_result["state"] == "DESTROY_PENDING", destroy_result
+            destroyed_production = httpx.post(
+                f"http://127.0.0.1:8010/api/v1/environments/{production_id}/destroy/approve",
+                headers={"Authorization": f"Bearer {operator_token}"},
+                json={"plan_hash": destroy_result["destroy_plan"]["plan_hash"]},
+                timeout=180,
+            )
+            destroyed_production.raise_for_status()
+            assert destroyed_production.json()["state"] == "DESTROYED", destroyed_production.text
+
             destroyed = httpx.post(
                 f"http://127.0.0.1:8010/api/v1/environments/{environment_id}/destroy",
                 headers=headers,
@@ -152,7 +209,14 @@ def main() -> None:
                 "kubectl", "get", "namespace", f"team-demo-{service_name}", check=False
             )
             assert deleted_namespace.returncode != 0
-            print("PASS: signed JWT → OPA → kind Ready → audit → destroy; agent production denied")
+            deleted_production_namespace = run(
+                "kubectl", "get", "namespace", f"team-demo-{production_service_name}", check=False
+            )
+            assert deleted_production_namespace.returncode != 0
+            print(
+                "PASS: signed JWT → OPA → kind Ready → audit → destroy; "
+                "agent production denied; production approval and protected destroy verified"
+            )
         finally:
             api.send_signal(signal.SIGTERM)
             api.wait(timeout=15)

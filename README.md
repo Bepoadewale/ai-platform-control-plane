@@ -46,7 +46,7 @@ For the complete local integration demo (Docker Desktop, kind, kubectl, and Helm
 make demo-local
 ```
 
-It generates temporary local JWT/JWKS material and proves signed identity → OPA → FastAPI → kind readiness → audit/metrics → destroy, plus an autonomous production-agent denial. No cloud credentials are used.
+It generates temporary local JWT/JWKS material and proves signed identity → OPA → FastAPI → kind readiness → audit/metrics → destroy, autonomous production-agent denial, and production apply/destroy with an independent operator approving exact plan hashes. No cloud credentials are used.
 
 Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
 

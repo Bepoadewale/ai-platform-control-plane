@@ -20,8 +20,9 @@ PARTIALLY VALIDATED
   namespace deletion. A deliberately unhealthy workload persisted as `FAILED` with a
   `reconciliation.failed` audit event before cleanup.
 - `make demo-local` executes a reproducible signed JWT → OPA → FastAPI → kind Ready → audit/metrics
-  → destroy flow and verifies autonomous production-agent denial. The non-root API image build and
-  `/healthz` endpoint were also executed locally.
+  → destroy flow; verifies autonomous production-agent denial; and exercises production apply/destroy
+  through independent exact-plan approvals. The non-root API image build and `/healthz` endpoint were
+  also executed locally.
 - The protected production lifecycle was executed in kind: immutable apply plan → independent
   approval → Ready → immutable destruction plan → independent approval → verified cleanup.
 - An interrupted `APPLYING` environment was persisted, the lifecycle service was restarted, and an
