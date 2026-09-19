@@ -1,8 +1,8 @@
 # P0 — Required for Portfolio Claim
 
 - Add migration/version management and corruption/recovery coverage for durable lifecycle/audit state.
-- Execute current policy through local OPA and fail closed on evaluator failure.
-- Exercise the authenticated HTTP API through OPA and the kind reconciler in one local integration test.
+- Add a reproducible automated FastAPI + OPA + kind integration test/script for the manually executed path.
+- Persist approvals, bind them to a plan hash, and reject stale/self approvals.
 - Add end-to-end TTL and policy-denial tests with audit evidence.
 
 # P1 — Production Hardening

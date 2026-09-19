@@ -1,4 +1,9 @@
 services:
+  opa:
+    image: openpolicyagent/opa:1.20.2
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "/policies"]
+    ports: ["8181:8181"]
+    volumes: ["./platform/policies:/policies:ro"]
   postgres:
     image: postgres:16.4-alpine
     environment:
@@ -14,10 +19,12 @@ services:
   control-plane:
     build: {context: ., dockerfile: control-plane/Dockerfile}
     ports: ["8000:8000"]
-    volumes: ["./environments:/app/environments"]
+    volumes: ["./environments:/app/environments", "./state:/app/state"]
     environment:
-      PLATFORM_DATABASE_URL: postgresql+psycopg://platform:local-development-only@postgres:5432/platform
+      PLATFORM_CONTROL_PLANE_DB: /app/state/control-plane.db
+      PLATFORM_OPA_DECISION_URL: http://opa:8181/v1/data/platform/environment
     depends_on:
       postgres: {condition: service_healthy}
+      opa: {condition: service_started}
 volumes:
   platform-postgres: {}

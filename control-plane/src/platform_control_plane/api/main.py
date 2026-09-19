@@ -7,12 +7,15 @@ from platform_control_plane.auth.dependencies import actor_from_request
 from platform_control_plane.models.domain import Actor, EnvironmentRequest, LifecycleState
 from platform_control_plane.observability.metrics import POLICY_DENIALS, REQUESTS
 from platform_control_plane.planner.service import Planner
+from platform_control_plane.policy.engine import OPAPolicyEngine
 from platform_control_plane.provisioning.service import EnvironmentService
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(title="AI Platform Control Plane", version="0.1.0")
 service = EnvironmentService(
-    Path("environments"), Path(os.environ.get("PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db"))
+    Path(os.environ.get("PLATFORM_DESIRED_STATE_ROOT", "environments")),
+    Path(os.environ.get("PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db")),
+    policy=OPAPolicyEngine.from_environment(require_live=True),
 )
 planner = Planner()
 
@@ -100,5 +103,5 @@ def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
 
 @app.get("/api/v1/environments/{environment_id}/audit-events")
 def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
-    service.get(actor, environment_id)
-    return service.audit.list(environment_id)
+    environment = service.get(actor, environment_id)
+    return service.audit.list(environment.request.request_id)

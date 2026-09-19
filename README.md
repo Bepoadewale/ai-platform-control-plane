@@ -21,9 +21,9 @@ flowchart LR
 
 - FastAPI `/api/v1` control plane with tenant boundaries, lifecycle transitions, idempotency keys, plans, audit events, approval workflow, safe dev destruction, and Prometheus metrics.
 - SQLite-backed local lifecycle and audit state survives a control-plane restart; it is covered by a restart-recovery test.
-- Golden-path desired-state generation for a Kubernetes service environment.
-- Policy boundary that fails closed: agents cannot create production, privileged workloads are prohibited, observability cannot be disabled, and production requires an operator approval.
-- Runnable local tests and demo. Local mode renders GitOps configuration; it does **not** claim to provision AWS or reconcile a real cluster.
+- RS256 JWT/JWKS bearer-token validation is exercised through the API; development headers require an explicit insecure opt-in.
+- A local OPA container evaluates live Rego decisions and fails closed when unavailable. The live path has denied an autonomous production-agent request.
+- Golden-path desired state is reconciled into a local kind cluster with Helm. The API waits for Deployment readiness and API destroy verifies resource cleanup.
 
 See [implementation status](docs/IMPLEMENTATION_STATUS.md) and [project status](PROJECT_STATUS.md) for the evidence boundary and current P0 work.
 
@@ -40,7 +40,7 @@ make demo
 make run
 ```
 
-Open `http://127.0.0.1:8000/docs` for the API. In local development, identity comes from request headers only; replace this with OIDC workload/user tokens before deployment.
+Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
 
 ```console
 curl -X POST http://127.0.0.1:8000/api/v1/environments \
@@ -51,9 +51,13 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
   -d '{"name":"demo-api","team":"team-demo","environment_type":"development","ttl_hours":12,"postgresql":true,"redis":true,"cost_center":"DEMO","idempotency_key":"demo-agent-001"}'
 ```
 
+## Execution boundary
+
+The verified local kind/OPA demo uses explicitly enabled development headers to make the request. JWT/JWKS validation is separately exercised through FastAPI integration tests. AWS/EKS, Argo CD, PostgreSQL, Grafana, OpenTelemetry and enterprise OIDC are not yet executed; see [implementation status](docs/IMPLEMENTATION_STATUS.md).
+
 ## Technology choices
 
-FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. Argo CD is the reconciler for Git desired state. OPA/Rego policy is supplied as the deployable policy contract, while the local adapter keeps the initial workflow runnable without a policy server. Terraform modules are opt-in AWS infrastructure foundations. Prometheus/OpenTelemetry configuration provides control-plane observability.
+FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. The local direct reconciler is executed against kind; Argo CD remains the production GitOps adapter. OPA/Rego is the live policy evaluator. Terraform modules are opt-in AWS infrastructure foundations. Prometheus/OpenTelemetry configuration provides control-plane observability.
 
 See [architecture](docs/architecture.md), [local development](docs/local-development.md), [demo](docs/demo.md), [agent safety](docs/agent-safety.md), [failure modes](docs/failure-modes.md), and the [interview guide](docs/interview-guide.md). To capture portfolio screenshots, run the demo/API then capture `/docs`, `/metrics`, `kubectl get all -n team-demo-demo-api`, and the Grafana dashboard after Prometheus is installed.
 

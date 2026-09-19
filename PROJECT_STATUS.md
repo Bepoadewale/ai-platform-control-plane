@@ -13,11 +13,14 @@ PARTIALLY VALIDATED
 - Rego policy tests run with OPA 1.20.2.
 - A kind v0.30.0 Kubernetes cluster was created with Docker Engine 29.0.1. The lifecycle service
   rendered a golden-path Helm release, observed its Deployment Ready, and executed verified cleanup.
+- The FastAPI request path was executed with live OPA and kind: request → OPA allow → plan → Helm
+  reconciliation → Kubernetes readiness → persisted audit → API-driven destroy. A production agent
+  request was denied by OPA with no Kubernetes mutation.
 
 ## Implemented but Not End-to-End Validated
 
-- Prometheus endpoint and direct local Kubernetes reconciliation adapter. The adapter has not yet
-  been exercised through the authenticated HTTP API or a live OPA request path.
+- Prometheus endpoint. Local PostgreSQL, Argo CD, OpenTelemetry, Grafana, TTL reaping, and the
+  approval workflow have not yet been exercised through a complete local infrastructure lifecycle.
 
 ## Simulated
 
@@ -26,7 +29,7 @@ PARTIALLY VALIDATED
 
 ## Architecture / Contracts Only
 
-- OPA runtime, GitOps controller, AWS provisioning.
+- GitOps controller and AWS provisioning.
 
 ## Known Failures
 
@@ -36,8 +39,8 @@ PARTIALLY VALIDATED
 
 ## Current P0 Objective
 
-Run OPA as the live request-policy dependency and fail closed on protected writes, then exercise
-the authenticated HTTP API through the kind reconciler.
+Bind persisted approvals to immutable plans, then execute approval, TTL, restart, and failed-workload
+paths through the authenticated HTTP API.
 
 ## Last Validation
 
@@ -47,7 +50,9 @@ the authenticated HTTP API through the kind reconciler.
 - Docker Engine 29.0.1 is available; Helm lint and Terraform validation passed earlier in this run.
 - `PLATFORM_RECONCILER=kind ... EnvironmentService.create(...)`: Deployment reached Ready in kind.
 - `PLATFORM_RECONCILER=kind ... EnvironmentService.destroy(...)`: namespace deletion verified.
+- FastAPI on `127.0.0.1:8001` + OPA container + kind: API-created Deployment reached `READY`, audit
+  timeline was retrieved, OPA denied autonomous production, and API destroy removed the namespace.
 
 ## Last Updated
 
-2026-09-19, uncommitted local kind reconciliation increment.
+2026-09-19, uncommitted live OPA/kind API increment.

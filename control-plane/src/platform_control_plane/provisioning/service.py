@@ -12,7 +12,7 @@ from platform_control_plane.models.domain import (
 )
 from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
-from platform_control_plane.policy.engine import PolicyEngine
+from platform_control_plane.policy.engine import OPAPolicyEngine, PolicyEngine
 from platform_control_plane.reconciliation.helm import (
     KindHelmReconciler,
     Reconciler,
@@ -26,8 +26,9 @@ class EnvironmentService:
         desired_state_root: Path,
         database_path: Path | None = None,
         reconciler: Reconciler | None = None,
+        policy: PolicyEngine | OPAPolicyEngine | None = None,
     ) -> None:
-        self.policy = PolicyEngine()
+        self.policy = policy or OPAPolicyEngine.from_environment()
         self.planner = Planner()
         self.audit = AuditRepository(database_path)
         self.renderer = GitOpsRenderer(desired_state_root)
