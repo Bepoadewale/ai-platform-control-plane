@@ -2,7 +2,7 @@
 
 ## Current Maturity
 
-PARTIALLY VALIDATED
+PORTFOLIO COMPLETE
 
 ## Executed and Verified
 
@@ -30,8 +30,9 @@ PARTIALLY VALIDATED
 
 ## Implemented but Not End-to-End Validated
 
-- Prometheus endpoint. Local PostgreSQL, Argo CD, OpenTelemetry, and Grafana have not yet been
-  exercised through a complete local infrastructure lifecycle.
+- Prometheus metrics endpoint is emitted and fetched in `make demo-local`; Prometheus server,
+  PostgreSQL, Argo CD, OpenTelemetry, and Grafana have not yet been exercised through a complete
+  local infrastructure lifecycle.
 
 ## Simulated
 
@@ -40,7 +41,7 @@ PARTIALLY VALIDATED
 
 ## Architecture / Contracts Only
 
-- GitOps controller and AWS provisioning.
+- Argo CD GitOps controller and AWS provisioning.
 
 ## Known Failures
 
@@ -50,15 +51,18 @@ PARTIALLY VALIDATED
 
 ## Current P0 Objective
 
-Run the final signed-API acceptance pass for production approval and protected destruction, then
-complete the final validation and documentation pass.
+No open P0 work. The next focused hardening item is OpenTelemetry export with a local collector and
+trace evidence.
 
 ## Last Validation
 
 - `.venv/bin/python -m pytest -q`: 25 passed (2 upstream TestClient deprecation warnings).
-- `.venv/bin/python -m ruff check control-plane/src control-plane/tests cli/src`: passed.
+- `.venv/bin/python -m ruff check control-plane/src control-plane/tests cli/src scripts/demo-local.py`: passed.
 - `opa test platform/policies tests/policy`: 1/1 passed with OPA 1.20.2.
-- Docker Engine 29.0.1 is available; Helm lint and Terraform validation passed earlier in this run.
+- `helm lint platform/helm/golden-path`: passed.
+- `terraform -chdir=... validate`: host provider-schema loader failed on macOS; the same locked
+  configuration passed `hashicorp/terraform:1.9.8` Linux-container validation after adding its
+  verified Linux ARM64 provider checksum.
 - `PLATFORM_RECONCILER=kind ... EnvironmentService.create(...)`: Deployment reached Ready in kind.
 - `PLATFORM_RECONCILER=kind ... EnvironmentService.destroy(...)`: namespace deletion verified.
 - FastAPI on `127.0.0.1:8001` + OPA container + kind: API-created Deployment reached `READY`, audit
@@ -66,11 +70,13 @@ complete the final validation and documentation pass.
 - `PLATFORM_RECONCILER=kind ... expire_due(...)`: TTL workload cleanup and namespace deletion verified.
 - `PLATFORM_RECONCILER=kind ... create(image=busybox:1.36)`: unhealthy workload reached `FAILED` and
   recorded `reconciliation.failed` before cleanup.
-- `make demo-local`: passed with signed JWT, OPA, kind, audit, metrics, destroy, and denial assertions.
-- `docker build ...` plus non-root container `/healthz`: passed.
+- `make demo-local`: passed with signed JWT, OPA, kind, audit, metrics, dev destroy, autonomous-agent
+  denial, independent production apply approval, and independent protected-destroy approval.
+- `docker build -f control-plane/Dockerfile -t ai-platform-control-plane:week1 .` plus non-root
+  container `/healthz`: passed.
 - `PLATFORM_RECONCILER=kind ... recover_pending(...)`: persisted `APPLYING` workload reconciled once
   after restart; subsequent recovery was a no-op and namespace cleanup was verified.
 
 ## Last Updated
 
-2026-09-19, uncommitted interrupted-reconciliation recovery increment.
+2026-09-19, final Week 1 local acceptance pass pending commit.

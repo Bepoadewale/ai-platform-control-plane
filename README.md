@@ -51,6 +51,8 @@ It generates temporary local JWT/JWKS material and proves signed identity → OP
 Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
 
 ```console
+PLATFORM_AUTH_MODE=headers PLATFORM_ALLOW_INSECURE_HEADERS=true make run
+
 curl -X POST http://127.0.0.1:8000/api/v1/environments \
   -H 'content-type: application/json' \
   -H 'x-platform-subject: demo-agent' \
@@ -61,11 +63,11 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
 
 ## Execution boundary
 
-The verified local kind/OPA demo uses explicitly enabled development headers to make the request. JWT/JWKS validation is separately exercised through FastAPI integration tests. AWS/EKS, Argo CD, PostgreSQL, Grafana, OpenTelemetry and enterprise OIDC are not yet executed; see [implementation status](docs/IMPLEMENTATION_STATUS.md).
+The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The curl example above is explicitly development-only. AWS/EKS, Argo CD, PostgreSQL, Grafana, OpenTelemetry and enterprise OIDC are not yet executed; see [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Technology choices
 
-FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. The local direct reconciler is executed against kind; Argo CD remains the production GitOps adapter. OPA/Rego is the live policy evaluator. Terraform modules are opt-in AWS infrastructure foundations. Prometheus/OpenTelemetry configuration provides control-plane observability.
+FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. The local direct reconciler is executed against kind; Argo CD remains the production GitOps adapter. OPA/Rego is the live policy evaluator. Terraform modules are opt-in AWS infrastructure foundations. Prometheus metrics are emitted locally; OpenTelemetry is a production-hardening follow-up.
 
 See [architecture](docs/architecture.md), [local development](docs/local-development.md), [demo](docs/demo.md), [agent safety](docs/agent-safety.md), [failure modes](docs/failure-modes.md), and the [interview guide](docs/interview-guide.md). To capture portfolio screenshots, run the demo/API then capture `/docs`, `/metrics`, `kubectl get all -n team-demo-demo-api`, and the Grafana dashboard after Prometheus is installed.
 
