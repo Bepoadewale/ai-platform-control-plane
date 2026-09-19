@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pip-audit>=2.8,<3", "pytest>=8.3,<9", "ruff>=0.8,<1"]
+dev = ["pip-audit>=2.8,<3", "pytest>=9.0.3,<10", "ruff>=0.8,<1"]
 mcp = ["mcp>=1.12,<2"]
 
 [project.scripts]
