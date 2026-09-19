@@ -4,7 +4,7 @@ Starting maturity: PARTIALLY VALIDATED.
 
 Outcome: make the request → policy → approval → desired state → local kind Ready → audit loop real.
 
-P0: durable state ✅; signed local identity; OPA execution; kind bootstrap; reconciler; Ready/denial/destroy integration tests.
+P0: durable state ✅; signed local identity **next**; OPA execution; kind bootstrap (blocked while Docker Desktop is unavailable); reconciler; Ready/denial/destroy integration tests.
 
 Failure demo: production request without approval or policy-allowed request with failed reconciliation is audited and not marked Ready.
 
