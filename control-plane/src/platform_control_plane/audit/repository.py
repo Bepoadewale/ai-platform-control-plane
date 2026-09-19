@@ -5,6 +5,7 @@ from threading import RLock
 from uuid import UUID
 
 from platform_control_plane.models.domain import AuditEvent
+from platform_control_plane.persistence.migrations import apply_migrations
 
 
 class AuditRepository:
@@ -17,16 +18,7 @@ class AuditRepository:
             self.connection = sqlite3.connect(database_path, check_same_thread=False)
             self.connection.row_factory = sqlite3.Row
             with self.lock:
-                self.connection.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS audit_events (
-                      event_id TEXT PRIMARY KEY,
-                      request_id TEXT NOT NULL,
-                      payload TEXT NOT NULL
-                    )
-                    """
-                )
-                self.connection.commit()
+                apply_migrations(self.connection)
 
     def append(self, event: AuditEvent) -> None:
         with self.lock:

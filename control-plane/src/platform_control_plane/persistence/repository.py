@@ -3,6 +3,7 @@ from pathlib import Path
 from threading import RLock
 
 from platform_control_plane.models.domain import Environment
+from platform_control_plane.persistence.migrations import apply_migrations
 
 
 class EnvironmentRepository:
@@ -20,18 +21,7 @@ class EnvironmentRepository:
         self.connection.row_factory = sqlite3.Row
         self.lock = RLock()
         with self.lock:
-            self.connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS environments (
-                  id TEXT PRIMARY KEY,
-                  tenant_id TEXT NOT NULL,
-                  idempotency_key TEXT NOT NULL,
-                  payload TEXT NOT NULL,
-                  UNIQUE (tenant_id, idempotency_key)
-                )
-                """
-            )
-            self.connection.commit()
+            apply_migrations(self.connection)
 
     def load_all(self) -> list[Environment]:
         with self.lock:
