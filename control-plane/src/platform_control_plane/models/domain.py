@@ -119,6 +119,9 @@ class Plan(BaseModel):
     estimated_ttl_usd: float | None
     requires_approval: bool
     policy_notes: list[str] = Field(default_factory=list)
+    plan_hash: str = ""
+    version: int = 1
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AuditEvent(BaseModel):
@@ -153,8 +156,14 @@ class InfrastructureRequest(BaseModel):
 
 class Approval(BaseModel):
     environment_id: UUID
+    plan_hash: str = ""
+    requested_by: str | None = None
     approved_by: str | None = None
     approved_at: datetime | None = None
+
+
+class ApprovalRequest(BaseModel):
+    plan_hash: str = Field(min_length=64, max_length=64)
 
 
 class Environment(BaseModel):
@@ -166,6 +175,7 @@ class Environment(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime | None = None
     plan: Plan | None = None
+    approval: Approval | None = None
     gitops_path: str | None = None
     endpoint: str | None = None
     failure_reason: str | None = None

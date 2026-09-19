@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 from platform_control_plane.models.domain import RESOURCE_PROFILES, EnvironmentRequest, Plan
 
 
@@ -21,10 +24,22 @@ class Planner:
         if request.secret_refs:
             resources.append("ExternalSecret references (values never exposed to requester)")
         ttl_cost = monthly * request.ttl_hours / (24 * 30) if request.ttl_hours else None
-        return Plan(
+        plan = Plan(
             request_id=request.request_id,
             resources=resources,
             estimated_monthly_usd=round(monthly, 2),
             estimated_ttl_usd=round(ttl_cost, 2) if ttl_cost else None,
             requires_approval=request.environment_type == "production",
         )
+        digest_input = {
+            "request": request.model_dump(mode="json", exclude={"request_id", "idempotency_key"}),
+            "resources": plan.resources,
+            "estimated_monthly_usd": plan.estimated_monthly_usd,
+            "estimated_ttl_usd": plan.estimated_ttl_usd,
+            "requires_approval": plan.requires_approval,
+            "version": plan.version,
+        }
+        plan.plan_hash = hashlib.sha256(
+            json.dumps(digest_input, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        return plan

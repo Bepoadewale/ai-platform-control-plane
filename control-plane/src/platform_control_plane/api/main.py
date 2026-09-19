@@ -4,7 +4,12 @@ from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Response
 from platform_control_plane.auth.dependencies import actor_from_request
-from platform_control_plane.models.domain import Actor, EnvironmentRequest, LifecycleState
+from platform_control_plane.models.domain import (
+    Actor,
+    ApprovalRequest,
+    EnvironmentRequest,
+    LifecycleState,
+)
 from platform_control_plane.observability.metrics import POLICY_DENIALS, REQUESTS
 from platform_control_plane.planner.service import Planner
 from platform_control_plane.policy.engine import OPAPolicyEngine
@@ -86,9 +91,13 @@ def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_requ
 
 
 @app.post("/api/v1/environments/{environment_id}/approve")
-def approve(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
+def approve(
+    environment_id: UUID,
+    approval: ApprovalRequest,
+    actor: Actor = Depends(actor_from_request),
+):
     try:
-        return service.approve(actor, environment_id)
+        return service.approve(actor, environment_id, approval.plan_hash)
     except (ValueError, PermissionError) as error:
         raise HTTPException(403, detail=str(error)) from error
 

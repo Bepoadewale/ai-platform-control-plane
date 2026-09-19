@@ -7,6 +7,7 @@ from platform_control_plane.audit.repository import AuditRepository
 from platform_control_plane.gitops.renderer import GitOpsRenderer
 from platform_control_plane.models.domain import (
     Actor,
+    Approval,
     AuditEvent,
     Environment,
     EnvironmentRequest,
@@ -82,6 +83,12 @@ class EnvironmentService:
         return self._apply(env, actor)
 
     def _apply(self, env: Environment, actor: Actor) -> Environment:
+        current_plan = self.planner.plan(env.request)
+        if env.plan is None or current_plan.plan_hash != env.plan.plan_hash:
+            env.state = LifecycleState.FAILED
+            env.failure_reason = "STALE_PLAN: request no longer matches approved plan"
+            self._event(env, actor, "plan.stale", reason=env.failure_reason)
+            return env
         env.state = LifecycleState.APPLYING
         self._event(env, actor, "gitops.rendering")
         env.gitops_path = self.renderer.render(env)
@@ -100,14 +107,27 @@ class EnvironmentService:
         self.repository.close()
         self.audit.close()
 
-    def approve(self, actor: Actor, environment_id: UUID) -> Environment:
+    def approve(self, actor: Actor, environment_id: UUID, plan_hash: str) -> Environment:
         env = self.get(actor, environment_id)
         if env.state != LifecycleState.APPROVAL_REQUIRED:
             raise ValueError("environment is not awaiting approval")
         if not ({"platform-operator", "platform-admin"} & {r.value for r in actor.roles}):
             raise PermissionError("platform operator role required")
+        if actor.subject == env.owner:
+            raise PermissionError("requester cannot approve their own protected request")
+        if env.plan is None or plan_hash != env.plan.plan_hash:
+            raise ValueError("STALE_PLAN: approval does not match current plan")
+        current_plan = self.planner.plan(env.request)
+        if current_plan.plan_hash != env.plan.plan_hash:
+            raise ValueError("STALE_PLAN: request changed after planning")
+        env.approval = Approval(
+            environment_id=env.id,
+            plan_hash=env.plan.plan_hash,
+            requested_by=env.owner,
+            approved_by=actor.subject,
+        )
         env.state = LifecycleState.APPROVED
-        self._event(env, actor, "approval.granted")
+        self._event(env, actor, "approval.granted", plan_hash=env.plan.plan_hash)
         return self._apply(env, actor)
 
     def get(self, actor: Actor, environment_id: UUID) -> Environment:

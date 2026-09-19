@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from platform_control_plane.models.domain import (
     Actor,
     EnvironmentRequest,
@@ -65,7 +66,30 @@ def test_production_requires_operator_approval(tmp_path: Path):
     env = service.create(developer(), request)
     assert env.state is LifecycleState.APPROVAL_REQUIRED
     operator = Actor(subject="operator", tenant_id="team-demo", roles={Role.PLATFORM_OPERATOR})
-    assert service.approve(operator, env.id).state is LifecycleState.READY
+    assert service.approve(operator, env.id, env.plan.plan_hash).state is LifecycleState.READY
+
+
+def test_production_approval_is_bound_to_plan_and_cannot_self_approve(tmp_path: Path):
+    service = EnvironmentService(tmp_path / "environments")
+    requester = Actor(
+        subject="operator-requester", tenant_id="team-demo", roles={Role.PLATFORM_OPERATOR}
+    )
+    env = service.create(
+        requester,
+        EnvironmentRequest(
+            name="approval-api",
+            team="team-demo",
+            environment_type=EnvironmentType.PRODUCTION,
+            cost_center="ENG",
+            idempotency_key="approval-bound-request-001",
+        ),
+    )
+    with pytest.raises(PermissionError):
+        service.approve(requester, env.id, env.plan.plan_hash)
+    approver = Actor(subject="another-operator", tenant_id="team-demo", roles={Role.PLATFORM_OPERATOR})
+    with pytest.raises(ValueError, match="STALE_PLAN"):
+        service.approve(approver, env.id, "0" * 64)
+    assert service.approve(approver, env.id, env.plan.plan_hash).approval.plan_hash == env.plan.plan_hash
 
 
 def test_idempotency_returns_original_environment(tmp_path: Path):
