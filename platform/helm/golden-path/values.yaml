@@ -1,0 +1,13 @@
+name: sample-api
+namespace: team-demo-sample-api
+team: team-demo
+environmentType: development
+ttlHours: 12
+profile: small
+image: nginx:1.27-alpine
+postgresql: false
+redis: false
+observability: true
+resources:
+  requests: {cpu: 250m, memory: 256Mi}
+  limits: {cpu: 500m, memory: 512Mi}

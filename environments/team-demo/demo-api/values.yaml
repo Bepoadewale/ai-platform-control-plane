@@ -1,0 +1,9 @@
+name: demo-api
+namespace: team-demo-demo-api
+team: team-demo
+environmentType: development
+ttlHours: 12
+profile: small
+postgresql: true
+redis: true
+observability: true

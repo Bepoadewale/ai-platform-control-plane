@@ -1,0 +1,5 @@
+services:
+  control-plane:
+    build: {context: ., dockerfile: control-plane/Dockerfile}
+    ports: ["8000:8000"]
+    volumes: ["./environments:/app/environments"]

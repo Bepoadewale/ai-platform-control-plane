@@ -1,0 +1,11 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata: {name: platform-environments, namespace: argocd}
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/bepoadewale/ai-platform-control-plane.git
+    targetRevision: main
+    path: platform/helm/golden-path
+  destination: {server: https://kubernetes.default.svc, namespace: default}
+  syncPolicy: {automated: {prune: false, selfHeal: false}}

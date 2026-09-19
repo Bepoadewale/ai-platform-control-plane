@@ -1,0 +1,37 @@
+[project]
+name = "ai-platform-control-plane"
+version = "0.1.0"
+description = "Governed internal developer platform and AI infrastructure control plane"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "pydantic>=2.9,<3",
+  "prometheus-client>=0.21,<1",
+  "uvicorn[standard]>=0.30,<1",
+  "httpx>=0.27,<1",
+  "typer>=0.12,<1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3,<9", "ruff>=0.8,<1"]
+
+[project.scripts]
+platformctl = "platform_control_plane.cli:app"
+
+[tool.setuptools]
+package-dir = {"" = "control-plane/src"}
+
+[tool.setuptools.packages.find]
+where = ["control-plane/src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["control-plane/src", "cli/src"]
+testpaths = ["control-plane/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008", "E501"] # FastAPI DI and long declarative infrastructure values are intentional.
