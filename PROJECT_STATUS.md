@@ -19,6 +19,9 @@ PARTIALLY VALIDATED
 - A real kind TTL lifecycle was executed: Ready workload → persisted expiry → reaper → verified
   namespace deletion. A deliberately unhealthy workload persisted as `FAILED` with a
   `reconciliation.failed` audit event before cleanup.
+- `make demo-local` executes a reproducible signed JWT → OPA → FastAPI → kind Ready → audit/metrics
+  → destroy flow and verifies autonomous production-agent denial. The non-root API image build and
+  `/healthz` endpoint were also executed locally.
 
 ## Implemented but Not End-to-End Validated
 
@@ -42,7 +45,8 @@ PARTIALLY VALIDATED
 
 ## Current P0 Objective
 
-Add versioned SQLite migrations and a reproducible signed-JWT + OPA + kind integration script.
+Execute a protected production approval and destruction workflow through kind, then prove restart
+recovery of an interrupted reconciliation without duplicate resources.
 
 ## Last Validation
 
@@ -57,7 +61,9 @@ Add versioned SQLite migrations and a reproducible signed-JWT + OPA + kind integ
 - `PLATFORM_RECONCILER=kind ... expire_due(...)`: TTL workload cleanup and namespace deletion verified.
 - `PLATFORM_RECONCILER=kind ... create(image=busybox:1.36)`: unhealthy workload reached `FAILED` and
   recorded `reconciliation.failed` before cleanup.
+- `make demo-local`: passed with signed JWT, OPA, kind, audit, metrics, destroy, and denial assertions.
+- `docker build ...` plus non-root container `/healthz`: passed.
 
 ## Last Updated
 
-2026-09-19, uncommitted TTL and failed-workload kind increment.
+2026-09-19, uncommitted local acceptance-demo increment.
