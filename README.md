@@ -63,7 +63,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
 
 ## Execution boundary
 
-The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The curl example above is explicitly development-only. AWS/EKS, Argo CD, PostgreSQL, Grafana, OpenTelemetry and enterprise OIDC are not yet executed; see [implementation status](docs/IMPLEMENTATION_STATUS.md).
+The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack additionally executes synthetic Keycloak OIDC, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard. The curl example above is explicitly development-only. AWS/EKS, Argo CD, and PostgreSQL-backed application persistence are not yet executed; see [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Technology choices
 

@@ -27,12 +27,14 @@ PORTFOLIO COMPLETE
   approval → Ready → immutable destruction plan → independent approval → verified cleanup.
 - An interrupted `APPLYING` environment was persisted, the lifecycle service was restarted, and an
   operator recovery pass reconciled it exactly once before verified kind cleanup.
+- Local Keycloak issued a real RS256 developer token that FastAPI validated through Keycloak JWKS.
+  Prometheus scraped the resulting API metric, the OTel Collector received its HTTP spans, and the
+  provisioned Grafana dashboard was discovered through Grafana's API.
 
 ## Implemented but Not End-to-End Validated
 
-- Prometheus metrics endpoint is emitted and fetched in `make demo-local`; Prometheus server,
-  PostgreSQL, Argo CD, OpenTelemetry, and Grafana have not yet been exercised through a complete
-  local infrastructure lifecycle.
+- PostgreSQL is running in Compose but SQLite remains the executed persistence backend. Argo CD is
+  not yet exercised.
 
 ## Simulated
 
@@ -51,12 +53,16 @@ PORTFOLIO COMPLETE
 
 ## Current P0 Objective
 
-No open P0 work. The next focused hardening item is OpenTelemetry export with a local collector and
-trace evidence.
+No open P0 work. The next focused hardening item is a PostgreSQL persistence adapter with migration
+and restart-recovery evidence.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 25 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q`: 26 passed (2 upstream TestClient deprecation warnings).
+- Local Compose: Keycloak bearer token → FastAPI `/api/v1/catalog`: `200`.
+- Prometheus query `sum(platform_requests_total)`: returned `1`; Collector logs contained
+  `GET /api/v1/catalog` spans with `service.name=ai-platform-control-plane`; Grafana dashboard API
+  returned the provisioned `AI Platform Control Plane` dashboard.
 - `.venv/bin/python -m ruff check control-plane/src control-plane/tests cli/src scripts/demo-local.py`: passed.
 - `opa test platform/policies tests/policy`: 1/1 passed with OPA 1.20.2.
 - `helm lint platform/helm/golden-path`: passed.

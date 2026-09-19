@@ -11,12 +11,14 @@ from platform_control_plane.models.domain import (
     LifecycleState,
 )
 from platform_control_plane.observability.metrics import POLICY_DENIALS, REQUESTS
+from platform_control_plane.observability.tracing import configure_tracing
 from platform_control_plane.planner.service import Planner
 from platform_control_plane.policy.engine import OPAPolicyEngine
 from platform_control_plane.provisioning.service import EnvironmentService
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(title="AI Platform Control Plane", version="0.1.0")
+configure_tracing(app)
 service = EnvironmentService(
     Path(os.environ.get("PLATFORM_DESIRED_STATE_ROOT", "environments")),
     Path(os.environ.get("PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db")),

@@ -68,7 +68,9 @@ class JWTVerifier:
                 audience=self.settings.audience,
                 options={"require": ["exp", "sub", "iss", "aud", "tenant_id"]},
             )
-            roles = claims.get("roles", [])
+            roles = claims.get("roles")
+            if roles is None:
+                roles = claims.get("realm_access", {}).get("roles", [])
             if not isinstance(roles, list):
                 raise jwt.InvalidTokenError("roles must be an array")
             principal_type = claims.get("principal_type", "human")

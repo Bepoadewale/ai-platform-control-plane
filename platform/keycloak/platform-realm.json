@@ -1,0 +1,72 @@
+{
+  "realm": "platform",
+  "enabled": true,
+  "sslRequired": "NONE",
+  "roles": {
+    "realm": [
+      {"name": "developer"},
+      {"name": "platform-operator"},
+      {"name": "agent-requester"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ai-platform-control-plane",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "tenant-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "control-plane-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "ai-platform-control-plane",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "developer",
+      "enabled": true,
+      "email": "developer@local.invalid",
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Developer",
+      "requiredActions": [],
+      "credentials": [{"type": "password", "value": "local-development-only", "temporary": false}],
+      "attributes": {"tenant_id": ["team-demo"]},
+      "realmRoles": ["developer"]
+    },
+    {
+      "username": "operator",
+      "enabled": true,
+      "email": "operator@local.invalid",
+      "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Operator",
+      "requiredActions": [],
+      "credentials": [{"type": "password", "value": "local-development-only", "temporary": false}],
+      "attributes": {"tenant_id": ["team-demo"]},
+      "realmRoles": ["platform-operator"]
+    }
+  ]
+}

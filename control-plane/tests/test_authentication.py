@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from platform_control_plane.api.main import app
 from platform_control_plane.auth.jwt import JWTSettings, JWTVerifier
+from platform_control_plane.models.domain import Role
 
 ISSUER = "https://issuer.platform.local"
 AUDIENCE = "ai-platform-control-plane"
@@ -48,6 +49,14 @@ def test_valid_signed_jwt_distinguishes_agent_principal(issuer_material):
     assert actor.subject == "human:ada"
     assert actor.tenant_id == "team-demo"
     assert actor.is_agent is True
+
+
+def test_keycloak_realm_roles_are_accepted(issuer_material):
+    private_key, jwks = issuer_material
+    token = issue_token(private_key, roles=None, realm_access={"roles": ["developer"]})
+    actor = verifier(jwks).verify(token)
+
+    assert actor.roles == {Role.DEVELOPER}
 
 
 @pytest.mark.parametrize(

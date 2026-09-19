@@ -1,0 +1,29 @@
+{
+  "annotations": {"list": []},
+  "editable": false,
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "sum(platform_requests_total)", "refId": "A"}],
+      "title": "Control-plane requests",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {}, "overrides": []},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "sum(platform_policy_denials_total)", "refId": "A"}],
+      "title": "Policy denials",
+      "type": "stat"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["platform", "local"],
+  "title": "AI Platform Control Plane",
+  "uid": "ai-platform-control-plane",
+  "version": 1
+}

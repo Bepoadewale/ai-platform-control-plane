@@ -6,7 +6,7 @@ validated primary-path regression is discovered.
 # P1 — Production Hardening
 
 - Add SQLite corruption/recovery coverage and a PostgreSQL-backed production persistence profile.
-- Add OpenTelemetry trace export and a local collector/visualization validation path.
+- Add a Compose smoke script covering Keycloak, OTel, Prometheus, and Grafana.
 - Expand API-level authorization integration coverage for cross-tenant access.
 
 # P2 — Enhancements
