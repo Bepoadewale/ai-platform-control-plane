@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from uuid import UUID
 
@@ -10,7 +11,9 @@ from platform_control_plane.provisioning.service import EnvironmentService
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(title="AI Platform Control Plane", version="0.1.0")
-service = EnvironmentService(Path("environments"))
+service = EnvironmentService(
+    Path("environments"), Path(os.environ.get("PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db"))
+)
 planner = Planner()
 
 

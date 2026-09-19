@@ -78,3 +78,25 @@ def test_idempotency_returns_original_environment(tmp_path: Path):
         idempotency_key="dedupe-key-123",
     )
     assert service.create(developer(), request).id == service.create(developer(), request).id
+
+
+def test_lifecycle_and_audit_survive_service_restart(tmp_path: Path):
+    database_path = tmp_path / "state" / "control-plane.db"
+    request = EnvironmentRequest(
+        name="durable-api",
+        team="team-demo",
+        environment_type=EnvironmentType.DEVELOPMENT,
+        cost_center="ENG",
+        idempotency_key="durable-request-001",
+    )
+    first = EnvironmentService(tmp_path / "environments", database_path)
+    created = first.create(developer(), request)
+    first.close()
+
+    restarted = EnvironmentService(tmp_path / "environments", database_path)
+    recovered = restarted.get(developer(), created.id)
+    assert recovered.state is LifecycleState.READY
+    assert recovered.request.idempotency_key == request.idempotency_key
+    assert len(restarted.audit.list(created.request.request_id)) >= 4
+    assert restarted.create(developer(), request).id == created.id
+    restarted.close()

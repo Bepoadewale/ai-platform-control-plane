@@ -10,18 +10,24 @@ from platform_control_plane.models.domain import (
     EnvironmentRequest,
     LifecycleState,
 )
+from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
 from platform_control_plane.policy.engine import PolicyEngine
 
 
 class EnvironmentService:
-    def __init__(self, desired_state_root: Path) -> None:
+    def __init__(self, desired_state_root: Path, database_path: Path | None = None) -> None:
         self.policy = PolicyEngine()
         self.planner = Planner()
-        self.audit = AuditRepository()
+        self.audit = AuditRepository(database_path)
         self.renderer = GitOpsRenderer(desired_state_root)
-        self._environments: dict[UUID, Environment] = {}
-        self._keys: dict[tuple[str, str], UUID] = {}
+        self.repository = EnvironmentRepository(database_path)
+        loaded = self.repository.load_all()
+        self._environments: dict[UUID, Environment] = {environment.id: environment for environment in loaded}
+        self._keys: dict[tuple[str, str], UUID] = {
+            (environment.tenant_id, environment.request.idempotency_key): environment.id
+            for environment in loaded
+        }
 
     def _event(self, env: Environment, actor: Actor, action: str, **details: str) -> None:
         self.audit.append(
@@ -34,6 +40,7 @@ class EnvironmentService:
                 details=details,
             )
         )
+        self.repository.upsert(env)
 
     def create(self, actor: Actor, request: EnvironmentRequest) -> Environment:
         key = (actor.tenant_id, request.idempotency_key)
@@ -68,6 +75,10 @@ class EnvironmentService:
         env.state = LifecycleState.READY
         self._event(env, actor, "environment.ready", gitops_path=env.gitops_path)
         return env
+
+    def close(self) -> None:
+        self.repository.close()
+        self.audit.close()
 
     def approve(self, actor: Actor, environment_id: UUID) -> Environment:
         env = self.get(actor, environment_id)
