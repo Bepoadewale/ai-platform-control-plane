@@ -21,6 +21,8 @@ class PolicyEngine:
             reasons.append("viewer role cannot create environments")
         if request.workload.privileged:
             reasons.append("privileged containers are prohibited")
+        if request.service_exposure == "loadbalancer" and Role.PLATFORM_OPERATOR not in actor.roles:
+            reasons.append("LoadBalancer exposure requires platform-operator authorization")
         if not request.observability:
             reasons.append("observability cannot be disabled")
         if actor.is_agent and request.environment_type is EnvironmentType.PRODUCTION:

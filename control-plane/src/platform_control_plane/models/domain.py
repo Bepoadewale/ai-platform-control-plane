@@ -56,15 +56,26 @@ class WorkloadProfile(BaseModel):
     replicas: Annotated[int, Field(ge=1, le=10)] = 1
     privileged: bool = False
     gpu_count: Annotated[int, Field(ge=0, le=8)] = 0
+    gpu_type: str | None = None
     runtime: str | None = None
     model: str | None = None
     latency_slo_ms: Annotated[int | None, Field(ge=1)] = None
+    min_replicas: Annotated[int, Field(ge=1, le=10)] = 1
+    max_replicas: Annotated[int, Field(ge=1, le=20)] = 3
+    scaling_policy: str = "cpu"
 
     @field_validator("size")
     @classmethod
     def known_size(cls, value: str) -> str:
         if value not in RESOURCE_PROFILES:
             raise ValueError(f"unsupported resource profile: {value}")
+        return value
+
+    @field_validator("max_replicas")
+    @classmethod
+    def replica_bounds(cls, value: int, info) -> int:
+        if value < info.data.get("min_replicas", 1):
+            raise ValueError("max_replicas must be greater than or equal to min_replicas")
         return value
 
 
@@ -78,9 +89,19 @@ class EnvironmentRequest(BaseModel):
     services: list[str] = Field(default_factory=lambda: ["api"])
     postgresql: bool = False
     redis: bool = False
+    object_storage: bool = False
+    secret_refs: list[str] = Field(default_factory=list, max_length=20)
+    service_exposure: str = "ingress"
     observability: bool = True
     workload: WorkloadProfile = Field(default_factory=WorkloadProfile)
     cost_center: str = Field(min_length=2, max_length=32)
+
+    @field_validator("service_exposure")
+    @classmethod
+    def known_exposure(cls, value: str) -> str:
+        if value not in {"internal", "ingress", "loadbalancer"}:
+            raise ValueError("service_exposure must be internal, ingress, or loadbalancer")
+        return value
 
 
 class Plan(BaseModel):
@@ -101,6 +122,31 @@ class AuditEvent(BaseModel):
     state: LifecycleState
     occurred_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     details: dict[str, str] = Field(default_factory=dict)
+
+
+class Tenant(BaseModel):
+    tenant_id: str
+    display_name: str
+    cost_center: str
+
+
+class Service(BaseModel):
+    name: str
+    image: str
+    port: Annotated[int, Field(ge=1, le=65535)] = 8080
+
+
+class InfrastructureRequest(BaseModel):
+    request_id: UUID
+    environment_id: UUID
+    requested_by: str
+    idempotency_key: str
+
+
+class Approval(BaseModel):
+    environment_id: UUID
+    approved_by: str | None = None
+    approved_at: datetime | None = None
 
 
 class Environment(BaseModel):

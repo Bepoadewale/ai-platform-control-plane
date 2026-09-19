@@ -52,7 +52,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
 
 FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. Argo CD is the reconciler for Git desired state. OPA/Rego policy is supplied as the deployable policy contract, while the local adapter keeps the initial workflow runnable without a policy server. Terraform modules are opt-in AWS infrastructure foundations. Prometheus/OpenTelemetry configuration provides control-plane observability.
 
-See [architecture](docs/architecture.md), [local development](docs/local-development.md), [demo](docs/demo.md), [agent safety](docs/agent-safety.md), and the [interview guide](docs/interview-guide.md).
+See [architecture](docs/architecture.md), [local development](docs/local-development.md), [demo](docs/demo.md), [agent safety](docs/agent-safety.md), [failure modes](docs/failure-modes.md), and the [interview guide](docs/interview-guide.md). To capture portfolio screenshots, run the demo/API then capture `/docs`, `/metrics`, `kubectl get all -n team-demo-demo-api`, and the Grafana dashboard after Prometheus is installed.
 
 ## Production boundary
 

@@ -23,6 +23,8 @@ class GitOpsRenderer:
                 f"profile: {request.workload.size}",
                 f"postgresql: {str(request.postgresql).lower()}",
                 f"redis: {str(request.redis).lower()}",
+                f"objectStorage: {str(request.object_storage).lower()}",
+                f"serviceExposure: {request.service_exposure}",
                 "observability: true",
                 "",
             ]

@@ -15,6 +15,11 @@ class Planner:
         if request.redis:
             resources.append("Redis (in-cluster demo; managed service in AWS profile)")
             monthly += 6
+        if request.object_storage:
+            resources.append("Object storage (bucket policy via AWS profile)")
+            monthly += 2
+        if request.secret_refs:
+            resources.append("ExternalSecret references (values never exposed to requester)")
         ttl_cost = monthly * request.ttl_hours / (24 * 30) if request.ttl_hours else None
         return Plan(
             request_id=request.request_id,

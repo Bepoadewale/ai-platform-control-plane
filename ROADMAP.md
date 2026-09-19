@@ -1,12 +1,12 @@
 # Roadmap
 
 - [x] M1: modular control-plane API, domain lifecycle, plans, audit trail, tests, ADRs.
-- [x] M2 foundations: Helm golden path and local Kubernetes instructions.
-- [x] M3 foundations: RBAC model and deployable Rego policy contract.
-- [x] M4 foundations: desired-state renderer and Argo CD application manifest.
-- [x] M5 foundations: MCP tool contract and Codex configuration.
-- [x] M6 foundations: Prometheus metrics/dashboard/SLO definitions.
-- [x] M7 foundations: opt-in Terraform module layout and validation workflow.
-- [x] M8: TTL metadata and a safe cleanup lifecycle in the service.
-- [x] M9: AI workload fields with explicit local-vs-GPU boundary.
-- [ ] M10: persistent repository, OIDC, OPA runtime, Git provider adapter, asynchronous reconciler, Crossplane evaluation.
+- [x] M2: kind bootstrap plus Helm golden path (namespace, identity, policy, quotas, limits, ingress, HPA, PDB).
+- [x] M3: RBAC model, tenant boundary, audit trail, local policy adapter, and Rego policy contract/tests.
+- [x] M4: desired-state renderer and Argo CD Application contract; real Git provider/Argo status adapter remains pending.
+- [x] M5: API-only MCP tool contract and Codex configuration; installable MCP runtime remains pending.
+- [x] M6: Prometheus endpoint, dashboard starter, and SLO documentation; OTEL exporter/tracing remains pending.
+- [x] M7: Terraform module contracts, provider lock, format/validate workflow; reviewed resource implementations remain pending.
+- [x] M8: cost metadata/plans and safe non-production TTL destruction.
+- [x] M9: AI workload schema with explicit CPU-local/GPU-cloud distinction.
+- [ ] M10: PostgreSQL repository, OIDC/JWKS, OPA runtime, Git provider adapter, asynchronous reconciler, Crossplane evaluation.

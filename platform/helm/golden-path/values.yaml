@@ -8,6 +8,14 @@ image: nginx:1.27-alpine
 postgresql: false
 redis: false
 observability: true
+ingress:
+  enabled: true
+  className: nginx
+  host: sample-api.localhost
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+  cpuUtilization: 70
 resources:
   requests: {cpu: 250m, memory: 256Mi}
   limits: {cpu: 500m, memory: 512Mi}

@@ -33,7 +33,15 @@ def catalog(actor: Actor = Depends(actor_from_headers)) -> dict:
             "small": {"cpu": "250m", "memory": "256Mi"},
             "medium": {"cpu": "500m", "memory": "512Mi"},
         },
-        "capabilities": ["service", "postgresql", "redis", "observability", "ttl"],
+        "capabilities": [
+            "service",
+            "postgresql",
+            "redis",
+            "object-storage",
+            "secret-references",
+            "observability",
+            "ttl",
+        ],
         "agent_constraints": [
             "no production",
             "no privileged containers",

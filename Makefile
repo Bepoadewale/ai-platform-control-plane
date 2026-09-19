@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo terraform-validate helm-lint
+.PHONY: install test lint run demo bootstrap-local terraform-validate helm-lint
 
 install:
 	python3 -m pip install -e '.[dev]'
@@ -14,6 +14,9 @@ run:
 
 demo:
 	PYTHONPATH=control-plane/src python3 examples/demo.py
+
+bootstrap-local:
+	./scripts/bootstrap-local.sh
 
 terraform-validate:
 	terraform -chdir=infrastructure/terraform/environments/aws init -backend=false
