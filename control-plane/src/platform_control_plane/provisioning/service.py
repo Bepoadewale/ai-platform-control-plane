@@ -200,3 +200,13 @@ class EnvironmentService:
             ):
                 expired.append(self.destroy(actor, env.id))
         return expired
+
+    def recover_pending(self, actor: Actor) -> list[Environment]:
+        if not ({"platform-operator", "platform-admin"} & {role.value for role in actor.roles}):
+            raise PermissionError("platform operator role required")
+        recovered: list[Environment] = []
+        for env in self.list(actor):
+            if env.state == LifecycleState.APPLYING:
+                self._event(env, actor, "reconciliation.recovery_started")
+                recovered.append(self._apply(env, actor))
+        return recovered

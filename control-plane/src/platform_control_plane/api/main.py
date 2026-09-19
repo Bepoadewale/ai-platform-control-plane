@@ -129,6 +129,14 @@ def reap_expired(actor: Actor = Depends(actor_from_request)):
     return service.expire_due(actor)
 
 
+@app.post("/api/v1/maintenance/recover")
+def recover_pending(actor: Actor = Depends(actor_from_request)):
+    try:
+        return service.recover_pending(actor)
+    except PermissionError as error:
+        raise HTTPException(403, detail=str(error)) from error
+
+
 @app.get("/api/v1/environments/{environment_id}/audit-events")
 def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     environment = service.get(actor, environment_id)

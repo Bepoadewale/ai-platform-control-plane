@@ -24,6 +24,8 @@ PARTIALLY VALIDATED
   `/healthz` endpoint were also executed locally.
 - The protected production lifecycle was executed in kind: immutable apply plan → independent
   approval → Ready → immutable destruction plan → independent approval → verified cleanup.
+- An interrupted `APPLYING` environment was persisted, the lifecycle service was restarted, and an
+  operator recovery pass reconciled it exactly once before verified kind cleanup.
 
 ## Implemented but Not End-to-End Validated
 
@@ -47,12 +49,12 @@ PARTIALLY VALIDATED
 
 ## Current P0 Objective
 
-Prove restart recovery of an interrupted reconciliation without duplicate resources, then perform
-the final end-to-end/API acceptance and documentation pass.
+Run the final signed-API acceptance pass for production approval and protected destruction, then
+complete the final validation and documentation pass.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 20 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q`: 23 passed (2 upstream TestClient deprecation warnings).
 - `.venv/bin/python -m ruff check control-plane/src control-plane/tests cli/src`: passed.
 - `opa test platform/policies tests/policy`: 1/1 passed with OPA 1.20.2.
 - Docker Engine 29.0.1 is available; Helm lint and Terraform validation passed earlier in this run.
@@ -65,7 +67,9 @@ the final end-to-end/API acceptance and documentation pass.
   recorded `reconciliation.failed` before cleanup.
 - `make demo-local`: passed with signed JWT, OPA, kind, audit, metrics, destroy, and denial assertions.
 - `docker build ...` plus non-root container `/healthz`: passed.
+- `PLATFORM_RECONCILER=kind ... recover_pending(...)`: persisted `APPLYING` workload reconciled once
+  after restart; subsequent recovery was a no-op and namespace cleanup was verified.
 
 ## Last Updated
 
-2026-09-19, uncommitted local acceptance-demo increment.
+2026-09-19, uncommitted interrupted-reconciliation recovery increment.

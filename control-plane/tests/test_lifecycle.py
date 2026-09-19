@@ -171,3 +171,34 @@ def test_lifecycle_and_audit_survive_service_restart(tmp_path: Path):
     assert len(restarted.audit.list(created.request.request_id)) >= 4
     assert restarted.create(developer(), request).id == created.id
     restarted.close()
+
+
+def test_recovery_reconciles_persisted_applying_environment_once(tmp_path: Path):
+    database_path = tmp_path / "state" / "control-plane.db"
+    first = EnvironmentService(tmp_path / "environments", database_path)
+    created = first.create(
+        developer(),
+        EnvironmentRequest(
+            name="recover-api",
+            team="team-demo",
+            environment_type=EnvironmentType.DEVELOPMENT,
+            cost_center="ENG",
+            idempotency_key="recovery-request-001",
+        ),
+    )
+    created.state = LifecycleState.APPLYING
+    first.repository.upsert(created)
+    first.close()
+
+    operator = Actor(subject="operator", tenant_id="team-demo", roles={Role.PLATFORM_OPERATOR})
+    restarted = EnvironmentService(tmp_path / "environments", database_path)
+    recovered = restarted.recover_pending(operator)
+
+    assert [environment.id for environment in recovered] == [created.id]
+    assert recovered[0].state is LifecycleState.READY
+    assert restarted.recover_pending(operator) == []
+    assert any(
+        event.action == "reconciliation.recovery_started"
+        for event in restarted.audit.list(created.request.request_id)
+    )
+    restarted.close()
