@@ -20,9 +20,12 @@ flowchart LR
 ## What works now
 
 - FastAPI `/api/v1` control plane with tenant boundaries, lifecycle transitions, idempotency keys, plans, audit events, approval workflow, safe dev destruction, and Prometheus metrics.
+- SQLite-backed local lifecycle and audit state survives a control-plane restart; it is covered by a restart-recovery test.
 - Golden-path desired-state generation for a Kubernetes service environment.
 - Policy boundary that fails closed: agents cannot create production, privileged workloads are prohibited, observability cannot be disabled, and production requires an operator approval.
 - Runnable local tests and demo. Local mode renders GitOps configuration; it does **not** claim to provision AWS or reconcile a real cluster.
+
+See [implementation status](docs/IMPLEMENTATION_STATUS.md) and [project status](PROJECT_STATUS.md) for the evidence boundary and current P0 work.
 
 ## Quick start
 
