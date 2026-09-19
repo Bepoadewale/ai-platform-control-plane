@@ -2,8 +2,8 @@
 
 - Add migration/version management and corruption/recovery coverage for durable lifecycle/audit state.
 - Execute current policy through local OPA and fail closed on evaluator failure.
-- Bootstrap kind and reconcile one approved environment to a Ready workload.
-- Add end-to-end destroy/TTL and denial-path tests with audit evidence.
+- Exercise the authenticated HTTP API through OPA and the kind reconciler in one local integration test.
+- Add end-to-end TTL and policy-denial tests with audit evidence.
 
 # P1 — Production Hardening
 

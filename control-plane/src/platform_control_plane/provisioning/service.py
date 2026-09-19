@@ -13,14 +13,25 @@ from platform_control_plane.models.domain import (
 from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
 from platform_control_plane.policy.engine import PolicyEngine
+from platform_control_plane.reconciliation.helm import (
+    KindHelmReconciler,
+    Reconciler,
+    ReconciliationError,
+)
 
 
 class EnvironmentService:
-    def __init__(self, desired_state_root: Path, database_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        desired_state_root: Path,
+        database_path: Path | None = None,
+        reconciler: Reconciler | None = None,
+    ) -> None:
         self.policy = PolicyEngine()
         self.planner = Planner()
         self.audit = AuditRepository(database_path)
         self.renderer = GitOpsRenderer(desired_state_root)
+        self.reconciler = reconciler or KindHelmReconciler.from_environment()
         self.repository = EnvironmentRepository(database_path)
         loaded = self.repository.load_all()
         self._environments: dict[UUID, Environment] = {environment.id: environment for environment in loaded}
@@ -71,9 +82,15 @@ class EnvironmentService:
         env.state = LifecycleState.APPLYING
         self._event(env, actor, "gitops.rendering")
         env.gitops_path = self.renderer.render(env)
-        env.endpoint = f"https://{env.request.name}.{env.request.team}.local.platform.example"
+        try:
+            env.endpoint = self.reconciler.apply(env, self.renderer.root.parent / env.gitops_path)
+        except ReconciliationError as error:
+            env.state = LifecycleState.FAILED
+            env.failure_reason = str(error)
+            self._event(env, actor, "reconciliation.failed", reason=env.failure_reason)
+            return env
         env.state = LifecycleState.READY
-        self._event(env, actor, "environment.ready", gitops_path=env.gitops_path)
+        self._event(env, actor, "environment.ready", gitops_path=env.gitops_path, endpoint=env.endpoint)
         return env
 
     def close(self) -> None:
@@ -111,6 +128,13 @@ class EnvironmentService:
         self._event(env, actor, "destroy.requested")
         env.state = LifecycleState.DESTROYING
         self._event(env, actor, "destroy.applying")
+        try:
+            self.reconciler.destroy(env)
+        except ReconciliationError as error:
+            env.state = LifecycleState.FAILED
+            env.failure_reason = str(error)
+            self._event(env, actor, "destroy.failed", reason=env.failure_reason)
+            return env
         env.state = LifecycleState.DESTROYED
         self._event(env, actor, "destroy.complete")
         return env

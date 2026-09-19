@@ -25,6 +25,7 @@ class GitOpsRenderer:
                 f"redis: {str(request.redis).lower()}",
                 f"objectStorage: {str(request.object_storage).lower()}",
                 f"serviceExposure: {request.service_exposure}",
+                f"image: {request.image}",
                 "observability: true",
                 "",
             ]

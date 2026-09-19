@@ -92,6 +92,7 @@ class EnvironmentRequest(BaseModel):
     object_storage: bool = False
     secret_refs: list[str] = Field(default_factory=list, max_length=20)
     service_exposure: str = "ingress"
+    image: str = "nginxinc/nginx-unprivileged:1.27-alpine"
     observability: bool = True
     workload: WorkloadProfile = Field(default_factory=WorkloadProfile)
     cost_center: str = Field(min_length=2, max_length=32)
@@ -101,6 +102,13 @@ class EnvironmentRequest(BaseModel):
     def known_exposure(cls, value: str) -> str:
         if value not in {"internal", "ingress", "loadbalancer"}:
             raise ValueError("service_exposure must be internal, ingress, or loadbalancer")
+        return value
+
+    @field_validator("image")
+    @classmethod
+    def safe_image_reference(cls, value: str) -> str:
+        if not value or any(character.isspace() for character in value):
+            raise ValueError("image must be a non-empty container image reference")
         return value
 
 
