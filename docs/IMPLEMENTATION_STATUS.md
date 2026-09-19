@@ -16,6 +16,6 @@
 | Helm/Kubernetes security defaults | ✅ Executed locally | non-root image, read-only root filesystem, `emptyDir /tmp`, probes, limits, and readiness |
 | Prometheus / Grafana | ✅ Executed locally | Prometheus scrape/query and provisioned Grafana dashboard API |
 | OpenTelemetry Collector | ✅ Executed locally | collector received FastAPI HTTP spans via OTLP/HTTP |
-| PostgreSQL service | 🟡 Running / Not Application-Backed | Compose healthcheck passes; SQLite remains the persistence backend |
+| PostgreSQL persistence | ✅ Executed locally | authenticated API create, direct SQL lifecycle/audit evidence, and restart recovery |
 | Argo CD reconciliation | 📐 Architecture Only | valid adapter/manifests only; not run locally |
 | AWS Terraform contract | 🟡 Implemented / Validated Statically | Linux-container `terraform validate`; no AWS resources created |

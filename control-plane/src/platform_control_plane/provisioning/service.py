@@ -13,6 +13,7 @@ from platform_control_plane.models.domain import (
     EnvironmentRequest,
     LifecycleState,
 )
+from platform_control_plane.persistence.postgres import PostgresStore
 from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
 from platform_control_plane.policy.engine import OPAPolicyEngine, PolicyEngine
@@ -27,16 +28,17 @@ class EnvironmentService:
     def __init__(
         self,
         desired_state_root: Path,
-        database_path: Path | None = None,
+        database_path: Path | str | None = None,
         reconciler: Reconciler | None = None,
         policy: PolicyEngine | OPAPolicyEngine | None = None,
     ) -> None:
         self.policy = policy or OPAPolicyEngine.from_environment()
         self.planner = Planner()
-        self.audit = AuditRepository(database_path)
+        self.postgres = PostgresStore(database_path) if isinstance(database_path, str) and database_path.startswith("postgres") else None
+        self.audit = AuditRepository(database_path) if self.postgres is None else None
         self.renderer = GitOpsRenderer(desired_state_root)
         self.reconciler = reconciler or KindHelmReconciler.from_environment()
-        self.repository = EnvironmentRepository(database_path)
+        self.repository = EnvironmentRepository(database_path) if self.postgres is None else self.postgres
         loaded = self.repository.load_all()
         self._environments: dict[UUID, Environment] = {environment.id: environment for environment in loaded}
         self._keys: dict[tuple[str, str], UUID] = {
@@ -45,16 +47,19 @@ class EnvironmentService:
         }
 
     def _event(self, env: Environment, actor: Actor, action: str, **details: str) -> None:
-        self.audit.append(
-            AuditEvent(
+        event = AuditEvent(
                 request_id=env.request.request_id,
                 actor=actor.subject,
                 tenant_id=actor.tenant_id,
                 action=action,
                 state=env.state,
                 details=details,
-            )
         )
+        if self.postgres is not None:
+            self.postgres.append_audit(event)
+        else:
+            assert self.audit is not None
+            self.audit.append(event)
         self.repository.upsert(env)
 
     def create(self, actor: Actor, request: EnvironmentRequest) -> Environment:
@@ -110,7 +115,14 @@ class EnvironmentService:
 
     def close(self) -> None:
         self.repository.close()
-        self.audit.close()
+        if self.audit is not None:
+            self.audit.close()
+
+    def audit_events(self, request_id: UUID) -> list[AuditEvent]:
+        if self.postgres is not None:
+            return self.postgres.list_audit(request_id)
+        assert self.audit is not None
+        return self.audit.list(request_id)
 
     def approve(self, actor: Actor, environment_id: UUID, plan_hash: str) -> Environment:
         env = self.get(actor, environment_id)

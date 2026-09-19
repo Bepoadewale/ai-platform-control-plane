@@ -33,8 +33,7 @@ PORTFOLIO COMPLETE
 
 ## Implemented but Not End-to-End Validated
 
-- PostgreSQL is running in Compose but SQLite remains the executed persistence backend. Argo CD is
-  not yet exercised.
+- Argo CD is not yet exercised.
 
 ## Simulated
 

@@ -19,9 +19,12 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(title="AI Platform Control Plane", version="0.1.0")
 configure_tracing(app)
+database_target = os.environ.get("PLATFORM_DATABASE_URL") or os.environ.get(
+    "PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db"
+)
 service = EnvironmentService(
     Path(os.environ.get("PLATFORM_DESIRED_STATE_ROOT", "environments")),
-    Path(os.environ.get("PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db")),
+    database_target if database_target.startswith("postgres") else Path(database_target),
     policy=OPAPolicyEngine.from_environment(require_live=True),
 )
 planner = Planner()
@@ -145,4 +148,4 @@ def recover_pending(actor: Actor = Depends(actor_from_request)):
 @app.get("/api/v1/environments/{environment_id}/audit-events")
 def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     environment = service.get(actor, environment_id)
-    return service.audit.list(environment.request.request_id)
+    return service.audit_events(environment.request.request_id)
