@@ -146,7 +146,33 @@ class EnvironmentService:
     def destroy(self, actor: Actor, environment_id: UUID) -> Environment:
         env = self.get(actor, environment_id)
         if env.request.environment_type.value == "production":
-            raise PermissionError("production destruction requires an approval workflow")
+            env.destroy_plan = self.planner.plan(env.request, action="DESTROY")
+            env.state = LifecycleState.DESTROY_PENDING
+            self._event(env, actor, "destroy.approval_required", plan_hash=env.destroy_plan.plan_hash)
+            return env
+        return self._destroy(env, actor)
+
+    def approve_destroy(self, actor: Actor, environment_id: UUID, plan_hash: str) -> Environment:
+        env = self.get(actor, environment_id)
+        if env.state != LifecycleState.DESTROY_PENDING or env.destroy_plan is None:
+            raise ValueError("environment is not awaiting destruction approval")
+        if not ({"platform-operator", "platform-admin"} & {r.value for r in actor.roles}):
+            raise PermissionError("platform operator role required")
+        if actor.subject == env.owner:
+            raise PermissionError("requester cannot approve their own protected request")
+        current_plan = self.planner.plan(env.request, action="DESTROY")
+        if plan_hash != env.destroy_plan.plan_hash or current_plan.plan_hash != plan_hash:
+            raise ValueError("STALE_PLAN: approval does not match current destruction plan")
+        env.destroy_approval = Approval(
+            environment_id=env.id,
+            plan_hash=plan_hash,
+            requested_by=env.owner,
+            approved_by=actor.subject,
+        )
+        self._event(env, actor, "destroy.approval_granted", plan_hash=plan_hash)
+        return self._destroy(env, actor)
+
+    def _destroy(self, env: Environment, actor: Actor) -> Environment:
         env.state = LifecycleState.DESTROY_PENDING
         self._event(env, actor, "destroy.requested")
         env.state = LifecycleState.DESTROYING

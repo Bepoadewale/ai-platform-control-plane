@@ -93,6 +93,31 @@ def test_production_approval_is_bound_to_plan_and_cannot_self_approve(tmp_path: 
     assert service.approve(approver, env.id, env.plan.plan_hash).approval.plan_hash == env.plan.plan_hash
 
 
+def test_production_destroy_requires_distinct_exact_plan_approval(tmp_path: Path):
+    service = EnvironmentService(tmp_path / "environments")
+    requester = Actor(
+        subject="production-owner", tenant_id="team-demo", roles={Role.PLATFORM_OPERATOR}
+    )
+    approver = Actor(subject="production-approver", tenant_id="team-demo", roles={Role.PLATFORM_OPERATOR})
+    env = service.create(
+        requester,
+        EnvironmentRequest(
+            name="production-destroy-api",
+            team="team-demo",
+            environment_type=EnvironmentType.PRODUCTION,
+            cost_center="ENG",
+            idempotency_key="production-destroy-request-001",
+        ),
+    )
+    assert service.approve(approver, env.id, env.plan.plan_hash).state is LifecycleState.READY
+    assert service.destroy(requester, env.id).state is LifecycleState.DESTROY_PENDING
+    with pytest.raises(PermissionError):
+        service.approve_destroy(requester, env.id, env.destroy_plan.plan_hash)
+    with pytest.raises(ValueError, match="STALE_PLAN"):
+        service.approve_destroy(approver, env.id, "0" * 64)
+    assert service.approve_destroy(approver, env.id, env.destroy_plan.plan_hash).state is LifecycleState.DESTROYED
+
+
 def test_idempotency_returns_original_environment(tmp_path: Path):
     service = EnvironmentService(tmp_path / "environments")
     request = EnvironmentRequest(

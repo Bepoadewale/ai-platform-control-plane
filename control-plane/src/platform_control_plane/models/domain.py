@@ -114,6 +114,7 @@ class EnvironmentRequest(BaseModel):
 
 class Plan(BaseModel):
     request_id: UUID
+    action: str = "APPLY"
     resources: list[str]
     estimated_monthly_usd: float
     estimated_ttl_usd: float | None
@@ -176,6 +177,8 @@ class Environment(BaseModel):
     expires_at: datetime | None = None
     plan: Plan | None = None
     approval: Approval | None = None
+    destroy_plan: Plan | None = None
+    destroy_approval: Approval | None = None
     gitops_path: str | None = None
     endpoint: str | None = None
     failure_reason: str | None = None

@@ -22,6 +22,8 @@ PARTIALLY VALIDATED
 - `make demo-local` executes a reproducible signed JWT → OPA → FastAPI → kind Ready → audit/metrics
   → destroy flow and verifies autonomous production-agent denial. The non-root API image build and
   `/healthz` endpoint were also executed locally.
+- The protected production lifecycle was executed in kind: immutable apply plan → independent
+  approval → Ready → immutable destruction plan → independent approval → verified cleanup.
 
 ## Implemented but Not End-to-End Validated
 
@@ -45,8 +47,8 @@ PARTIALLY VALIDATED
 
 ## Current P0 Objective
 
-Execute a protected production approval and destruction workflow through kind, then prove restart
-recovery of an interrupted reconciliation without duplicate resources.
+Prove restart recovery of an interrupted reconciliation without duplicate resources, then perform
+the final end-to-end/API acceptance and documentation pass.
 
 ## Last Validation
 

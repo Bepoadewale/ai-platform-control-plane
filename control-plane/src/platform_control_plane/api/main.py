@@ -110,6 +110,18 @@ def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
         raise HTTPException(403, detail=str(error)) from error
 
 
+@app.post("/api/v1/environments/{environment_id}/destroy/approve")
+def approve_destroy(
+    environment_id: UUID,
+    approval: ApprovalRequest,
+    actor: Actor = Depends(actor_from_request),
+):
+    try:
+        return service.approve_destroy(actor, environment_id, approval.plan_hash)
+    except (ValueError, PermissionError) as error:
+        raise HTTPException(403, detail=str(error)) from error
+
+
 @app.post("/api/v1/maintenance/ttl-reap")
 def reap_expired(actor: Actor = Depends(actor_from_request)):
     if not ({"platform-operator", "platform-admin"} & {role.value for role in actor.roles}):
