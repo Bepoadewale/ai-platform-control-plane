@@ -3,7 +3,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Response
-from platform_control_plane.auth.dependencies import actor_from_headers
+from platform_control_plane.auth.dependencies import actor_from_request
 from platform_control_plane.models.domain import Actor, EnvironmentRequest, LifecycleState
 from platform_control_plane.observability.metrics import POLICY_DENIALS, REQUESTS
 from platform_control_plane.planner.service import Planner
@@ -28,7 +28,7 @@ def metrics() -> Response:
 
 
 @app.get("/api/v1/catalog")
-def catalog(actor: Actor = Depends(actor_from_headers)) -> dict:
+def catalog(actor: Actor = Depends(actor_from_request)) -> dict:
     REQUESTS.labels("catalog", "success").inc()
     return {
         "environment_types": ["development", "staging", "production"],
@@ -54,12 +54,12 @@ def catalog(actor: Actor = Depends(actor_from_headers)) -> dict:
 
 
 @app.post("/api/v1/plans")
-def plan(request: EnvironmentRequest, actor: Actor = Depends(actor_from_headers)):
+def plan(request: EnvironmentRequest, actor: Actor = Depends(actor_from_request)):
     return planner.plan(request)
 
 
 @app.post("/api/v1/environments", status_code=201)
-def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_headers)):
+def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_request)):
     env = service.create(actor, request)
     if env.state == LifecycleState.REJECTED:
         POLICY_DENIALS.labels("policy").inc()
@@ -70,12 +70,12 @@ def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_header
 
 
 @app.get("/api/v1/environments")
-def list_environments(actor: Actor = Depends(actor_from_headers)):
+def list_environments(actor: Actor = Depends(actor_from_request)):
     return service.list(actor)
 
 
 @app.get("/api/v1/environments/{environment_id}")
-def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
         return service.get(actor, environment_id)
     except (KeyError, PermissionError) as error:
@@ -83,7 +83,7 @@ def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_head
 
 
 @app.post("/api/v1/environments/{environment_id}/approve")
-def approve(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def approve(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
         return service.approve(actor, environment_id)
     except (ValueError, PermissionError) as error:
@@ -91,7 +91,7 @@ def approve(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
 
 
 @app.post("/api/v1/environments/{environment_id}/destroy")
-def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
         return service.destroy(actor, environment_id)
     except (KeyError, PermissionError) as error:
@@ -99,6 +99,6 @@ def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
 
 
 @app.get("/api/v1/environments/{environment_id}/audit-events")
-def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     service.get(actor, environment_id)
     return service.audit.list(environment_id)
