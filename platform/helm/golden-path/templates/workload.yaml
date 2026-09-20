@@ -91,6 +91,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata: {name: {{ include "golden-path.fullname" . }}, namespace: {{ .Values.namespace }}}
 spec: {minAvailable: 1, selector: {matchLabels: {app.kubernetes.io/name: {{ include "golden-path.fullname" . }}}}}
+{{- if .Values.autoscaling.enabled }}
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -102,3 +103,4 @@ spec:
   metrics:
     - type: Resource
       resource: {name: cpu, target: {type: Utilization, averageUtilization: {{ .Values.autoscaling.cpuUtilization }}}}
+{{- end }}

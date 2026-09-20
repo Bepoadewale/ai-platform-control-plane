@@ -5,7 +5,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/bepoadewale/ai-platform-control-plane.git
-    targetRevision: codex/week-01-platform-control-plane
+    targetRevision: main
     path: platform/helm/golden-path
   destination: {server: https://kubernetes.default.svc, namespace: default}
   syncPolicy: {automated: {prune: false, selfHeal: false}}
