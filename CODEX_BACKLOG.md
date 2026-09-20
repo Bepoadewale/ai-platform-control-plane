@@ -5,8 +5,8 @@ validated primary-path regression is discovered.
 
 # P1 — Production Hardening
 
-- Add SQLite corruption/recovery coverage and a PostgreSQL-backed production persistence profile.
-- Add a Compose smoke script covering Keycloak, OTel, Prometheus, and Grafana.
+- Resolve Argo CD aggregate Application health remaining `Progressing` after a successful local sync and ready Deployment.
+- Add CI-suitable coverage for the Compose smoke stack when runner capacity allows.
 - Expand API-level authorization integration coverage for cross-tenant access.
 
 # P2 — Enhancements
@@ -15,4 +15,4 @@ validated primary-path regression is discovered.
 
 # P3 — Future / Cloud / Hardware
 
-- AWS, Argo CD, enterprise OIDC, and multi-cluster delivery.
+- AWS, enterprise OIDC, and multi-cluster delivery.

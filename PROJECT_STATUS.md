@@ -28,12 +28,16 @@ PORTFOLIO COMPLETE
 - An interrupted `APPLYING` environment was persisted, the lifecycle service was restarted, and an
   operator recovery pass reconciled it exactly once before verified kind cleanup.
 - Local Keycloak issued a real RS256 developer token that FastAPI validated through Keycloak JWKS.
-  Prometheus scraped the resulting API metric, the OTel Collector received its HTTP spans, and the
-  provisioned Grafana dashboard was discovered through Grafana's API.
+  The Compose smoke test also exercised the PostgreSQL-backed API, Prometheus scrape/query, OTel
+  Collector HTTP spans, and provisioned Grafana dashboard.
+- Argo CD 3.5.3 was installed in kind and synchronized the branch’s Helm golden path. Its Deployment
+  reached `1/1` available. The Application aggregate health remained `Progressing`; this is recorded
+  below rather than presented as a healthy GitOps deployment.
 
 ## Implemented but Not End-to-End Validated
 
-- Argo CD is not yet exercised.
+- Argo CD’s application-level health aggregation has not reached `Healthy` in the local chart despite
+  a successful sync and an observed ready Deployment.
 
 ## Simulated
 
@@ -42,23 +46,27 @@ PORTFOLIO COMPLETE
 
 ## Architecture / Contracts Only
 
-- Argo CD GitOps controller and AWS provisioning.
+- AWS provisioning.
 
 ## Known Failures
 
 - The first golden-path release failed because its read-only filesystem had no writable `/tmp`; the
   chart now supplies an `emptyDir` mount and the corrected release reached Ready. This failure was
   local-only and no longer reproduces.
+- Local Argo CD application health remains `Progressing` after sync while its managed Deployment is
+  `1/1` available. Treat Argo aggregate health as unresolved local integration work.
 
 ## Current P0 Objective
 
-No open P0 work. The next focused hardening item is a PostgreSQL persistence adapter with migration
-and restart-recovery evidence.
+No open P0 work. The next focused hardening item is resolving the local Argo CD aggregate-health
+observation discrepancy and turning the validated Compose stack into CI-suitable smoke coverage.
 
 ## Last Validation
 
 - `.venv/bin/python -m pytest -q`: 26 passed (2 upstream TestClient deprecation warnings).
 - Local Compose: Keycloak bearer token → FastAPI `/api/v1/catalog`: `200`.
+- `make compose-smoke`: Keycloak token, FastAPI catalog authorization, PostgreSQL state, Prometheus
+  query, OTel Collector HTTP span, and Grafana dashboard assertions passed.
 - Prometheus query `sum(platform_requests_total)`: returned `1`; Collector logs contained
   `GET /api/v1/catalog` spans with `service.name=ai-platform-control-plane`; Grafana dashboard API
   returned the provisioned `AI Platform Control Plane` dashboard.
@@ -81,7 +89,9 @@ and restart-recovery evidence.
   container `/healthz`: passed.
 - `PLATFORM_RECONCILER=kind ... recover_pending(...)`: persisted `APPLYING` workload reconciled once
   after restart; subsequent recovery was a no-op and namespace cleanup was verified.
+- Argo CD 3.5.3: Application sync to `d3fccb0` succeeded and its managed deployment was `1/1`
+  available. Aggregate application health was `Progressing` and is intentionally not claimed healthy.
 
 ## Last Updated
 
-2026-09-19, final Week 1 local acceptance pass pending commit.
+2026-09-20, Compose and Argo local integration validation.

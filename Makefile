@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local terraform-validate helm-lint
+.PHONY: install test lint run demo demo-local bootstrap-local terraform-validate helm-lint compose-up compose-smoke argocd-demo
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -29,3 +29,12 @@ terraform-validate:
 
 helm-lint:
 	helm lint platform/helm/golden-path
+
+compose-up:
+	docker compose up -d --build
+
+compose-smoke:
+	./scripts/compose-smoke.sh
+
+argocd-demo:
+	./scripts/argocd-demo.sh
