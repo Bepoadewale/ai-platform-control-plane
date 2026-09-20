@@ -1,15 +1,47 @@
+import sqlite3
 from collections import defaultdict
+from pathlib import Path
+from threading import RLock
 from uuid import UUID
 
 from platform_control_plane.models.domain import AuditEvent
+from platform_control_plane.persistence.migrations import apply_migrations
 
 
 class AuditRepository:
-    def __init__(self) -> None:
+    def __init__(self, database_path: Path | None = None) -> None:
         self._events: dict[UUID, list[AuditEvent]] = defaultdict(list)
+        self.connection: sqlite3.Connection | None = None
+        self.lock = RLock()
+        if database_path is not None:
+            database_path.parent.mkdir(parents=True, exist_ok=True)
+            self.connection = sqlite3.connect(database_path, check_same_thread=False)
+            self.connection.row_factory = sqlite3.Row
+            with self.lock:
+                apply_migrations(self.connection)
 
     def append(self, event: AuditEvent) -> None:
-        self._events[event.request_id].append(event)
+        with self.lock:
+            self._events[event.request_id].append(event)
+            if self.connection is not None:
+                self.connection.execute(
+                    "INSERT OR IGNORE INTO audit_events (event_id, request_id, payload) VALUES (?, ?, ?)",
+                    (str(event.event_id), str(event.request_id), event.model_dump_json()),
+                )
+                self.connection.commit()
 
     def list(self, request_id: UUID) -> list[AuditEvent]:
-        return self._events[request_id].copy()
+        if self.connection is not None:
+            with self.lock:
+                rows = self.connection.execute(
+                    "SELECT payload FROM audit_events WHERE request_id = ? ORDER BY rowid",
+                    (str(request_id),),
+                ).fetchall()
+            return [AuditEvent.model_validate_json(row["payload"]) for row in rows]
+        with self.lock:
+            return self._events[request_id].copy()
+
+    def close(self) -> None:
+        if self.connection is not None:
+            with self.lock:
+                self.connection.close()

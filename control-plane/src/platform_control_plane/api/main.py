@@ -1,16 +1,32 @@
+import os
 from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Response
-from platform_control_plane.auth.dependencies import actor_from_headers
-from platform_control_plane.models.domain import Actor, EnvironmentRequest, LifecycleState
+from platform_control_plane.auth.dependencies import actor_from_request
+from platform_control_plane.models.domain import (
+    Actor,
+    ApprovalRequest,
+    EnvironmentRequest,
+    LifecycleState,
+)
 from platform_control_plane.observability.metrics import POLICY_DENIALS, REQUESTS
+from platform_control_plane.observability.tracing import configure_tracing
 from platform_control_plane.planner.service import Planner
+from platform_control_plane.policy.engine import OPAPolicyEngine
 from platform_control_plane.provisioning.service import EnvironmentService
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(title="AI Platform Control Plane", version="0.1.0")
-service = EnvironmentService(Path("environments"))
+configure_tracing(app)
+database_target = os.environ.get("PLATFORM_DATABASE_URL") or os.environ.get(
+    "PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db"
+)
+service = EnvironmentService(
+    Path(os.environ.get("PLATFORM_DESIRED_STATE_ROOT", "environments")),
+    database_target if database_target.startswith("postgres") else Path(database_target),
+    policy=OPAPolicyEngine.from_environment(require_live=True),
+)
 planner = Planner()
 
 
@@ -25,7 +41,7 @@ def metrics() -> Response:
 
 
 @app.get("/api/v1/catalog")
-def catalog(actor: Actor = Depends(actor_from_headers)) -> dict:
+def catalog(actor: Actor = Depends(actor_from_request)) -> dict:
     REQUESTS.labels("catalog", "success").inc()
     return {
         "environment_types": ["development", "staging", "production"],
@@ -51,13 +67,16 @@ def catalog(actor: Actor = Depends(actor_from_headers)) -> dict:
 
 
 @app.post("/api/v1/plans")
-def plan(request: EnvironmentRequest, actor: Actor = Depends(actor_from_headers)):
+def plan(request: EnvironmentRequest, actor: Actor = Depends(actor_from_request)):
     return planner.plan(request)
 
 
 @app.post("/api/v1/environments", status_code=201)
-def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_headers)):
-    env = service.create(actor, request)
+def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_request)):
+    try:
+        env = service.create(actor, request)
+    except ValueError as error:
+        raise HTTPException(409, detail=str(error)) from error
     if env.state == LifecycleState.REJECTED:
         POLICY_DENIALS.labels("policy").inc()
         REQUESTS.labels("create", "rejected").inc()
@@ -67,12 +86,12 @@ def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_header
 
 
 @app.get("/api/v1/environments")
-def list_environments(actor: Actor = Depends(actor_from_headers)):
+def list_environments(actor: Actor = Depends(actor_from_request)):
     return service.list(actor)
 
 
 @app.get("/api/v1/environments/{environment_id}")
-def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
         return service.get(actor, environment_id)
     except (KeyError, PermissionError) as error:
@@ -80,22 +99,53 @@ def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_head
 
 
 @app.post("/api/v1/environments/{environment_id}/approve")
-def approve(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def approve(
+    environment_id: UUID,
+    approval: ApprovalRequest,
+    actor: Actor = Depends(actor_from_request),
+):
     try:
-        return service.approve(actor, environment_id)
+        return service.approve(actor, environment_id, approval.plan_hash)
     except (ValueError, PermissionError) as error:
         raise HTTPException(403, detail=str(error)) from error
 
 
 @app.post("/api/v1/environments/{environment_id}/destroy")
-def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
+def destroy(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
         return service.destroy(actor, environment_id)
     except (KeyError, PermissionError) as error:
         raise HTTPException(403, detail=str(error)) from error
 
 
+@app.post("/api/v1/environments/{environment_id}/destroy/approve")
+def approve_destroy(
+    environment_id: UUID,
+    approval: ApprovalRequest,
+    actor: Actor = Depends(actor_from_request),
+):
+    try:
+        return service.approve_destroy(actor, environment_id, approval.plan_hash)
+    except (ValueError, PermissionError) as error:
+        raise HTTPException(403, detail=str(error)) from error
+
+
+@app.post("/api/v1/maintenance/ttl-reap")
+def reap_expired(actor: Actor = Depends(actor_from_request)):
+    if not ({"platform-operator", "platform-admin"} & {role.value for role in actor.roles}):
+        raise HTTPException(403, detail="platform operator role required")
+    return service.expire_due(actor)
+
+
+@app.post("/api/v1/maintenance/recover")
+def recover_pending(actor: Actor = Depends(actor_from_request)):
+    try:
+        return service.recover_pending(actor)
+    except PermissionError as error:
+        raise HTTPException(403, detail=str(error)) from error
+
+
 @app.get("/api/v1/environments/{environment_id}/audit-events")
-def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_headers)):
-    service.get(actor, environment_id)
-    return service.audit.list(environment_id)
+def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
+    environment = service.get(actor, environment_id)
+    return service.audit_events(environment.request.request_id)

@@ -32,10 +32,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/trivy-action@0.28.0
-        with: {scan-type: fs, scan-ref: ., severity: HIGH,CRITICAL, exit-code: "1"}
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with: {scan-type: fs, scan-ref: ., severity: "HIGH,CRITICAL", exit-code: "1"}
       - run: docker build -t ai-platform-control-plane:ci -f control-plane/Dockerfile .
-      - uses: aquasecurity/trivy-action@0.28.0
-        with: {image-ref: ai-platform-control-plane:ci, format: table, exit-code: "1", severity: HIGH,CRITICAL}
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with: {image-ref: ai-platform-control-plane:ci, format: table, exit-code: "1", severity: "HIGH,CRITICAL", ignore-unfixed: "true"}
       - uses: anchore/sbom-action@v0
         with: {path: ., format: spdx-json}

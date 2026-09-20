@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: control-plane
+    folder: Platform
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 10
+    options:
+      path: /var/lib/grafana/dashboards

@@ -1,4 +1,9 @@
 services:
+  opa:
+    image: openpolicyagent/opa:1.20.2
+    command: ["run", "--server", "--addr=0.0.0.0:8181", "/policies"]
+    ports: ["8181:8181"]
+    volumes: ["./platform/policies:/policies:ro"]
   postgres:
     image: postgres:16.4-alpine
     environment:
@@ -11,13 +16,59 @@ services:
       timeout: 3s
       retries: 10
     volumes: ["platform-postgres:/var/lib/postgresql/data"]
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: local-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: local-development-only
+      KC_HOSTNAME_STRICT: "false"
+    ports: ["8081:8080"]
+    volumes:
+      - ./platform/keycloak:/opt/keycloak/data/import:ro
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.118.0
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    ports: ["4318:4318", "8889:8889"]
+    volumes:
+      - ./platform/observability/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    ports: ["9090:9090"]
+    volumes:
+      - ./platform/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - platform-prometheus:/prometheus
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports: ["3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: local-development-only
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./platform/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./platform/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus: {condition: service_started}
   control-plane:
     build: {context: ., dockerfile: control-plane/Dockerfile}
     ports: ["8000:8000"]
-    volumes: ["./environments:/app/environments"]
+    volumes: ["./environments:/app/environments", "./state:/app/state"]
     environment:
-      PLATFORM_DATABASE_URL: postgresql+psycopg://platform:local-development-only@postgres:5432/platform
+      PLATFORM_CONTROL_PLANE_DB: /app/state/control-plane.db
+      PLATFORM_DATABASE_URL: postgresql://platform:local-development-only@postgres:5432/platform
+      PLATFORM_OPA_DECISION_URL: http://opa:8181/v1/data/platform/environment
+      PLATFORM_JWT_ISSUER: http://localhost:8081/realms/platform
+      PLATFORM_JWT_AUDIENCE: ai-platform-control-plane
+      PLATFORM_JWKS_URL: http://keycloak:8080/realms/platform/protocol/openid-connect/certs
+      OTEL_SERVICE_NAME: ai-platform-control-plane
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     depends_on:
       postgres: {condition: service_healthy}
+      opa: {condition: service_started}
+      keycloak: {condition: service_started}
+      otel-collector: {condition: service_started}
 volumes:
   platform-postgres: {}
+  platform-prometheus: {}

@@ -4,7 +4,7 @@ team: team-demo
 environmentType: development
 ttlHours: 12
 profile: small
-image: nginx:1.27-alpine
+image: nginxinc/nginx-unprivileged:1.27-alpine
 postgresql: false
 redis: false
 observability: true
@@ -13,6 +13,7 @@ ingress:
   className: nginx
   host: sample-api.localhost
 autoscaling:
+  enabled: true
   minReplicas: 1
   maxReplicas: 3
   cpuUtilization: 70

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from uuid import UUID
 
@@ -5,40 +7,70 @@ from platform_control_plane.audit.repository import AuditRepository
 from platform_control_plane.gitops.renderer import GitOpsRenderer
 from platform_control_plane.models.domain import (
     Actor,
+    Approval,
     AuditEvent,
     Environment,
     EnvironmentRequest,
     LifecycleState,
 )
+from platform_control_plane.persistence.postgres import PostgresStore
+from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
-from platform_control_plane.policy.engine import PolicyEngine
+from platform_control_plane.policy.engine import OPAPolicyEngine, PolicyEngine
+from platform_control_plane.reconciliation.helm import (
+    KindHelmReconciler,
+    Reconciler,
+    ReconciliationError,
+)
 
 
 class EnvironmentService:
-    def __init__(self, desired_state_root: Path) -> None:
-        self.policy = PolicyEngine()
+    def __init__(
+        self,
+        desired_state_root: Path,
+        database_path: Path | str | None = None,
+        reconciler: Reconciler | None = None,
+        policy: PolicyEngine | OPAPolicyEngine | None = None,
+    ) -> None:
+        self.policy = policy or OPAPolicyEngine.from_environment()
         self.planner = Planner()
-        self.audit = AuditRepository()
+        self.postgres = PostgresStore(database_path) if isinstance(database_path, str) and database_path.startswith("postgres") else None
+        self.audit = AuditRepository(database_path) if self.postgres is None else None
         self.renderer = GitOpsRenderer(desired_state_root)
-        self._environments: dict[UUID, Environment] = {}
-        self._keys: dict[tuple[str, str], UUID] = {}
+        self.reconciler = reconciler or KindHelmReconciler.from_environment()
+        self.repository = EnvironmentRepository(database_path) if self.postgres is None else self.postgres
+        loaded = self.repository.load_all()
+        self._environments: dict[UUID, Environment] = {environment.id: environment for environment in loaded}
+        self._keys: dict[tuple[str, str], UUID] = {
+            (environment.tenant_id, environment.request.idempotency_key): environment.id
+            for environment in loaded
+        }
 
     def _event(self, env: Environment, actor: Actor, action: str, **details: str) -> None:
-        self.audit.append(
-            AuditEvent(
+        event = AuditEvent(
                 request_id=env.request.request_id,
                 actor=actor.subject,
                 tenant_id=actor.tenant_id,
                 action=action,
                 state=env.state,
                 details=details,
-            )
         )
+        if self.postgres is not None:
+            self.postgres.append_audit(event)
+        else:
+            assert self.audit is not None
+            self.audit.append(event)
+        self.repository.upsert(env)
 
     def create(self, actor: Actor, request: EnvironmentRequest) -> Environment:
         key = (actor.tenant_id, request.idempotency_key)
         if key in self._keys:
-            return self._environments[self._keys[key]]
+            existing = self._environments[self._keys[key]]
+            requested = request.model_dump(mode="json", exclude={"request_id"})
+            original = existing.request.model_dump(mode="json", exclude={"request_id"})
+            if requested != original:
+                raise ValueError("IDEMPOTENCY_CONFLICT: key is already bound to another request")
+            return existing
         env = Environment.from_request(request, actor)
         self._environments[env.id] = env
         self._keys[key] = env.id
@@ -61,22 +93,58 @@ class EnvironmentService:
         return self._apply(env, actor)
 
     def _apply(self, env: Environment, actor: Actor) -> Environment:
+        current_plan = self.planner.plan(env.request)
+        if env.plan is None or current_plan.plan_hash != env.plan.plan_hash:
+            env.state = LifecycleState.FAILED
+            env.failure_reason = "STALE_PLAN: request no longer matches approved plan"
+            self._event(env, actor, "plan.stale", reason=env.failure_reason)
+            return env
         env.state = LifecycleState.APPLYING
         self._event(env, actor, "gitops.rendering")
         env.gitops_path = self.renderer.render(env)
-        env.endpoint = f"https://{env.request.name}.{env.request.team}.local.platform.example"
+        try:
+            env.endpoint = self.reconciler.apply(env, self.renderer.root.parent / env.gitops_path)
+        except ReconciliationError as error:
+            env.state = LifecycleState.FAILED
+            env.failure_reason = str(error)
+            self._event(env, actor, "reconciliation.failed", reason=env.failure_reason)
+            return env
         env.state = LifecycleState.READY
-        self._event(env, actor, "environment.ready", gitops_path=env.gitops_path)
+        self._event(env, actor, "environment.ready", gitops_path=env.gitops_path, endpoint=env.endpoint)
         return env
 
-    def approve(self, actor: Actor, environment_id: UUID) -> Environment:
+    def close(self) -> None:
+        self.repository.close()
+        if self.audit is not None:
+            self.audit.close()
+
+    def audit_events(self, request_id: UUID) -> list[AuditEvent]:
+        if self.postgres is not None:
+            return self.postgres.list_audit(request_id)
+        assert self.audit is not None
+        return self.audit.list(request_id)
+
+    def approve(self, actor: Actor, environment_id: UUID, plan_hash: str) -> Environment:
         env = self.get(actor, environment_id)
         if env.state != LifecycleState.APPROVAL_REQUIRED:
             raise ValueError("environment is not awaiting approval")
         if not ({"platform-operator", "platform-admin"} & {r.value for r in actor.roles}):
             raise PermissionError("platform operator role required")
+        if actor.subject == env.owner:
+            raise PermissionError("requester cannot approve their own protected request")
+        if env.plan is None or plan_hash != env.plan.plan_hash:
+            raise ValueError("STALE_PLAN: approval does not match current plan")
+        current_plan = self.planner.plan(env.request)
+        if current_plan.plan_hash != env.plan.plan_hash:
+            raise ValueError("STALE_PLAN: request changed after planning")
+        env.approval = Approval(
+            environment_id=env.id,
+            plan_hash=env.plan.plan_hash,
+            requested_by=env.owner,
+            approved_by=actor.subject,
+        )
         env.state = LifecycleState.APPROVED
-        self._event(env, actor, "approval.granted")
+        self._event(env, actor, "approval.granted", plan_hash=env.plan.plan_hash)
         return self._apply(env, actor)
 
     def get(self, actor: Actor, environment_id: UUID) -> Environment:
@@ -95,11 +163,44 @@ class EnvironmentService:
     def destroy(self, actor: Actor, environment_id: UUID) -> Environment:
         env = self.get(actor, environment_id)
         if env.request.environment_type.value == "production":
-            raise PermissionError("production destruction requires an approval workflow")
+            env.destroy_plan = self.planner.plan(env.request, action="DESTROY")
+            env.state = LifecycleState.DESTROY_PENDING
+            self._event(env, actor, "destroy.approval_required", plan_hash=env.destroy_plan.plan_hash)
+            return env
+        return self._destroy(env, actor)
+
+    def approve_destroy(self, actor: Actor, environment_id: UUID, plan_hash: str) -> Environment:
+        env = self.get(actor, environment_id)
+        if env.state != LifecycleState.DESTROY_PENDING or env.destroy_plan is None:
+            raise ValueError("environment is not awaiting destruction approval")
+        if not ({"platform-operator", "platform-admin"} & {r.value for r in actor.roles}):
+            raise PermissionError("platform operator role required")
+        if actor.subject == env.owner:
+            raise PermissionError("requester cannot approve their own protected request")
+        current_plan = self.planner.plan(env.request, action="DESTROY")
+        if plan_hash != env.destroy_plan.plan_hash or current_plan.plan_hash != plan_hash:
+            raise ValueError("STALE_PLAN: approval does not match current destruction plan")
+        env.destroy_approval = Approval(
+            environment_id=env.id,
+            plan_hash=plan_hash,
+            requested_by=env.owner,
+            approved_by=actor.subject,
+        )
+        self._event(env, actor, "destroy.approval_granted", plan_hash=plan_hash)
+        return self._destroy(env, actor)
+
+    def _destroy(self, env: Environment, actor: Actor) -> Environment:
         env.state = LifecycleState.DESTROY_PENDING
         self._event(env, actor, "destroy.requested")
         env.state = LifecycleState.DESTROYING
         self._event(env, actor, "destroy.applying")
+        try:
+            self.reconciler.destroy(env)
+        except ReconciliationError as error:
+            env.state = LifecycleState.FAILED
+            env.failure_reason = str(error)
+            self._event(env, actor, "destroy.failed", reason=env.failure_reason)
+            return env
         env.state = LifecycleState.DESTROYED
         self._event(env, actor, "destroy.complete")
         return env
@@ -116,3 +217,13 @@ class EnvironmentService:
             ):
                 expired.append(self.destroy(actor, env.id))
         return expired
+
+    def recover_pending(self, actor: Actor) -> list[Environment]:
+        if not ({"platform-operator", "platform-admin"} & {role.value for role in actor.roles}):
+            raise PermissionError("platform operator role required")
+        recovered: list[Environment] = []
+        for env in self.list(actor):
+            if env.state == LifecycleState.APPLYING:
+                self._event(env, actor, "reconciliation.recovery_started")
+                recovered.append(self._apply(env, actor))
+        return recovered

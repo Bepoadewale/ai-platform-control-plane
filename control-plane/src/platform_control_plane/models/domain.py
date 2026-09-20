@@ -92,6 +92,7 @@ class EnvironmentRequest(BaseModel):
     object_storage: bool = False
     secret_refs: list[str] = Field(default_factory=list, max_length=20)
     service_exposure: str = "ingress"
+    image: str = "nginxinc/nginx-unprivileged:1.27-alpine"
     observability: bool = True
     workload: WorkloadProfile = Field(default_factory=WorkloadProfile)
     cost_center: str = Field(min_length=2, max_length=32)
@@ -103,14 +104,25 @@ class EnvironmentRequest(BaseModel):
             raise ValueError("service_exposure must be internal, ingress, or loadbalancer")
         return value
 
+    @field_validator("image")
+    @classmethod
+    def safe_image_reference(cls, value: str) -> str:
+        if not value or any(character.isspace() for character in value):
+            raise ValueError("image must be a non-empty container image reference")
+        return value
+
 
 class Plan(BaseModel):
     request_id: UUID
+    action: str = "APPLY"
     resources: list[str]
     estimated_monthly_usd: float
     estimated_ttl_usd: float | None
     requires_approval: bool
     policy_notes: list[str] = Field(default_factory=list)
+    plan_hash: str = ""
+    version: int = 1
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class AuditEvent(BaseModel):
@@ -145,8 +157,14 @@ class InfrastructureRequest(BaseModel):
 
 class Approval(BaseModel):
     environment_id: UUID
+    plan_hash: str = ""
+    requested_by: str | None = None
     approved_by: str | None = None
     approved_at: datetime | None = None
+
+
+class ApprovalRequest(BaseModel):
+    plan_hash: str = Field(min_length=64, max_length=64)
 
 
 class Environment(BaseModel):
@@ -158,6 +176,9 @@ class Environment(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     expires_at: datetime | None = None
     plan: Plan | None = None
+    approval: Approval | None = None
+    destroy_plan: Plan | None = None
+    destroy_approval: Approval | None = None
     gitops_path: str | None = None
     endpoint: str | None = None
     failure_reason: str | None = None
