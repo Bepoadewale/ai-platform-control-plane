@@ -17,5 +17,5 @@
 | Prometheus / Grafana | ✅ Executed locally | Prometheus scrape/query and provisioned Grafana dashboard API |
 | OpenTelemetry Collector | ✅ Executed locally | collector received FastAPI HTTP spans via OTLP/HTTP |
 | PostgreSQL persistence | ✅ Executed locally | authenticated API create, direct SQL lifecycle/audit evidence, and restart recovery |
-| Argo CD reconciliation | 🟡 Executed / health unresolved | Argo CD 3.5.3 synchronized the Helm golden path in kind and the Deployment became `1/1` available; aggregate Application health remains `Progressing` |
+| Argo CD reconciliation | ✅ Executed locally | Argo CD 3.5.3 synchronized the Helm golden path in kind; Application reported `Synced/Healthy` and Deployment became `1/1` available |
 | AWS Terraform contract | 🟡 Implemented / Validated Statically | Linux-container `terraform validate`; no AWS resources created |

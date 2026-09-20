@@ -30,14 +30,12 @@ PORTFOLIO COMPLETE
 - Local Keycloak issued a real RS256 developer token that FastAPI validated through Keycloak JWKS.
   The Compose smoke test also exercised the PostgreSQL-backed API, Prometheus scrape/query, OTel
   Collector HTTP spans, and provisioned Grafana dashboard.
-- Argo CD 3.5.3 was installed in kind and synchronized the branch’s Helm golden path. Its Deployment
-  reached `1/1` available. The Application aggregate health remained `Progressing`; this is recorded
-  below rather than presented as a healthy GitOps deployment.
+- Argo CD 3.5.3 was installed in kind and synchronized the branch’s Helm golden path. The
+  Application reached `Synced/Healthy` and its managed Deployment reached `1/1` available.
 
 ## Implemented but Not End-to-End Validated
 
-- Argo CD’s application-level health aggregation has not reached `Healthy` in the local chart despite
-  a successful sync and an observed ready Deployment.
+- No primary local control-loop capability is awaiting end-to-end validation.
 
 ## Simulated
 
@@ -53,13 +51,11 @@ PORTFOLIO COMPLETE
 - The first golden-path release failed because its read-only filesystem had no writable `/tmp`; the
   chart now supplies an `emptyDir` mount and the corrected release reached Ready. This failure was
   local-only and no longer reproduces.
-- Local Argo CD application health remains `Progressing` after sync while its managed Deployment is
-  `1/1` available. Treat Argo aggregate health as unresolved local integration work.
 
 ## Current P0 Objective
 
-No open P0 work. The next focused hardening item is resolving the local Argo CD aggregate-health
-observation discrepancy and turning the validated Compose stack into CI-suitable smoke coverage.
+No open P0 work. The next focused hardening item is turning the validated Compose stack into
+CI-suitable smoke coverage.
 
 ## Last Validation
 
@@ -89,9 +85,9 @@ observation discrepancy and turning the validated Compose stack into CI-suitable
   container `/healthz`: passed.
 - `PLATFORM_RECONCILER=kind ... recover_pending(...)`: persisted `APPLYING` workload reconciled once
   after restart; subsequent recovery was a no-op and namespace cleanup was verified.
-- Argo CD 3.5.3: Application sync to `d3fccb0` succeeded and its managed deployment was `1/1`
-  available. Aggregate application health was `Progressing` and is intentionally not claimed healthy.
+- `ARGOCD_TARGET_REVISION=codex/week-01-platform-control-plane make argocd-demo`: Argo CD 3.5.3
+  synchronized the golden path and observed Application `Synced/Healthy` plus a `1/1` Deployment.
 
 ## Last Updated
 
-2026-09-20, Compose and Argo local integration validation.
+2026-09-20, Compose and Argo local integration validation completed.

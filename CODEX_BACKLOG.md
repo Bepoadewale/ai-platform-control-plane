@@ -5,7 +5,6 @@ validated primary-path regression is discovered.
 
 # P1 — Production Hardening
 
-- Resolve Argo CD aggregate Application health remaining `Progressing` after a successful local sync and ready Deployment.
 - Add CI-suitable coverage for the Compose smoke stack when runner capacity allows.
 - Expand API-level authorization integration coverage for cross-tenant access.
 

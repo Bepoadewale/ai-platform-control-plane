@@ -63,11 +63,11 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
 
 ## Execution boundary
 
-The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. The curl example above is explicitly development-only. Argo CD has synchronized the golden path in kind and observed a ready Deployment, but its aggregate Application health remains unresolved; AWS/EKS is not executed. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
+The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. `make argocd-demo` synchronizes the golden path with local Argo CD and waits for `Synced/Healthy`. The curl example above is explicitly development-only. AWS/EKS is not executed. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Technology choices
 
-FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. The local direct reconciler is executed against kind; Argo CD is additionally exercised in kind for GitOps synchronization, with the aggregate health caveat above. OPA/Rego is the live policy evaluator. Terraform modules are opt-in AWS infrastructure foundations. Prometheus metrics and OpenTelemetry spans are emitted through the local Compose stack.
+FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. The local direct reconciler and Argo CD GitOps synchronization are executed against kind. OPA/Rego is the live policy evaluator. Terraform modules are opt-in AWS infrastructure foundations. Prometheus metrics and OpenTelemetry spans are emitted through the local Compose stack.
 
 See [architecture](docs/architecture.md), [local development](docs/local-development.md), [demo](docs/demo.md), [agent safety](docs/agent-safety.md), [failure modes](docs/failure-modes.md), and the [interview guide](docs/interview-guide.md). To capture portfolio screenshots, run the demo/API then capture `/docs`, `/metrics`, `kubectl get all -n team-demo-demo-api`, and the Grafana dashboard after Prometheus is installed.
 
