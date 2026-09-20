@@ -14,8 +14,7 @@ fi
 
 kubectl apply -f platform/argocd/golden-path-application.yaml
 kubectl patch application platform-environments --namespace argocd --type merge \
-  --patch "{\"spec\":{\"source\":{\"targetRevision\":\"${target_revision}\",\"helm\":{\"values\":\"autoscaling:\\n  enabled: false\\n\"}}}}"
-kubectl delete hpa sample-api --namespace team-demo-sample-api --ignore-not-found
+  --patch "{\"spec\":{\"source\":{\"targetRevision\":\"${target_revision}\",\"helm\":{\"values\":\"autoscaling:\\n  enabled: false\\n\"}},\"syncPolicy\":{\"automated\":{\"prune\":true,\"selfHeal\":false}}}}"
 kubectl annotate application platform-environments --namespace argocd \
   argocd.argoproj.io/refresh=hard --overwrite
 echo "Applied local Argo CD validation override for revision ${target_revision}."
