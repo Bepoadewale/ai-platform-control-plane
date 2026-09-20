@@ -43,10 +43,13 @@ make run
 For the complete local integration demo (Docker Desktop, kind, kubectl, and Helm required):
 
 ```console
+make bootstrap-local
+make compose-smoke
 make demo-local
+make argocd-demo
 ```
 
-It generates temporary local JWT/JWKS material and proves signed identity → OPA → FastAPI → kind readiness → audit/metrics → destroy, autonomous production-agent denial, and production apply/destroy with an independent operator approving exact plan hashes. No cloud credentials are used.
+This bootstraps kind, Metrics Server, and Argo CD; validates the Keycloak/PostgreSQL/OTel/Prometheus/Grafana Compose stack; and proves signed identity → OPA → FastAPI → kind readiness → audit/metrics → destroy, autonomous production-agent denial, production apply/destroy with an independent operator approving exact plan hashes, and Argo CD `Synced/Healthy`. No cloud credentials are used.
 
 Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
 

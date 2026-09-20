@@ -5,7 +5,7 @@ wait_for() {
   local url="$1"
   shift
   for _ in $(seq 1 60); do
-    if curl --fail --silent --show-error "$@" "$url" >/dev/null; then
+    if curl --fail --silent "$@" "$url" >/dev/null; then
       return 0
     fi
     sleep 2
@@ -14,17 +14,27 @@ wait_for() {
   return 1
 }
 
-docker compose up -d --build
+if [[ "${COMPOSE_SKIP_UP:-0}" != "1" ]]; then
+  docker compose up -d --build
+fi
 wait_for http://localhost:8000/healthz
 wait_for http://localhost:9090/-/ready
 wait_for http://localhost:3000/api/health -u admin:local-development-only
+wait_for http://localhost:8081/realms/platform/.well-known/openid-configuration
 
-token="$(curl --fail --silent --show-error \
-  --data-urlencode client_id=ai-platform-control-plane \
-  --data-urlencode grant_type=password \
-  --data-urlencode username=developer \
-  --data-urlencode password=local-development-only \
-  http://localhost:8081/realms/platform/protocol/openid-connect/token | jq -er '.access_token')"
+token=""
+for _ in $(seq 1 60); do
+  if token="$(curl --fail --silent \
+    --data-urlencode client_id=ai-platform-control-plane \
+    --data-urlencode grant_type=password \
+    --data-urlencode username=developer \
+    --data-urlencode password=local-development-only \
+    http://localhost:8081/realms/platform/protocol/openid-connect/token | jq -er '.access_token' 2>/dev/null)"; then
+    break
+  fi
+  sleep 2
+done
+[[ -n "${token}" ]] || { echo "Timed out obtaining local Keycloak token" >&2; exit 1; }
 
 curl --fail --silent --show-error \
   -H "Authorization: Bearer ${token}" \

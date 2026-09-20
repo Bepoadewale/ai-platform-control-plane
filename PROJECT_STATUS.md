@@ -2,7 +2,7 @@
 
 ## Current Maturity
 
-PORTFOLIO COMPLETE
+PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Executed and Verified
 
@@ -32,6 +32,9 @@ PORTFOLIO COMPLETE
   Collector HTTP spans, and provisioned Grafana dashboard.
 - Argo CD 3.5.3 was installed in kind and synchronized the branch’s Helm golden path. The
   Application reached `Synced/Healthy` and its managed Deployment reached `1/1` available.
+- A clean-room local reset removed the repository’s Compose containers, volumes, local image, and
+  kind cluster. The documented bootstrap then recreated kind, Metrics Server, Argo CD, the Compose
+  integration stack, the governed lifecycle demo, and Argo CD `Synced/Healthy` reconciliation.
 
 ## Implemented but Not End-to-End Validated
 
@@ -87,7 +90,11 @@ CI-suitable smoke coverage.
   after restart; subsequent recovery was a no-op and namespace cleanup was verified.
 - `ARGOCD_TARGET_REVISION=codex/week-01-platform-control-plane make argocd-demo`: Argo CD 3.5.3
   synchronized the golden path and observed Application `Synced/Healthy` plus a `1/1` Deployment.
+- Clean-room workflow: `make clean-local`; `make bootstrap-local`; `make compose-smoke`; `make
+  demo-local`; and `make argocd-demo`. The first command removed only Project 1 resources. The
+  rebuilt stack passed direct API/Keycloak/Prometheus/Grafana/OTel assertions, the governed
+  lifecycle demo, and Argo CD `Synced/Healthy` verification.
 
 ## Last Updated
 
-2026-09-20, Compose and Argo local integration validation completed.
+2026-09-20, clean-room local bootstrap and end-to-end validation completed.

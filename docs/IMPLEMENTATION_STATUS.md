@@ -18,4 +18,5 @@
 | OpenTelemetry Collector | ✅ Executed locally | collector received FastAPI HTTP spans via OTLP/HTTP |
 | PostgreSQL persistence | ✅ Executed locally | authenticated API create, direct SQL lifecycle/audit evidence, and restart recovery |
 | Argo CD reconciliation | ✅ Executed locally | Argo CD 3.5.3 synchronized the Helm golden path in kind; Application reported `Synced/Healthy` and Deployment became `1/1` available |
+| Clean-room bootstrap and teardown | ✅ Executed locally | `make clean-local` removed Project 1 local state; `make bootstrap-local`, `make compose-smoke`, `make demo-local`, and `make argocd-demo` recreated and validated it |
 | AWS Terraform contract | 🟡 Implemented / Validated Statically | Linux-container `terraform validate`; no AWS resources created |

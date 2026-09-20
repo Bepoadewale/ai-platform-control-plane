@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local terraform-validate helm-lint compose-up compose-smoke argocd-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke argocd-demo
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -22,6 +22,9 @@ demo-local:
 
 bootstrap-local:
 	./scripts/bootstrap-local.sh
+
+clean-local:
+	./scripts/clean-local.sh
 
 terraform-validate:
 	terraform -chdir=infrastructure/terraform/environments/aws init -backend=false
