@@ -9,3 +9,13 @@
 **D — cleanup.** An expired non-production `READY` environment moves through `DESTROY_PENDING`, `DESTROYING`, and `DESTROYED`; production is protected from TTL deletion.
 
 **E — failed reconciliation.** A deliberately unhealthy image is deployed to kind with a bounded timeout. The environment becomes `FAILED` and records `reconciliation.failed`; it is never marked `READY`.
+
+**F — tenant boundary and retry safety.** API tests prove a tenant cannot read or mutate another
+tenant's environment. Repeating the same mutation with the same idempotency key returns the original
+result; reusing that key for materially different input is rejected rather than creating duplicate
+infrastructure.
+
+**G — local GitOps.** Run `make argocd-demo` after `make bootstrap-local`. Argo CD applies the
+checked-in golden path from the current branch; the script waits for Application `Synced/Healthy`
+and a `1/1` available Deployment. This is local kind/Argo execution, not a hosted Git provider or
+production Argo HA claim.

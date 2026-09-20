@@ -19,4 +19,8 @@ sequenceDiagram
   API-->>Client: lifecycle/status
 ```
 
-State is recorded as `REQUESTED → VALIDATING → PLANNED → APPLYING → READY`, with rejection, approval, failure, and destruction branches. The in-memory repository is intentionally local-demo only; PostgreSQL is the production persistence seam.
+State is recorded as `REQUESTED → VALIDATING → PLANNED → APPLYING → READY`, with rejection,
+approval, failure, and destruction branches. The local control plane persists lifecycle, plans,
+approvals, idempotency records, TTL metadata, reconciliation recovery state, and audit events through
+versioned SQLite migrations; the Compose path also executes a PostgreSQL adapter. In-memory state is
+not the evidence path. PostgreSQL remains the recommended production persistence seam.
