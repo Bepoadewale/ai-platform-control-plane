@@ -1,4 +1,6 @@
-FROM python:3.12-slim
+# Keep the local control-plane image on the maintained Debian Bookworm stream.
+# The floating `slim` tag moved to a base carrying newly disclosed OpenSSL CVEs.
+FROM python:3.12-slim-bookworm
 WORKDIR /app
 COPY pyproject.toml ./
 COPY control-plane/src ./control-plane/src

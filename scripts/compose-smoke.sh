@@ -55,7 +55,9 @@ curl --fail --silent --show-error -u admin:local-development-only \
   | jq -e 'length > 0' >/dev/null
 
 for _ in $(seq 1 60); do
-  if docker compose logs --no-color otel-collector | grep -q 'GET /api/v1/catalog'; then
+  # Do not use `grep -q` here: with `pipefail`, Docker can receive SIGPIPE
+  # after grep exits early and make a successful trace look like a failure.
+  if docker compose logs --no-color otel-collector | grep 'GET /api/v1/catalog' >/dev/null; then
     echo "PASS: Keycloak OIDC → FastAPI → PostgreSQL-backed control plane → OTLP → Prometheus → Grafana"
     exit 0
   fi
