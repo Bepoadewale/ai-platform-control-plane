@@ -6,14 +6,16 @@ set -euo pipefail
 scratch_dir="$(mktemp -d)"
 trap 'rm -rf "$scratch_dir"' EXIT
 
-issuer="http://localhost:8081/realms/platform"
-console_origin="http://localhost:4173"
-client_id="ai-platform-control-plane"
+issuer="${CONSOLE_ISSUER:-http://localhost:8081/realms/platform}"
+console_origin="${CONSOLE_ORIGIN:-http://localhost:4173}"
+api_base_url="${CONSOLE_API_BASE_URL:-http://localhost:8000}"
+client_id="${CONSOLE_CLIENT_ID:-ai-platform-control-plane}"
 state="console-browser-smoke"
 code_verifier="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~abcdef"
 code_challenge="$(printf '%s' "$code_verifier" | openssl dgst -sha256 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')"
 
-authorization_url="${issuer}/protocol/openid-connect/auth?client_id=${client_id}&redirect_uri=http%3A%2F%2Flocalhost%3A4173%2F&response_type=code&scope=openid%20profile&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256"
+encoded_redirect_uri="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "${console_origin}/")"
+authorization_url="${issuer}/protocol/openid-connect/auth?client_id=${client_id}&redirect_uri=${encoded_redirect_uri}&response_type=code&scope=openid%20profile&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256"
 
 curl --fail --silent --show-error --cookie-jar "$scratch_dir/cookies" \
   --output "$scratch_dir/login.html" "$authorization_url"
@@ -43,12 +45,12 @@ access_token="$(jq -er '.access_token' <<<"$tokens")"
 id_token="$(jq -er '.id_token' <<<"$tokens")"
 
 curl --fail --silent --show-error -H "Authorization: Bearer ${access_token}" \
-  http://localhost:8000/api/v1/catalog | jq -e '.capabilities | index("ttl") != null' >/dev/null
+  "${api_base_url}/api/v1/catalog" | jq -e '.capabilities | index("ttl") != null' >/dev/null
 
 logout_hint="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$id_token")"
 curl --fail --silent --show-error --dump-header "$scratch_dir/logout-headers" --output /dev/null \
   --cookie "$scratch_dir/cookies" \
-  "${issuer}/protocol/openid-connect/logout?client_id=${client_id}&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A4173%2F&id_token_hint=${logout_hint}"
+  "${issuer}/protocol/openid-connect/logout?client_id=${client_id}&post_logout_redirect_uri=${encoded_redirect_uri}&id_token_hint=${logout_hint}"
 logout_redirect="$(awk '/^[Ll]ocation:/{sub(/^[Ll]ocation:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$scratch_dir/logout-headers")"
 [[ "$logout_redirect" == "${console_origin}"/* ]] || { echo "Keycloak did not redirect logout to the console" >&2; exit 1; }
 

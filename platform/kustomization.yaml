@@ -5,6 +5,7 @@ resources:
   - cloud/runtime/opa.yaml
   - cloud/runtime/keycloak.yaml
   - cloud/runtime/control-plane.yaml
+  - cloud/runtime/operator-console.yaml
   - cloud/runtime/otel-collector.yaml
 
 configMapGenerator:

@@ -28,11 +28,12 @@ spec:
               valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: keycloak-admin-password}}
             - name: KC_HOSTNAME_STRICT
               value: "true"
-            # Pin the issuer that FastAPI validates. Without this, Keycloak derives
-            # a short service hostname from the token request and creates tokens
-            # that fail the control plane's issuer check.
+            # Pilot-only local-review hostname. The Console reaches Keycloak over a
+            # local port-forward; FastAPI verifies this issuer but fetches JWKS via
+            # the in-cluster service URL. A production deployment needs TLS and a
+            # real enterprise OIDC hostname instead.
             - name: KC_HOSTNAME
-              value: http://keycloak.platform-system.svc.cluster.local:8080
+              value: http://localhost:18081
           resources:
             requests: {cpu: 250m, memory: 512Mi}
             limits: {cpu: "1", memory: 1Gi}

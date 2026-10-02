@@ -65,6 +65,7 @@ kubectl -n argocd wait --for=jsonpath='{.status.health.status}'=Healthy applicat
 kubectl -n platform-system rollout status deployment/opa --timeout=5m
 kubectl -n platform-system rollout status deployment/keycloak --timeout=10m
 kubectl -n platform-system rollout status deployment/control-plane --timeout=5m
+kubectl -n platform-system rollout status deployment/operator-console --timeout=5m
 kubectl -n platform-system rollout status deployment/otel-collector --timeout=5m
 kubectl -n platform-observability rollout status deployment/prometheus-server --timeout=5m
 kubectl -n platform-observability rollout status deployment/grafana --timeout=5m

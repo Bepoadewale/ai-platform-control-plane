@@ -16,7 +16,10 @@ actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query
 
 registry="${expected_account}.dkr.ecr.${aws_region}.amazonaws.com"
 image="${registry}/${repository}:${image_tag}"
+console_image="${registry}/${repository}:console-${image_tag}"
 AWS_PROFILE="$aws_profile" aws ecr get-login-password --region "$aws_region" | docker login --username AWS --password-stdin "$registry"
 docker build --quiet --platform linux/amd64 -f "$project_root/control-plane/Dockerfile" -t "$image" "$project_root"
 docker push --quiet "$image"
-echo "$image"
+docker build --quiet --platform linux/amd64 -f "$project_root/operator-console/Dockerfile" -t "$console_image" "$project_root"
+docker push --quiet "$console_image"
+printf '%s\n%s\n' "$image" "$console_image"
