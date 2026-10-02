@@ -38,7 +38,9 @@ jobs:
           role-to-assume: ${{ inputs.role_to_assume }}
           aws-region: us-east-1
       - name: Verify short-lived identity
-        run: aws sts get-caller-identity
+        run: |
+          aws sts get-caller-identity
+          test "$(aws sts get-caller-identity --query Account --output text)" = "654654474502"
       - name: Initialize pilot Terraform
         env:
           EXPECTED_AWS_ACCOUNT_ID: "654654474502"
@@ -55,12 +57,18 @@ jobs:
       - name: Require apply confirmation
         if: inputs.action == 'apply'
         run: test "${{ inputs.confirmation }}" = "APPLY"
+      - name: Create reviewed apply plan
+        if: inputs.action == 'apply'
+        run: terraform -chdir=infrastructure/terraform/pilot plan -input=false -out=/tmp/pilot.tfplan -var expected_account_id=654654474502
       - name: Apply reviewed pilot plan
         if: inputs.action == 'apply'
-        run: terraform -chdir=infrastructure/terraform/pilot apply -input=false -auto-approve -var expected_account_id=654654474502
+        run: terraform -chdir=infrastructure/terraform/pilot apply -input=false /tmp/pilot.tfplan
       - name: Require destroy confirmation
         if: inputs.action == 'destroy'
         run: test "${{ inputs.confirmation }}" = "DESTROY"
+      - name: Create reviewed destroy plan
+        if: inputs.action == 'destroy'
+        run: terraform -chdir=infrastructure/terraform/pilot plan -destroy -input=false -out=/tmp/pilot-destroy.tfplan -var expected_account_id=654654474502
       - name: Destroy pilot footprint
         if: inputs.action == 'destroy'
-        run: terraform -chdir=infrastructure/terraform/pilot destroy -input=false -auto-approve -var expected_account_id=654654474502
+        run: terraform -chdir=infrastructure/terraform/pilot apply -input=false /tmp/pilot-destroy.tfplan

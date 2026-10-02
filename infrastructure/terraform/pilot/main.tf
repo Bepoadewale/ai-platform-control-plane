@@ -399,6 +399,22 @@ data "aws_iam_policy_document" "github_terraform" {
     ]
     resources = ["*"]
   }
+
+  # Terraform's remote backend needs only this project's state prefix and lock table.
+  statement {
+    actions   = ["s3:ListBucket", "s3:GetBucketVersioning"]
+    resources = ["arn:aws:s3:::ai-platform-control-plane-tfstate-${var.expected_account_id}"]
+  }
+
+  statement {
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    resources = ["arn:aws:s3:::ai-platform-control-plane-tfstate-${var.expected_account_id}/pilot/*"]
+  }
+
+  statement {
+    actions   = ["dynamodb:DescribeTable", "dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
+    resources = ["arn:aws:dynamodb:${var.aws_region}:${var.expected_account_id}:table/ai-platform-control-plane-pilot-terraform-locks"]
+  }
 }
 
 resource "aws_iam_role_policy" "github_terraform" {

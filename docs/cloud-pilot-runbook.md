@@ -65,7 +65,8 @@ in `docs/VALIDATION.md` only with observed values.
 - `destroy`: requires `confirmation=DESTROY` and the same role ARN.
 
 The role is restricted to the repository and `codex/production-pilot-roadmap` ref. It is for a
-reviewed pilot only, not an unattended production deployer. Before using it, apply the foundation
+reviewed pilot only, not an unattended production deployer. Its state access is scoped to the
+project's Terraform S3 prefix and DynamoDB lock table. Before using it, apply the foundation
 locally once, copy `github_terraform_role_arn` from Terraform output, and inspect the role policy.
 
 ## Teardown and verification
