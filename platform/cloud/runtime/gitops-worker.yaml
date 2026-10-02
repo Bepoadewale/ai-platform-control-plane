@@ -30,6 +30,7 @@ spec:
       containers:
         - name: worker
           image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot
+          imagePullPolicy: Always
           command: [python, -m, platform_control_plane.gitops.worker]
           env:
             - name: PLATFORM_DATABASE_URL

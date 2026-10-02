@@ -64,17 +64,27 @@ class KubernetesArgoStatusClient:
                 return EnvironmentObservation("ABSENT", "Argo Application is absent")
             raise
         status = application_data.get("status", {})
-        health = status.get("health", {}).get("status")
         sync = status.get("sync", {}).get("status")
-        if health in {"Degraded", "Missing", "Unknown"}:
-            return EnvironmentObservation("FAILED", f"Argo health is {health}")
-        if sync != "Synced" or health != "Healthy":
-            return EnvironmentObservation("PENDING", f"Argo sync={sync or 'Unknown'} health={health or 'Unknown'}")
+        if sync != "Synced":
+            return EnvironmentObservation("PENDING", f"Argo sync={sync or 'Unknown'}")
         namespace = f"{environment.request.team}-{environment.request.name}"
-        deployment = self._get(f"/apis/apps/v1/namespaces/{namespace}/deployments/{environment.request.name}")
+        try:
+            deployment = self._get(
+                f"/apis/apps/v1/namespaces/{namespace}/deployments/{environment.request.name}"
+            )
+        except httpx.HTTPStatusError as error:
+            if error.response.status_code == 404:
+                return EnvironmentObservation("PENDING", "Argo application is synced; Deployment is not present yet")
+            raise
         desired = deployment.get("spec", {}).get("replicas", 1)
-        available = deployment.get("status", {}).get("availableReplicas", 0)
+        deployment_status = deployment.get("status", {})
+        available = deployment_status.get("availableReplicas", 0)
         if available < desired:
+            for condition in deployment_status.get("conditions", []):
+                if condition.get("type") == "Progressing" and condition.get("status") == "False":
+                    return EnvironmentObservation("FAILED", condition.get("message") or "Deployment progress deadline exceeded")
+                if condition.get("type") == "ReplicaFailure" and condition.get("status") == "True":
+                    return EnvironmentObservation("FAILED", condition.get("message") or "Deployment replica failure")
             return EnvironmentObservation("PENDING", f"Deployment available={available}/{desired}")
         return EnvironmentObservation("READY")
 
