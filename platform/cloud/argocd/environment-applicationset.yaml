@@ -10,6 +10,8 @@ spec:
     - git:
         repoURL: https://github.com/Bepoadewale/ai-platform-control-plane.git
         revision: main
+        # The pilot is deliberately short lived; poll reviewed desired state promptly.
+        requeueAfterSeconds: 30
         directories:
           - path: environments/*/*
   template:
