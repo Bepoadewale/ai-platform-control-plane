@@ -36,7 +36,7 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 
 | Phase | Scope | Evidence required before proceeding |
 | --- | --- | --- |
-| 0. Pilot guardrails | Dedicated AWS account, budget alarms, tags, remote Terraform state, break-glass process, destroy plan | Account and billing controls reviewed; no workload deployed yet |
+| 0. Pilot guardrails | Dedicated AWS account, budget alarms, tags, remote Terraform state, break-glass process, destroy plan | **Executed 2026-10-02:** account guard, encrypted/versioned state, lock table, tags, and USD 10 alerts. No workload deployed; see `docs/VALIDATION.md`. |
 | 1. Identity and CI | GitHub Actions OIDC role with least privilege; no long-lived AWS keys | Workflow obtains short-lived credentials and can run a read-only identity check |
 | 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, and narrowly scoped IAM/IRSA or Pod Identity | `plan`, reviewed `apply`, smoke, and `destroy` evidence recorded |
 | 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | Health, policy denial, secret-reference-only behavior, and telemetry evidence recorded |
@@ -96,4 +96,3 @@ Record a separate pilot validation in `docs/VALIDATION.md` with:
 
 Only label an AWS component **EXECUTED** after this evidence exists. Until then it remains
 **ARCHITECTURE / CONTRACT ONLY** or **PLANNED**.
-

@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke argocd-demo public-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -44,3 +44,9 @@ argocd-demo:
 
 public-demo:
 	./scripts/start-public-demo.sh
+
+pilot-guardrails-bootstrap:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/bootstrap-pilot-guardrails.sh
+
+pilot-guardrails-apply:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} APPLY_GUARDRAILS=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/bootstrap-pilot-guardrails.sh

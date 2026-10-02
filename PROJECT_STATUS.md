@@ -35,6 +35,10 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 - A clean-room local reset removed the repository’s Compose containers, volumes, local image, and
   kind cluster. The documented bootstrap then recreated kind, Metrics Server, Argo CD, the Compose
   integration stack, the governed lifecycle demo, and Argo CD `Synced/Healthy` reconciliation.
+- AWS pilot Phase 0 was applied in the dedicated pilot account: Terraform created an encrypted,
+  versioned, public-access-blocked S3 state bucket, a project-scoped DynamoDB lock table, and a
+  USD 10 monthly actual-cost Budget with 50/80/100% alert thresholds. No workload infrastructure
+  was created.
 
 ## Implemented but Not End-to-End Validated
 
@@ -47,14 +51,16 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Architecture / Contracts Only
 
-- AWS provisioning: the present Terraform modules are validate-only contracts, not deployable VPC,
-  EKS, RDS, ECR, or secrets infrastructure.
+- VPC, EKS, RDS, ECR, Secrets Manager, and workload provisioning: current Terraform modules are
+  still validate-only contracts.
 - Production Git desired-state commits/PRs, asynchronous reconciliation workers, external secret
   delivery/workload identity, and delegated MCP OIDC identity.
 
 ## Explicitly Unexecuted Production Adapters
 
-- AWS/EKS/RDS/ECR/Secrets Manager pilot, GitHub Actions OIDC federation, and remote Terraform state.
+- AWS/EKS/RDS/ECR/Secrets Manager workload pilot and GitHub Actions OIDC federation. Remote
+  Terraform state is executed only for Phase 0 guardrails; no application/infrastructure state is
+  deployed yet.
 - Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
 - Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
 
@@ -70,8 +76,8 @@ requirements. These are not local-first completion blockers and have not been st
 ## Current P0 Objective
 
 No open P0 work. The next focused hardening item is turning the validated Compose stack into
-CI-suitable smoke coverage. A separate, owner-authorized AWS pilot can begin only after its
-guardrails in `docs/production-pilot.md` are available.
+CI-suitable smoke coverage. The next cloud P1 item is GitHub Actions OIDC with a narrowly scoped,
+read-only identity check; the USD 10 Phase 0 guardrails are already applied.
 
 ## Last Validation
 
@@ -107,7 +113,12 @@ guardrails in `docs/production-pilot.md` are available.
   demo-local`; and `make argocd-demo`. The first command removed only Project 1 resources. The
   rebuilt stack passed direct API/Keycloak/Prometheus/Grafana/OTel assertions, the governed
   lifecycle demo, and Argo CD `Synced/Healthy` verification.
+- AWS Phase 0: `scripts/bootstrap-pilot-guardrails.sh` authenticated the expected pilot account,
+  initialized remote Terraform state, imported the secure backend resources, and applied only
+  `ai-platform-control-plane-pilot-monthly-cost`. AWS API verification confirmed AES256 bucket
+  encryption, versioning enabled, active lock table, zero current budget spend, and 50/80/100%
+  actual-cost notifications. No VPC/EKS/RDS/ECR/NAT/workload resources were created.
 
 ## Last Updated
 
-2026-09-20, clean-room local bootstrap and end-to-end validation completed.
+2026-10-02, AWS pilot Phase 0 guardrails executed; local-first completion status unchanged.

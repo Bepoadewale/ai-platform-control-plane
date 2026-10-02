@@ -155,4 +155,9 @@ minimal EKS environment, and GitOps reconciliation where the control plane publi
 Argo CD applies it. See the [production-pilot plan](docs/production-pilot.md). Until that plan has
 executed evidence, AWS Terraform remains a static contract—not an AWS/EKS deployment claim.
 
+Phase 0 guardrails are the only AWS resources currently executed: an encrypted/versioned Terraform
+state bucket, a DynamoDB lock table, required resource tags, and a USD 10 monthly actual-cost
+Budget. No VPC, EKS, EC2, RDS, ECR, NAT Gateway, Secrets Manager, or application workload has been
+created. See [AWS validation evidence](docs/VALIDATION.md#aws-pilot-phase-0--2026-10-02).
+
 Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).

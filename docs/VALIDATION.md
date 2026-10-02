@@ -39,7 +39,7 @@ can accept its port before it is ready to serve. `COMPOSE_SKIP_UP=1 ./scripts/co
 an internal reuse option for validating already-started services; documented users should run
 `make compose-smoke`.
 
-## Future AWS production-pilot validation template — NOT EXECUTED
+## Future AWS workload-pilot validation template — NOT EXECUTED
 
 Do not fill this section from a local kind run or a Terraform-only validation. When an
 owner-authorized pilot occurs, record the commit SHA, AWS region, non-sensitive resource tags,
@@ -48,3 +48,28 @@ rollback/`destroy` commands, Argo and EKS readiness evidence, OPA/audit/telemetr
 observed pilot cost. Confirm teardown by checking that only documented retained resources remain.
 
 The required sequence and security boundaries are in [Production pilot plan](production-pilot.md).
+
+## AWS pilot Phase 0 — 2026-10-02
+
+Environment: dedicated AWS pilot account in `us-east-1`; Terraform 1.14.0; AWS provider 5.100.0;
+local IAM-user profile for initial bootstrap. No AWS credentials, account identifiers, or alert
+recipient were committed.
+
+Executed sequence:
+
+```console
+PILOT_BUDGET_EMAIL='<local recipient>' make pilot-guardrails-bootstrap
+PILOT_BUDGET_EMAIL='<local recipient>' make pilot-guardrails-apply
+```
+
+The bootstrap verified the expected account before mutation, created/imported only the state
+backend (S3 with AES256 encryption, versioning, ownership controls, and public-access blocking) and
+the PAY_PER_REQUEST DynamoDB lock table, then stored Terraform state remotely. The reviewed apply
+contained one further change: `ai-platform-control-plane-pilot-monthly-cost`, a USD 10 monthly
+actual-cost Budget with 50%, 80%, and 100% notification thresholds. AWS API checks confirmed zero
+current spend and all three notification records.
+
+Not executed: VPC, EKS, EC2, RDS, ECR, NAT Gateway, Secrets Manager, Kubernetes workloads, GitHub
+OIDC, application deployment, Argo reconciliation in AWS, failure/rollback, and teardown. Budget
+notification delivery cannot be claimed until a threshold is reached or deliberately tested. AWS
+Budgets is alerting, not a guaranteed spend stop.

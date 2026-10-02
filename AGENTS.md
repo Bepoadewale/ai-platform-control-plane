@@ -19,3 +19,7 @@ repository. Use a least-privilege GitHub Actions OIDC role and record real `plan
 failure, cost, and `destroy` evidence before labeling any AWS component executed. The production
 pilot plan is `docs/production-pilot.md`; it does not authorize provisioning until the repository
 owner supplies a dedicated account, budget, and explicit deployment authority.
+
+The owner-authorized Phase 0 backend and USD 10 Budget are executed and recorded in
+`docs/VALIDATION.md`. They do not authorize EKS, VPC, RDS, workloads, GitHub deployment roles, or
+any other paid service; obtain a reviewed plan and explicit scope before each later phase.

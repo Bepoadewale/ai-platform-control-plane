@@ -10,7 +10,7 @@
 - [x] M8: cost metadata/plans and safe non-production TTL destruction.
 - [x] M9: AI workload schema with explicit CPU-local/GPU-cloud distinction.
 - [x] M10: local PostgreSQL, Keycloak OIDC/JWKS, and live OPA runtime.
-- [ ] M11: production-pilot guardrails, GitHub OIDC → AWS, and a reviewed minimal Terraform foundation.
+- [ ] M11: Phase 0 production-pilot guardrails are executed; GitHub OIDC → AWS and a reviewed minimal Terraform foundation remain.
 - [ ] M12: protected Git desired-state adapter → Argo CD → EKS lifecycle with readiness/audit evidence.
 - [ ] M13: durable asynchronous reconciler, external secret references/workload identity, and lifecycle observability/SLOs.
 - [ ] M14: trusted delegated MCP identity, developer self-service integration, and multi-cluster evaluation.

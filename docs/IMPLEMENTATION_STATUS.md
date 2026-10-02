@@ -19,8 +19,9 @@
 | PostgreSQL persistence | ✅ Executed locally | authenticated API create, direct SQL lifecycle/audit evidence, and restart recovery |
 | Argo CD reconciliation | ✅ Executed locally | Argo CD 3.5.3 synchronized the Helm golden path in kind; Application reported `Synced/Healthy` and Deployment became `1/1` available |
 | Clean-room bootstrap and teardown | ✅ Executed locally | `make clean-local` removed Project 1 local state; `make bootstrap-local`, `make compose-smoke`, `make demo-local`, and `make argocd-demo` recreated and validated it |
-| AWS Terraform contract | 🟡 Implemented / Validated Statically | Linux-container `terraform validate`; no AWS resources created |
-| AWS/EKS pilot | 📋 Roadmap | [production-pilot plan](production-pilot.md); no AWS account or resources used |
+| AWS workload Terraform contracts | 🟡 Implemented / Validated Statically | VPC/EKS/IAM workload modules validate only; no VPC, EKS, RDS, ECR, Secrets Manager, or workloads created |
+| AWS Phase 0 guardrails | ✅ Executed in AWS pilot account | encrypted/versioned S3 Terraform state, DynamoDB lock table, required tags, and USD 10 actual-cost alerts; no workload infrastructure |
+| AWS/EKS workload pilot | 📋 Roadmap | [production-pilot plan](production-pilot.md); no VPC, EKS, RDS, ECR, Secrets Manager, or workloads deployed |
 | Production Git commit/PR → Argo reconciliation | 📐 Architecture / Contract Only | local Argo CD sync is executed; protected Git adapter is not |
 | Durable asynchronous reconciler | 📋 Roadmap | API-process local reconciler is executed; worker/operator is not |
 | External secret delivery / workload identity | 📋 Roadmap | no secret values are passed through the API or agent paths |
