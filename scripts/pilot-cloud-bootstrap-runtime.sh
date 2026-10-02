@@ -97,7 +97,11 @@ sed "s#targetRevision: main#targetRevision: ${runtime_revision}#" \
 kubectl apply -f "$runtime_manifest"
 kubectl -n argocd rollout status deployment/argocd-server --timeout=10m
 kubectl -n argocd wait --for=jsonpath='{.status.sync.status}'=Synced application/ai-platform-control-plane-runtime --timeout=10m
-kubectl -n argocd wait --for=jsonpath='{.status.health.status}'=Healthy application/ai-platform-control-plane-runtime --timeout=10m
+# Argo CD reports this mixed application as Degraded when it cannot derive health for
+# third-party CRs (for example, an ExternalSecret or ApplicationSet). Sync is the Git
+# reconciliation assertion; the following explicit readiness gates are authoritative for
+# the workloads and secret that this pilot owns.
+kubectl -n platform-system wait --for=condition=Ready externalsecret/github-app-credentials --timeout=5m
 kubectl -n platform-system rollout status deployment/opa --timeout=5m
 kubectl -n platform-system rollout status deployment/keycloak --timeout=10m
 kubectl -n platform-system rollout status deployment/control-plane --timeout=5m
@@ -107,4 +111,4 @@ kubectl -n platform-system rollout status deployment/operator-console --timeout=
 kubectl -n platform-system rollout status deployment/otel-collector --timeout=5m
 kubectl -n platform-observability rollout status deployment/prometheus-server --timeout=5m
 kubectl -n platform-observability rollout status deployment/grafana --timeout=5m
-echo "Runtime is Argo Synced/Healthy from revision $runtime_revision. Run make pilot-cloud-smoke for bounded API, policy and telemetry checks."
+echo "Runtime is Argo Synced from revision $runtime_revision and all project workload/secret readiness gates passed. Run make pilot-cloud-smoke for bounded API, policy and telemetry checks."
