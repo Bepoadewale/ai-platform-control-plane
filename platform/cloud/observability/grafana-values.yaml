@@ -20,3 +20,19 @@ datasources:
         type: tempo
         access: proxy
         url: http://tempo.platform-observability.svc.cluster.local:3100
+
+# The bootstrap script creates this project-scoped ConfigMap from the same
+# dashboard JSON used by the local stack before Grafana starts.
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: control-plane
+        folder: Platform
+        type: file
+        disableDeletion: true
+        updateIntervalSeconds: 10
+        options:
+          path: /var/lib/grafana/dashboards/control-plane
+dashboardsConfigMaps:
+  control-plane: ai-platform-control-plane-dashboard

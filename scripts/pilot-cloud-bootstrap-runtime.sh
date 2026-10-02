@@ -24,6 +24,10 @@ helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
 helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
 helm repo update >/dev/null
+kubectl create namespace platform-observability --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n platform-observability create configmap ai-platform-control-plane-dashboard \
+  --from-file=control-plane.json="$project_root/platform/observability/grafana/dashboards/control-plane.json" \
+  --dry-run=client -o yaml | kubectl apply -f -
 helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace \
   --set server.service.type=ClusterIP --wait --timeout 10m
 helm upgrade --install tempo grafana/tempo --namespace platform-observability --create-namespace \
