@@ -203,10 +203,9 @@ data "aws_iam_policy_document" "external_secrets_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "${local.eks_oidc_issuer}:sub"
-      # The controller is installed separately, but the scoped web-identity token
-      # belongs to the namespace-local SecretStore reader. Keeping this subject
-      # exact prevents any other service account from reading the GitHub App key.
-      values   = ["system:serviceaccount:platform-system:pilot-secrets-reader"]
+      # Only the External Secrets controller can assume this role. Its attached
+      # policy is limited to the single GitHub App secret used by the worker.
+      values   = ["system:serviceaccount:external-secrets:external-secrets"]
     }
   }
 }
