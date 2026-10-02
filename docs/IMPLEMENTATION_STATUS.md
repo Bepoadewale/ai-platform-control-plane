@@ -30,7 +30,7 @@ service or that unexecuted production controls are present.
 | GitHub Actions Terraform OIDC workflow | 🟡 Implemented / Not Executed | manual plan/apply/destroy dropdown, branch-bound OIDC roles, and explicit confirmations; no OIDC workflow run yet |
 | EKS GitOps runtime manifests | ✅ Executed in a bounded AWS pilot | Argo CD synchronized the EKS control plane, OPA, Keycloak, OTel Collector, NetworkPolicy, probes, and ECR image to `Synced/Healthy` |
 | Cloud observability | ✅ Executed in a bounded AWS pilot | Prometheus scraped the control plane, Tempo returned FastAPI traces, and Grafana exposed the provisioned control-plane dashboard |
-| Production Git commit/PR → Argo reconciliation | 🟡 Implemented / Not Executed | GitHub App publisher and durable worker are unit/restart-tested; protected AWS Git publication and Argo workload lifecycle remain pending |
+| Production Git commit/PR → Argo reconciliation | 🟡 Implemented / Not Executed | GitHub App publisher supports scoped apply/delete PRs; worker, ApplicationSet, and observer are locally tested. Protected AWS Git publication and EKS workload evidence remain pending. |
 | Durable asynchronous reconciler | 🟡 Implemented / Not Fully Executed | PostgreSQL/SQLite job state and restart-safe Git publication worker are tested locally; no cloud worker deployment or EKS/Argo readiness evidence yet |
 | Argo environment ApplicationSet | 🟡 Implemented / Not Executed | manifest is statically rendered; it discovers merged environment values and deploys the existing golden-path chart only after the cloud GitOps flow is executed |
 | Argo/Kubernetes status observer | 🟡 Implemented / Not Executed | separately deployed read-only observer has Ready/Degraded unit coverage; no EKS observation evidence yet |

@@ -233,6 +233,16 @@ class EnvironmentService:
         self._event(env, actor, "destroy.requested")
         env.state = LifecycleState.DESTROYING
         self._event(env, actor, "destroy.applying")
+        if self.reconciliation_mode == "gitops-worker":
+            job = ReconciliationJob(
+                environment_id=env.id,
+                action=ReconciliationAction.DESTROY,
+                actor=actor,
+            )
+            self.repository.enqueue_job(job)
+            RECONCILIATION_QUEUE_DEPTH.set(len(self.pending_reconciliation_jobs()))
+            self._event(env, actor, "destroy.queued", job_id=str(job.id))
+            return env
         try:
             self.reconciler.destroy(env)
         except ReconciliationError as error:

@@ -9,10 +9,16 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 import httpx
-from platform_control_plane.models.domain import Actor, Environment, LifecycleState, Role
+from platform_control_plane.models.domain import (
+    Actor,
+    Environment,
+    LifecycleState,
+    ReconciliationAction,
+    Role,
+)
 from platform_control_plane.provisioning.service import EnvironmentService
 
-ObservationState = Literal["PENDING", "READY", "FAILED"]
+ObservationState = Literal["ABSENT", "PENDING", "READY", "FAILED"]
 
 
 @dataclass(frozen=True)
@@ -55,7 +61,7 @@ class KubernetesArgoStatusClient:
             )
         except httpx.HTTPStatusError as error:
             if error.response.status_code == 404:
-                return EnvironmentObservation("PENDING", "Argo Application has not been generated")
+                return EnvironmentObservation("ABSENT", "Argo Application is absent")
             raise
         status = application_data.get("status", {})
         health = status.get("health", {}).get("status")
@@ -86,15 +92,27 @@ class EnvironmentStatusObserver:
     def run_once(self) -> list[Environment]:
         self.service.refresh_from_store()
         observed: list[Environment] = []
-        published_ids = {
-            job.environment_id
+        published_actions = {
+            job.environment_id: job.action
             for job in self.service.repository.load_jobs()
             if job.state.value == "PUBLISHED"
         }
         for environment in self.service._environments.values():
-            if environment.id not in published_ids or environment.state is not LifecycleState.APPLYING:
+            action = published_actions.get(environment.id)
+            if action is None:
                 continue
             result = self.client.observe(environment)
+            if action is ReconciliationAction.DESTROY:
+                if environment.state is not LifecycleState.DESTROYING or result.state != "ABSENT":
+                    continue
+                environment.state = LifecycleState.DESTROYED
+                self.service._event(environment, self.actor, "destroy.complete")
+                observed.append(environment)
+                continue
+            if environment.state is not LifecycleState.APPLYING:
+                continue
+            if result.state == "ABSENT":
+                continue
             if result.state == "PENDING":
                 continue
             if result.state == "READY":

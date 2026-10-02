@@ -31,6 +31,8 @@ from platform_control_plane.provisioning.service import EnvironmentService
 class DesiredStatePublisher(Protocol):
     def publish(self, *, path: str, content: str, change_id: str, title: str) -> str: ...
 
+    def delete(self, *, path: str, change_id: str, title: str) -> str: ...
+
 
 class GitOpsWorker:
     """Publishes pending jobs once; safely retries only explicit pending/failed jobs."""
@@ -48,38 +50,47 @@ class GitOpsWorker:
         return processed
 
     def _publish(self, job: ReconciliationJob) -> ReconciliationJob:
-        if job.action is not ReconciliationAction.APPLY:
-            return self._failed(job, "destroy publication is not implemented")
         environment = self.service._environments.get(job.environment_id)
         if environment is None or environment.gitops_path is None:
             return self._failed(job, "environment or rendered desired state is unavailable")
-        if environment.state is not LifecycleState.APPLYING:
-            return self._failed(job, f"environment is not applying: {environment.state.value}")
+        expected_state = (
+            LifecycleState.APPLYING if job.action is ReconciliationAction.APPLY else LifecycleState.DESTROYING
+        )
+        if environment.state is not expected_state:
+            return self._failed(job, f"environment is not {expected_state.value.lower()}: {environment.state.value}")
         job.state = ReconciliationJobState.PROCESSING
         job.attempts += 1
         job.updated_at = datetime.now(UTC)
         self.service.repository.update_job(job)
-        # API and worker pods do not share a mutable filesystem. Re-rendering is deterministic
-        # from the persisted request and allows a restarted worker to resume safely.
-        path = self.service.renderer.render(environment)
-        content = (self.service.renderer.root.parent / path).read_text(encoding="utf-8")
         try:
-            job.publication_url = self.publisher.publish(
-                path=path,
-                content=content,
-                change_id=str(job.id),
-                title=f"gitops: apply {environment.tenant_id}/{environment.request.name}",
-            )
+            if job.action is ReconciliationAction.APPLY:
+                # API and worker pods do not share a mutable filesystem. Re-rendering is deterministic
+                # from the persisted request and allows a restarted worker to resume safely.
+                path = self.service.renderer.render(environment)
+                content = (self.service.renderer.root.parent / path).read_text(encoding="utf-8")
+                job.publication_url = self.publisher.publish(
+                    path=path,
+                    content=content,
+                    change_id=str(job.id),
+                    title=f"gitops: apply {environment.tenant_id}/{environment.request.name}",
+                )
+            else:
+                job.publication_url = self.publisher.delete(
+                    path=environment.gitops_path,
+                    change_id=str(job.id),
+                    title=f"gitops: destroy {environment.tenant_id}/{environment.request.name}",
+                )
         except GitOpsPublicationError as error:
             return self._failed(job, str(error))
         job.state = ReconciliationJobState.PUBLISHED
         job.updated_at = datetime.now(UTC)
         self.service.repository.update_job(job)
         environment.endpoint = job.publication_url
+        event = "gitops.pull_request_created" if job.action is ReconciliationAction.APPLY else "gitops.destroy_pull_request_created"
         self.service._event(
             environment,
             job.actor,
-            "gitops.pull_request_created",
+            event,
             job_id=str(job.id),
             pull_request=job.publication_url,
         )

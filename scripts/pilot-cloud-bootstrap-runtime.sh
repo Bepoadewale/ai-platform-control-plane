@@ -8,12 +8,20 @@ aws_profile="${AWS_PROFILE:-ai-platform-pilot-key}"
 expected_account="${EXPECTED_AWS_ACCOUNT_ID:-654654474502}"
 aws_region="${AWS_REGION:-us-east-1}"
 cluster_name="${PILOT_CLUSTER_NAME:-ai-platform-control-plane-pilot}"
+runtime_revision="${PILOT_RUNTIME_REVISION:-main}"
 
 for command in aws kubectl helm jq openssl; do
   command -v "$command" >/dev/null 2>&1 || { echo "$command is required." >&2; exit 1; }
 done
 actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query Account --output text)"
 [[ "$actual_account" == "$expected_account" ]] || { echo "Unexpected AWS account." >&2; exit 1; }
+[[ "$runtime_revision" =~ ^[A-Za-z0-9._/-]+$ ]] || { echo "Invalid PILOT_RUNTIME_REVISION." >&2; exit 1; }
+AWS_PROFILE="$aws_profile" aws secretsmanager get-secret-value \
+  --secret-id ai-platform-control-plane-pilot/gitops-publisher --region "$aws_region" \
+  --query VersionId --output text >/dev/null || {
+    echo "The scoped GitHub App secret has no value. Run make pilot-cloud-put-gitops-secret first." >&2
+    exit 1
+  }
 
 AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
 kubectl get nodes --request-timeout=30s >/dev/null
@@ -71,7 +79,11 @@ kubectl -n platform-system create secret generic platform-runtime-secrets \
 kubectl apply -f "$project_root/platform/cloud/runtime/external-secrets.yaml"
 kubectl -n platform-system wait --for=condition=Ready externalsecret/github-app-credentials --timeout=5m
 
-kubectl apply -f "$project_root/platform/cloud/argocd/runtime-application.yaml"
+runtime_manifest="$(mktemp "${TMPDIR:-/tmp}/ai-platform-runtime-application.XXXXXX.yaml")"
+trap 'rm -f "$runtime_manifest"' EXIT
+sed "s#targetRevision: main#targetRevision: ${runtime_revision}#" \
+  "$project_root/platform/cloud/argocd/runtime-application.yaml" >"$runtime_manifest"
+kubectl apply -f "$runtime_manifest"
 kubectl -n argocd rollout status deployment/argocd-server --timeout=10m
 kubectl -n argocd wait --for=jsonpath='{.status.sync.status}'=Synced application/ai-platform-control-plane-runtime --timeout=10m
 kubectl -n argocd wait --for=jsonpath='{.status.health.status}'=Healthy application/ai-platform-control-plane-runtime --timeout=10m
@@ -84,4 +96,4 @@ kubectl -n platform-system rollout status deployment/operator-console --timeout=
 kubectl -n platform-system rollout status deployment/otel-collector --timeout=5m
 kubectl -n platform-observability rollout status deployment/prometheus-server --timeout=5m
 kubectl -n platform-observability rollout status deployment/grafana --timeout=5m
-echo "Runtime is Argo Synced/Healthy. Run make pilot-cloud-smoke for bounded API, policy and telemetry checks."
+echo "Runtime is Argo Synced/Healthy from revision $runtime_revision. Run make pilot-cloud-smoke for bounded API, policy and telemetry checks."

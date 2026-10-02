@@ -19,6 +19,9 @@ class Publisher:
     def publish(self, **_: str) -> str:
         return "https://github.example/owner/repo/pull/42"
 
+    def delete(self, **_: str) -> str:
+        return "https://github.example/owner/repo/pull/43"
+
 
 class StatusClient:
     def __init__(self, state: str, reason: str | None = None) -> None:
@@ -73,6 +76,22 @@ def test_observer_records_degraded_argo_workload_as_failed(tmp_path: Path) -> No
     assert persisted.failure_reason == "Argo health is Degraded"
     assert any(
         event.action == "reconciliation.failed"
+        for event in service.audit_events(environment.request.request_id)
+    )
+    service.close()
+
+
+def test_observer_marks_destroyed_only_after_argo_application_is_absent(tmp_path: Path) -> None:
+    service, environment = published_environment(tmp_path)
+    EnvironmentStatusObserver(service, StatusClient("READY")).run_once()
+    assert service.destroy(developer(), environment.id).state is LifecycleState.DESTROYING
+    GitOpsWorker(service, Publisher()).run_once()
+
+    observed = EnvironmentStatusObserver(service, StatusClient("ABSENT")).run_once()
+    assert [item.id for item in observed] == [environment.id]
+    assert service.get(developer(), environment.id).state is LifecycleState.DESTROYED
+    assert any(
+        event.action == "destroy.complete"
         for event in service.audit_events(environment.request.request_id)
     )
     service.close()
