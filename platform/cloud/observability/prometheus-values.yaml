@@ -5,6 +5,11 @@ pushgateway:
 server:
   persistentVolume:
     enabled: false
+  global:
+    # Short pilot cadence provides observable feedback without relying on an
+    # arbitrary sleep in smoke validation.
+    scrape_interval: 15s
+    scrape_timeout: 5s
   resources:
     requests: {cpu: 100m, memory: 256Mi}
     limits: {cpu: 500m, memory: 512Mi}
