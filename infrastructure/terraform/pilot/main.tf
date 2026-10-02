@@ -221,9 +221,6 @@ resource "aws_eks_node_group" "pilot" {
     aws_iam_role_policy_attachment.node_worker,
     aws_iam_role_policy_attachment.node_cni,
     aws_iam_role_policy_attachment.node_ecr,
-    aws_eks_addon.vpc_cni,
-    aws_eks_addon.coredns,
-    aws_eks_addon.kube_proxy,
   ]
 }
 

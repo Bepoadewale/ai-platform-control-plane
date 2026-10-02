@@ -30,6 +30,9 @@ Review the entire plan. The foundation uses two CPU-only `t3.large` EKS nodes, o
 one `db.t3.micro` PostgreSQL instance. It does not provision GPUs, load balancers, or public app
 endpoints. The intended pilot window is short; Budget alerts are notifications, not a spending cap.
 
+The node group intentionally does not wait for the CoreDNS add-on: CoreDNS cannot become healthy
+until schedulable nodes exist, so that dependency would create a startup deadlock.
+
 ## Create and validate
 
 ```bash
@@ -51,6 +54,18 @@ Use port forwarding for inspection; the pilot does not create a public load bala
 kubectl -n platform-system port-forward service/control-plane 8000:8000
 kubectl -n argocd port-forward service/argocd-server 8080:443
 ```
+
+After the runtime smoke test passes, use a temporary public review URL if needed:
+
+```bash
+make pilot-cloud-public-demo
+```
+
+It exposes only a local `kubectl port-forward` through an unauthenticated Cloudflare Quick Tunnel,
+prints a temporary `/docs` URL, and creates no AWS load balancer or DNS resource. Keep it open only
+while reviewing disposable pilot data. `Ctrl-C` closes the tunnel and local port-forward; it does
+**not** destroy the AWS pilot. Run `make pilot-cloud-destroy` only after the owner has confirmed the
+public review is complete.
 
 Record the Argo Application state, EKS deployment readiness, health endpoint, OPA denial test,
 database persistence, `/metrics`, and trace output before teardown. Populate the evidence template
