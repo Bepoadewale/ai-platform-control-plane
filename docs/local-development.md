@@ -6,6 +6,10 @@ For the full executed local control loop, start Docker Desktop and install kind,
 
 For a clean local infrastructure bootstrap, run `make bootstrap-local`. It creates the `ai-platform-local` kind cluster, installs Metrics Server and Argo CD, and configures Argo CD 3.x to persist resource health for the demo. `make compose-smoke` brings up and validates local Keycloak, OPA, PostgreSQL, OTel Collector, Prometheus, Grafana, and the control plane. `make argocd-demo` applies the current branch to local Argo CD and waits for `Synced/Healthy` plus deployment readiness.
 
+To use the separate browser interface, run `make console-local` and open `http://localhost:4173`.
+It uses the local Keycloak Authorization Code + PKCE flow and the same signed-token API; see
+[Operator Console](operator-console.md) for its security and validation boundary.
+
 To reset only Project 1 local state, run `make clean-local`. It removes this repository's Compose containers, named volumes, locally built Compose image, and `ai-platform-local` kind cluster. It does not remove unrelated Docker images or containers.
 
 For Codex MCP, point a project MCP configuration at `mcp-server` after installing its optional SDK dependency. Example prompt: “Use the platform MCP tools to create a temporary dev environment for demo-api with PostgreSQL and Redis.”

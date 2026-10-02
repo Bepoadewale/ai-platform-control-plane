@@ -19,6 +19,12 @@ sequenceDiagram
   API-->>Client: lifecycle/status
 ```
 
+The local **Operator Console** is a separate static browser client, not a privileged platform
+component. It uses Keycloak Authorization Code + PKCE to obtain a bearer token and calls the same
+API route as the CLI or an agent. FastAPI's explicit CORS allow-list, JWT/JWKS verification,
+tenant/RBAC checks, OPA decision, immutable plan and audit path remain authoritative. The console
+does not call Helm, `kubectl`, Terraform, AWS, or the database directly.
+
 State is recorded as `REQUESTED → VALIDATING → PLANNED → APPLYING → READY`, with rejection,
 approval, failure, and destruction branches. The local control plane persists lifecycle, plans,
 approvals, idempotency records, TTL metadata, reconciliation recovery state, and audit events through

@@ -39,6 +39,21 @@ can accept its port before it is ready to serve. `COMPOSE_SKIP_UP=1 ./scripts/co
 an internal reuse option for validating already-started services; documented users should run
 `make compose-smoke`.
 
+## Operator Console local smoke — 2026-10-02
+
+`make compose-smoke` rebuilt the Compose control plane and confirmed all of the following:
+
+| Evidence | Result |
+| --- | --- |
+| Console runtime | Nginx console served `http://localhost:4173/healthz` and its sign-in landing page |
+| Browser identity configuration | Local Keycloak accepted the console Authorization Code + PKCE request for the configured callback URL |
+| API browser boundary | FastAPI returned an explicit CORS allow-list response for `http://localhost:4173`; wildcard CORS is not configured |
+| API authorization | A local Keycloak bearer token reached `/api/v1/catalog` successfully |
+| Existing service evidence | PostgreSQL-backed API, OTel Collector span, Prometheus query, and Grafana dashboard assertions passed |
+
+This records a service-level smoke test, not a completed human browser login. The console's local
+fixture, production boundary, and manual sign-in steps are in [Operator Console](operator-console.md).
+
 ## AWS workload pilot — 2026-10-02 (create/validate/destroy)
 
 Environment: macOS; AWS CLI v2; Terraform 1.14.0; AWS provider 5.100.0; EKS Kubernetes 1.35;

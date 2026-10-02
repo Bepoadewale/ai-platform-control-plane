@@ -113,6 +113,13 @@ This bootstraps kind, Metrics Server, and Argo CD; validates the Keycloak/Postgr
 
 Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
 
+### Operator Console
+
+Run `make console-local`, then open `http://localhost:4173`. The separate browser console uses
+Keycloak Authorization Code + PKCE and calls the same signed-JWT, tenant-aware API; it does not
+receive Kubernetes, Terraform, cloud, or secret authority. See [Operator Console](docs/operator-console.md)
+for the local fixture boundary and exact validation status.
+
 ### Temporary public demo URL
 
 Run `make public-demo` to bootstrap the local stack and print a temporary Cloudflare Quick Tunnel URL for the provisioned Grafana dashboard. It uses no Cloudflare account, named tunnel, or persistent credential; the URL changes every run and must never be committed. Anyone with the URL can reach that local dashboard, so use only disposable demonstration data. Keep the command running while sharing it; `Ctrl-C` stops only the tunnel and `make clean-local` removes project-owned local resources.

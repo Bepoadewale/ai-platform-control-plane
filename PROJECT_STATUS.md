@@ -80,15 +80,18 @@ requirements. These are not local-first completion blockers and have not been st
 ## Current P0 Objective
 
 No open local-first P0 work. The bounded cloud pilot is torn down; its observed cost was not
-recorded. GitOps publication, a durable reconciler, external secrets/workload identity, and GitHub
-Actions OIDC execution remain later P1 work.
+recorded. The Operator Console is locally smoke-validated but still needs human browser sign-in and
+later cloud evidence. GitOps publication, a durable reconciler, external secrets/workload identity,
+and GitHub Actions OIDC execution remain later P1 work.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 26 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q`: 29 passed (2 upstream TestClient deprecation warnings).
 - Local Compose: Keycloak bearer token → FastAPI `/api/v1/catalog`: `200`.
 - `make compose-smoke`: Keycloak token, FastAPI catalog authorization, PostgreSQL state, Prometheus
   query, OTel Collector HTTP span, and Grafana dashboard assertions passed.
+- `make console-smoke`: browser-equivalent Keycloak Authorization Code + PKCE callback, token
+  exchange, and signed Console API request passed without printing an access token.
 - Prometheus query `sum(platform_requests_total)`: returned `1`; Collector logs contained
   `GET /api/v1/catalog` spans with `service.name=ai-platform-control-plane`; Grafana dashboard API
   returned the provisioned `AI Platform Control Plane` dashboard.
@@ -139,6 +142,10 @@ Actions OIDC execution remain later P1 work.
   checks found no tagged pilot workload resources, no EKS/RDS/ECR/secret/IAM/VPC resources, and
   zero resources in the pilot Terraform state. The encrypted state bucket, lock table, and USD 10
   Budget alert remain intentionally retained as Phase 0 guardrails.
+- Operator Console: `make compose-smoke` started the Nginx console at `http://localhost:4173`,
+  confirmed its static content and health endpoint, Keycloak accepted the Authorization Code + PKCE
+  request, FastAPI returned the configured CORS preflight, and the signed-token API/OTLP/Prometheus/
+  Grafana path passed. Browser-completed sign-in is not yet recorded.
 
 ## Last Updated
 

@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-plan pilot-cloud-apply pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-validate pilot-cloud-public-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-plan pilot-cloud-apply pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-validate pilot-cloud-public-demo
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -38,6 +38,13 @@ compose-up:
 
 compose-smoke:
 	./scripts/compose-smoke.sh
+
+console-local:
+	docker compose up -d --build control-plane keycloak opa postgres otel-collector prometheus grafana operator-console
+	@echo "Operator Console: http://localhost:4173"
+
+console-smoke:
+	./scripts/console-browser-smoke.sh
 
 argocd-demo:
 	./scripts/argocd-demo.sh

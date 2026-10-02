@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>AI Platform Control Plane</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="AI Platform Control Plane home"><span class="brand-mark">A</span><span>AI Platform<br /><strong>Control Plane</strong></span></a>
+        <div class="environment"><span></span> Local operator console</div>
+        <div id="session" class="session"></div>
+      </header>
+
+      <section id="login-panel" class="login-panel">
+        <p class="eyebrow">GOVERNED INFRASTRUCTURE</p>
+        <h1>Request capacity without receiving administrator credentials.</h1>
+        <p>This console authenticates with the local Keycloak issuer and calls the existing signed-JWT, tenant-aware control-plane API. It cannot bypass policy, approval, audit, or tenant isolation.</p>
+        <button id="sign-in" class="button primary">Sign in with Keycloak</button>
+        <p class="hint">Local fixture users: <code>developer</code> and <code>operator</code>.</p>
+      </section>
+
+      <section id="app" hidden>
+        <nav class="tabs" aria-label="Console sections">
+          <button class="tab active" data-view="overview">Overview</button>
+          <button class="tab" data-view="environments">Environments</button>
+          <button class="tab" data-view="request">New request</button>
+          <button class="tab" data-view="governance">Governance</button>
+        </nav>
+
+        <section id="overview" class="view active">
+          <div class="page-header"><div><p class="eyebrow">OPERATOR OVERVIEW</p><h1>Governed environment delivery</h1></div><button class="button secondary refresh">Refresh evidence</button></div>
+          <div class="metrics-grid">
+            <article><p>Environments</p><strong id="environment-count">—</strong><small>visible to this tenant</small></article>
+            <article><p>Ready</p><strong id="ready-count">—</strong><small>observed lifecycle state</small></article>
+            <article><p>Approval gated</p><strong id="approval-count">—</strong><small>immutable plan required</small></article>
+            <article><p>Policy boundary</p><strong>OPA</strong><small>live decision service</small></article>
+          </div>
+          <div class="panel two-column">
+            <div><h2>Control path</h2><ol class="path"><li>Signed identity</li><li>Tenant + RBAC</li><li>OPA policy</li><li>Immutable plan</li><li>Approval where required</li><li>Reconciliation + audit</li></ol></div>
+            <div><h2>Catalog capabilities</h2><div id="capabilities" class="chips"></div><p id="constraints" class="muted"></p></div>
+          </div>
+        </section>
+
+        <section id="environments" class="view">
+          <div class="page-header"><div><p class="eyebrow">TENANT INVENTORY</p><h1>Environment state</h1></div><button class="button secondary refresh">Refresh</button></div>
+          <div class="panel table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>State</th><th>Plan</th><th>Expires</th><th>Actions</th></tr></thead><tbody id="environment-rows"></tbody></table></div>
+        </section>
+
+        <section id="request" class="view">
+          <div class="page-header"><div><p class="eyebrow">SELF-SERVICE</p><h1>Create an environment request</h1></div></div>
+          <form id="request-form" class="panel request-form">
+            <label>Environment name<input required name="name" pattern="[a-z][a-z0-9-]{2,40}" placeholder="payments-dev" /></label>
+            <label>Team<input required name="team" pattern="[a-z][a-z0-9-]{1,30}" value="team-demo" /></label>
+            <label>Environment<select name="environment_type"><option value="development">Development</option><option value="staging">Staging</option><option value="production">Production</option></select></label>
+            <label>Resource profile<select name="size"><option value="small">Small — 250m / 256Mi</option><option value="medium">Medium — 500m / 512Mi</option><option value="large">Large — 1 CPU / 1Gi</option></select></label>
+            <label>TTL hours<input name="ttl_hours" type="number" min="1" max="168" value="24" /></label>
+            <label>Cost center<input required name="cost_center" value="platform" /></label>
+            <label class="check"><input name="postgresql" type="checkbox" /> PostgreSQL</label>
+            <label class="check"><input name="redis" type="checkbox" /> Redis</label>
+            <div class="form-actions"><button type="button" id="plan-request" class="button secondary">Preview plan</button><button type="submit" class="button primary">Submit request</button></div>
+          </form>
+          <pre id="request-result" class="result" hidden></pre>
+        </section>
+
+        <section id="governance" class="view">
+          <div class="page-header"><div><p class="eyebrow">SECURITY BOUNDARY</p><h1>What this console cannot do</h1></div></div>
+          <div class="panel governance-grid">
+            <article><h2>Identity is server verified</h2><p>API requests carry the Keycloak-issued bearer token. The control plane verifies issuer, audience, signature, expiry, tenant, and roles.</p></article>
+            <article><h2>Policy is enforced live</h2><p>OPA decides whether an action is allowed, denied, or requires approval. The browser does not decide policy.</p></article>
+            <article><h2>Plans bind approvals</h2><p>Protected actions require an independent approval for the exact immutable plan hash. Material changes invalidate the approval.</p></article>
+            <article><h2>No direct infrastructure authority</h2><p>Users and agents receive neither Kubernetes credentials, Terraform execution, cloud credentials, nor secret values from this interface.</p></article>
+          </div>
+          <pre id="audit-result" class="result" hidden></pre>
+        </section>
+      </section>
+      <div id="notice" role="status" aria-live="polite"></div>
+    </main>
+    <script src="/runtime-config.js"></script><script src="/app.js"></script>
+  </body>
+</html>

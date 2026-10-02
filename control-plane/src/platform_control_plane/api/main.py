@@ -3,6 +3,7 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 from platform_control_plane.auth.dependencies import actor_from_request
 from platform_control_plane.models.domain import (
     Actor,
@@ -18,6 +19,20 @@ from platform_control_plane.provisioning.service import EnvironmentService
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 app = FastAPI(title="AI Platform Control Plane", version="0.1.0")
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("PLATFORM_CORS_ORIGINS", "").split(",")
+    if origin.strip()
+]
+if cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+        max_age=600,
+    )
 configure_tracing(app)
 database_target = os.environ.get("PLATFORM_DATABASE_URL") or os.environ.get(
     "PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db"

@@ -23,3 +23,12 @@ adapter.
 Kubernetes templates set non-root execution, drop Linux capabilities, disable privilege escalation, use read-only root filesystems, resource limits, namespace quotas, and default-deny ingress/egress. Secrets are references only; neither API responses nor audit events contain secret values.
 
 Local header identity is a development-only adapter. Production must use short-lived OIDC tokens, JWKS validation, workload identity, encrypted PostgreSQL, immutable central audit storage, rate limits, and protected/signed Git changes.
+
+## Browser console boundary
+
+The local Operator Console uses Authorization Code + PKCE against Keycloak and sends the resulting
+short-lived bearer token only to the explicitly allowed control-plane origin. Browser code is not an
+authorization authority: it cannot select its own tenant or roles, grant approval, or make direct
+Kubernetes/Terraform/cloud/secret calls. The local browser callback is intentionally limited to
+`localhost`; cloud use requires TLS, enterprise OIDC, a reviewed callback and CORS allow-list, and
+an authenticated ingress.
