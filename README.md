@@ -143,6 +143,16 @@ See [architecture](docs/architecture.md), [local development](docs/local-develop
 
 ## Production boundary
 
-This portfolio implementation is locally runnable, not production-certified. Production needs durable PostgreSQL persistence, OIDC/JWKS validation, an OPA sidecar/bundle, Git commit signing and protected branches, Argo CD HA, external secrets, managed database operators, and a real job/reconciliation queue. AWS is intentionally opt-in; no expensive resources or GPUs are created by default.
+This portfolio implementation is locally runnable, not production-certified. Local PostgreSQL,
+OIDC/JWKS validation, OPA, Argo CD, and telemetry are executed; a production deployment still needs
+HA/managed persistence, enterprise identity, policy distribution, signed Git commits and protected
+branches, external secrets, managed database operations, and a durable job/reconciliation queue.
+AWS is intentionally opt-in; no expensive resources or GPUs are created by default.
+
+The next cloud milestone is deliberately separate from the local-first completion claim. It starts
+with GitHub OIDC (not stored AWS keys), remote Terraform state, a budget-bounded AWS account, one
+minimal EKS environment, and GitOps reconciliation where the control plane publishes intent while
+Argo CD applies it. See the [production-pilot plan](docs/production-pilot.md). Until that plan has
+executed evidence, AWS Terraform remains a static contract—not an AWS/EKS deployment claim.
 
 Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).

@@ -38,3 +38,13 @@ The smoke script uses bounded readiness retries because a newly recreated API or
 can accept its port before it is ready to serve. `COMPOSE_SKIP_UP=1 ./scripts/compose-smoke.sh` is
 an internal reuse option for validating already-started services; documented users should run
 `make compose-smoke`.
+
+## Future AWS production-pilot validation template — NOT EXECUTED
+
+Do not fill this section from a local kind run or a Terraform-only validation. When an
+owner-authorized pilot occurs, record the commit SHA, AWS region, non-sensitive resource tags,
+tool versions, GitHub OIDC role boundary, exact reviewed `terraform plan`/`apply`/smoke/failure/
+rollback/`destroy` commands, Argo and EKS readiness evidence, OPA/audit/telemetry evidence, and
+observed pilot cost. Confirm teardown by checking that only documented retained resources remain.
+
+The required sequence and security boundaries are in [Production pilot plan](production-pilot.md).

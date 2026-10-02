@@ -12,4 +12,10 @@ rejected by OPA before any Kubernetes mutation.
 
 Tools are classified as READ (`platform_catalog`, `get_environment_status`, `list_environments`, `estimate_cost`, `get_audit_events`), PLAN (`plan_environment`), WRITE (`request_environment`, `deploy_service`), and DESTRUCTIVE (`request_environment_destroy`). Authorization is checked by the API on every call. Destructive production operations require a human approval workflow.
 
+The local MCP runtime is runnable, but production identity is unfinished: environment variables must
+not be a source of authority. A production MCP gateway validates a trusted OIDC/delegated token,
+binds the downstream subject, tenant, scopes, expiry, and action hash, and cannot amplify a caller's
+authority. It still calls the control-plane API, which repeats tenant, RBAC, OPA, approval, and audit
+checks.
+
 Plan/apply separation makes actions reviewable. Idempotency keys make retries safe. Tenant-scoped identity restricts blast radius; audit events record actor, decision, plan hash, approval, and transition. Treat tool arguments as untrusted: prompt injection cannot grant a capability absent from the caller's token. Production should add nonce/replay controls, quotas, rate limits, approval expiry, and signed tool assertions.

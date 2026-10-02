@@ -47,7 +47,19 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Architecture / Contracts Only
 
-- AWS provisioning.
+- AWS provisioning: the present Terraform modules are validate-only contracts, not deployable VPC,
+  EKS, RDS, ECR, or secrets infrastructure.
+- Production Git desired-state commits/PRs, asynchronous reconciliation workers, external secret
+  delivery/workload identity, and delegated MCP OIDC identity.
+
+## Explicitly Unexecuted Production Adapters
+
+- AWS/EKS/RDS/ECR/Secrets Manager pilot, GitHub Actions OIDC federation, and remote Terraform state.
+- Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
+- Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
+
+See [the production-pilot plan](docs/production-pilot.md) for scoped delivery gates and evidence
+requirements. These are not local-first completion blockers and have not been started.
 
 ## Known Failures
 
@@ -58,7 +70,8 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 ## Current P0 Objective
 
 No open P0 work. The next focused hardening item is turning the validated Compose stack into
-CI-suitable smoke coverage.
+CI-suitable smoke coverage. A separate, owner-authorized AWS pilot can begin only after its
+guardrails in `docs/production-pilot.md` are available.
 
 ## Last Validation
 

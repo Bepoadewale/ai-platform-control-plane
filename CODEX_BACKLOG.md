@@ -7,6 +7,12 @@ validated primary-path regression is discovered.
 
 - Add CI-suitable coverage for the Compose smoke stack when runner capacity allows.
 - Expand API-level authorization integration coverage for cross-tenant access.
+- Define AWS pilot account guardrails: budget, tags, remote Terraform state, destroy process, and GitHub OIDC role boundary.
+- Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation.
+- Add protected Git desired-state publication and Argo status observation; do not let the production API invoke Helm/kubectl directly.
+- Separate reconciliation from the API process with durable job state and idempotent recovery.
+- Add external secret references/workload identity, lifecycle metrics/child spans, and measured SLO/alert evidence.
+- Replace development MCP identity environment variables with trusted delegated OIDC identity.
 
 # P2 — Enhancements
 
@@ -14,4 +20,4 @@ validated primary-path regression is discovered.
 
 # P3 — Future / Cloud / Hardware
 
-- AWS, enterprise OIDC, and multi-cluster delivery.
+- Enterprise OIDC validation, multi-cluster delivery, HA/failover, and GPU/cloud workload execution.
