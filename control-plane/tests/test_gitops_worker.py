@@ -61,6 +61,7 @@ def test_worker_publishes_durable_job_without_claiming_kubernetes_readiness(tmp_
     assert recovered.state is LifecycleState.APPLYING
     assert recovered.endpoint == "https://github.example/owner/repo/pull/42"
     assert restarted.pending_reconciliation_jobs() == []
+    assert len(restarted.reconciliation_jobs(developer(), environment.id)) == 1
     assert any(
         event.action == "gitops.pull_request_created"
         for event in restarted.audit_events(recovered.request.request_id)

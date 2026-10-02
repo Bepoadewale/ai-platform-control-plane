@@ -20,6 +20,10 @@ from platform_control_plane.models.domain import (
     ReconciliationJob,
     ReconciliationJobState,
 )
+from platform_control_plane.observability.metrics import (
+    RECONCILIATION_JOBS,
+    RECONCILIATION_QUEUE_DEPTH,
+)
 from platform_control_plane.policy.engine import OPAPolicyEngine
 from platform_control_plane.provisioning.service import EnvironmentService
 
@@ -39,6 +43,7 @@ class GitOpsWorker:
         processed: list[ReconciliationJob] = []
         for job in self.service.pending_reconciliation_jobs():
             processed.append(self._publish(job))
+        RECONCILIATION_QUEUE_DEPTH.set(len(self.service.pending_reconciliation_jobs()))
         return processed
 
     def _publish(self, job: ReconciliationJob) -> ReconciliationJob:
@@ -77,6 +82,7 @@ class GitOpsWorker:
             job_id=str(job.id),
             pull_request=job.publication_url,
         )
+        RECONCILIATION_JOBS.labels(job.action.value, "published").inc()
         return job
 
     def _failed(self, job: ReconciliationJob, reason: str) -> ReconciliationJob:
@@ -89,6 +95,7 @@ class GitOpsWorker:
             environment.state = LifecycleState.FAILED
             environment.failure_reason = f"GITOPS_PUBLICATION_FAILED: {reason}"
             self.service._event(environment, job.actor, "gitops.publication_failed", reason=reason)
+        RECONCILIATION_JOBS.labels(job.action.value, "failed").inc()
         return job
 
 

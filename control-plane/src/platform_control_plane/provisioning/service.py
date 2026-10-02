@@ -17,6 +17,7 @@ from platform_control_plane.models.domain import (
     ReconciliationJob,
     ReconciliationJobState,
 )
+from platform_control_plane.observability.metrics import RECONCILIATION_QUEUE_DEPTH
 from platform_control_plane.persistence.postgres import PostgresStore
 from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
@@ -117,6 +118,7 @@ class EnvironmentService:
                 actor=actor,
             )
             self.repository.enqueue_job(job)
+            RECONCILIATION_QUEUE_DEPTH.set(len(self.pending_reconciliation_jobs()))
             self._event(env, actor, "reconciliation.queued", job_id=str(job.id))
             return env
         try:
@@ -132,6 +134,14 @@ class EnvironmentService:
 
     def pending_reconciliation_jobs(self) -> list[ReconciliationJob]:
         return self.repository.load_jobs({ReconciliationJobState.PENDING})
+
+    def reconciliation_jobs(self, actor: Actor, environment_id: UUID) -> list[ReconciliationJob]:
+        self.get(actor, environment_id)
+        return [
+            job
+            for job in self.repository.load_jobs()
+            if job.environment_id == environment_id
+        ]
 
     def close(self) -> None:
         self.repository.close()

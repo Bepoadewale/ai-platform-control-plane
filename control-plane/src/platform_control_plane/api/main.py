@@ -164,3 +164,11 @@ def recover_pending(actor: Actor = Depends(actor_from_request)):
 def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     environment = service.get(actor, environment_id)
     return service.audit_events(environment.request.request_id)
+
+
+@app.get("/api/v1/environments/{environment_id}/reconciliation-jobs")
+def reconciliation_jobs(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
+    try:
+        return service.reconciliation_jobs(actor, environment_id)
+    except (KeyError, PermissionError) as error:
+        raise HTTPException(404, detail="environment not found") from error
