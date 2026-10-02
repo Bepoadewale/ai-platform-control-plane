@@ -12,3 +12,19 @@ evidence gates in [docs/production-pilot.md](docs/production-pilot.md): GitHub O
 Terraform plan/apply/destroy, EKS/Argo lifecycle, external secret/workload identity boundary,
 failure/recovery evidence, and measured observability/cost evidence. Static Terraform validation,
 local kind, or a successful container build are not substitutes.
+
+## Production-certification gate
+
+The following is deliberately stricter than `PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE` and
+`CLOUD-PILOT VALIDATED`. Do not describe this repository as production-certified until every
+applicable item has executed evidence:
+
+- [x] Bounded cloud create → validate → destroy pilot, with EKS/Argo/runtime/Console evidence.
+- [ ] Individual environment request publishes a protected Git change and Argo reconciles that
+  workload in EKS with observed readiness, failure, rollback, and cleanup.
+- [ ] Durable outbox/worker reconciliation with idempotent retry and recovery has executed.
+- [ ] Enterprise identity, GitHub Actions AWS OIDC, and external secret/workload identity paths have
+  executed without long-lived credentials.
+- [ ] HA, backup/restore, failure/rollback, and sustained workload behavior have been measured.
+- [ ] Production observability, SLO/error-budget, alerting, and cost evidence have been collected.
+- [ ] Public TLS ingress and a production Console identity/CORS boundary have been validated.

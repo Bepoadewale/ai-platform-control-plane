@@ -4,6 +4,16 @@
 
 PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
+## Cloud Validation Boundary
+
+CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
+
+The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
+Grafana, Tempo, governance scenarios, and guarded teardown. It did not execute real
+per-environment Git publication/Argo reconciliation, durable asynchronous reconciliation,
+enterprise identity, external secrets/workload identity, HA, measured SLO/cost evidence, or a
+sustained production workload. Those omissions prevent any production-certified claim.
+
 ## Executed and Verified
 
 - FastAPI lifecycle, tenancy, policy, approval, audit and GitOps-rendering tests/demos run locally.
@@ -46,7 +56,7 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 - The EKS runtime accepted a Keycloak-issued RS256 JWT, rejected a cross-tenant request through
   live OPA with a persisted audit trail, retained that rejected state after a control-plane restart,
   and exposed live Prometheus metrics, Tempo traces, and the provisioned Grafana dashboard.
-- In the active bounded AWS pilot, the EKS-hosted Operator Console passed Keycloak PKCE
+- In the second bounded AWS pilot, the EKS-hosted Operator Console passed Keycloak PKCE
   login/logout, explicit CORS, and a signed API request through local-only port-forwards. A
   development request reached `READY` through the documented render-only adapter and was then
   destroyed with its full audit timeline. A production request required the distinct operator role

@@ -1,5 +1,10 @@
 # Implementation Status
 
+**Evidence boundary:** the repository is **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE** and
+**CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED**. An executed AWS component below means it ran
+in the short-lived, guarded pilot and was torn down; it does not imply a long-running production
+service or that unexecuted production controls are present.
+
 | Capability | Status | Validation |
 | --- | --- | --- |
 | Control-plane API/lifecycle | ✅ Executed locally | signed FastAPI + OPA + kind acceptance demo |

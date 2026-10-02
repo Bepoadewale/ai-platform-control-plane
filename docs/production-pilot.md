@@ -2,7 +2,8 @@
 
 This repository is **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE**. Its governed lifecycle is executed
 locally with kind, Keycloak, OPA, PostgreSQL, Argo CD, Prometheus, Grafana, and OpenTelemetry.
-That does not constitute an AWS production deployment.
+Its bounded AWS pilot is **CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED**. That does not
+constitute an AWS production deployment or certify the unexecuted controls in the production gate.
 
 This document defines the separate, budget-bounded AWS pilot and records its current evidence
 boundary. The foundation and runtime validation below ran on 2026-10-02; unfinished phases remain
@@ -84,7 +85,9 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 
 ## Evidence format
 
-Do not change the repository maturity to production-validated after a successful Terraform apply.
+Do not change the repository maturity to production-certified after a successful Terraform apply
+or a bounded pilot. The stricter production-certification criteria are in
+[Definition of Done](../DEFINITION_OF_DONE.md#production-certification-gate).
 Record a separate pilot validation in `docs/VALIDATION.md` with:
 
 - commit SHA, AWS region, infrastructure and application versions;

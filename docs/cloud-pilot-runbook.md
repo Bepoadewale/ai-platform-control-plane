@@ -1,8 +1,9 @@
 # AWS pilot runbook
 
 This is the controlled **create → validate → destroy** procedure for the non-production AWS pilot.
-It is not a routine local-development command. It creates billable resources and must be run only in
-the dedicated account, with the USD 10 Budget alerts already confirmed.
+It is not a routine local-development command or a production-certification procedure. It creates
+billable resources and must be run only in the dedicated account, with the USD 10 Budget alerts
+already confirmed. A successful run is **CLOUD-PILOT VALIDATED**, not production-certified.
 
 ## Boundaries
 

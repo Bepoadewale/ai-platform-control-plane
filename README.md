@@ -4,6 +4,12 @@ A governed internal developer platform that lets engineers and AI agents request
 
 It is deliberately a **control plane**, not an AI demo app. A request is authenticated, authorized, policy-checked, planned with a cost estimate, persisted as an auditable lifecycle, rendered to GitOps desired state, and then reconciled by Kubernetes tooling.
 
+> **Evidence boundary:** **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE.** A separate AWS pilot is
+> **CLOUD-PILOT VALIDATED**: its EKS runtime, Console, identity, policy, observability, and guarded
+> teardown were executed. It is **not production-certified**: per-environment AWS GitOps,
+> durable reconciliation, enterprise identity/secrets, HA, measured SLOs/cost, and sustained
+> workload evidence remain unexecuted.
+
 ## What this repository demonstrates
 
 It turns an infrastructure request into a governed lifecycle instead of handing a person or an AI
@@ -154,11 +160,14 @@ See [architecture](docs/architecture.md), [local development](docs/local-develop
 
 ## Production boundary
 
-This portfolio implementation is locally runnable, not production-certified. Local PostgreSQL,
-OIDC/JWKS validation, OPA, Argo CD, and telemetry are executed; a production deployment still needs
-HA/managed persistence, enterprise identity, policy distribution, signed Git commits and protected
-branches, external secrets, managed database operations, and a durable job/reconciliation queue.
-AWS is intentionally opt-in; no expensive resources or GPUs are created by default.
+This portfolio implementation is **portfolio complete locally** and **cloud-pilot validated**, not
+production-certified. Local PostgreSQL, OIDC/JWKS validation, OPA, Argo CD, and telemetry are
+executed; the bounded AWS pilot also executed its runtime and teardown. Production certification
+would additionally require real per-environment GitOps/reconciliation, HA/managed persistence,
+enterprise identity, signed Git commits and protected branches, external secrets/workload identity,
+managed database operations, durable job/reconciliation, measured SLO/cost evidence, and sustained
+workload failure/rollback validation. AWS is intentionally opt-in; no expensive resources or GPUs
+are created by default.
 
 The AWS pilot is deliberately separate from the local-first completion claim. It used guarded
 Terraform create/destroy scripts, a tagged VPC/EKS/RDS/ECR foundation, an Argo-managed runtime,

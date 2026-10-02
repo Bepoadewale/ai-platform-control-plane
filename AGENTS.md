@@ -32,3 +32,8 @@ The owner-authorized Phase 0 backend and USD 10 Budget are executed and recorded
 actual apply, run the reviewed plan, use only the project-scoped scripts, record evidence, and
 destroy the workload footprint. The GitHub Actions workflow is manual and confirmation-gated; it
 must never receive AWS access keys or broad unattended deployment authority.
+
+Evidence-label rule: keep `PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE`, `CLOUD-PILOT VALIDATED`, and
+`production-certified` distinct. A bounded cloud create/validate/destroy pass validates only the
+recorded pilot capabilities; it never authorizes a production-certified claim until the separate
+production-certification gate in `DEFINITION_OF_DONE.md` has executed evidence.

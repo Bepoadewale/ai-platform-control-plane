@@ -1,5 +1,10 @@
 # Validation
 
+**Evidence boundary:** this document records both local-first execution and bounded AWS-pilot
+execution. The AWS entries establish **CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED**; consult
+[the production-certification gate](../DEFINITION_OF_DONE.md#production-certification-gate) for
+the unexecuted requirements.
+
 Baseline: `make test`, `make lint`, `make demo`; when tools exist, `make helm-lint` and `make terraform-validate`.
 
 ## Clean-room local validation — 2026-09-20
