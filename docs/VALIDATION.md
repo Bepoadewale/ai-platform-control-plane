@@ -47,7 +47,30 @@ tool versions, GitHub OIDC role boundary, exact reviewed `terraform plan`/`apply
 rollback/`destroy` commands, Argo and EKS readiness evidence, OPA/audit/telemetry evidence, and
 observed pilot cost. Confirm teardown by checking that only documented retained resources remain.
 
-The required sequence and security boundaries are in [Production pilot plan](production-pilot.md).
+### Cloud create → validate → destroy evidence
+
+When this pilot is actually run, record only observed evidence:
+
+| Evidence | Value / result |
+| --- | --- |
+| Date / commit | — |
+| Operator OS and tool versions | — |
+| AWS region / project tags | — |
+| Reviewed Terraform plan summary | — |
+| Manual GitHub Actions OIDC run (action / run URL) | — |
+| EKS / nodes ready | — |
+| ECR image digest | — |
+| Argo Application sync / health | — |
+| Control-plane, OPA, Keycloak, and RDS smoke | — |
+| Prometheus query / Grafana datasource / Tempo trace | — |
+| API success / policy-denial / approval / failure scenario | — |
+| Restart or recovery scenario | — |
+| Observed cost during pilot | — |
+| Terraform destroy result | — |
+| Post-destroy resource query | — |
+
+The required sequence and security boundaries are in [Production pilot plan](production-pilot.md) and
+[the AWS pilot runbook](cloud-pilot-runbook.md).
 
 ## AWS pilot Phase 0 — 2026-10-02
 

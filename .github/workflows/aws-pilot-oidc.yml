@@ -1,11 +1,23 @@
-name: aws-pilot-oidc
+name: aws-pilot-terraform
 
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: "Terraform action. apply/destroy require the matching confirmation text."
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
       role_to_assume:
         description: AWS IAM role ARN emitted by the pilot Terraform stack
         required: true
+        type: string
+      confirmation:
+        description: "For apply enter APPLY; for destroy enter DESTROY. Leave blank for plan."
+        required: false
         type: string
 
 permissions:
@@ -13,12 +25,42 @@ permissions:
   id-token: write
 
 jobs:
-  identity:
+  terraform:
     runs-on: ubuntu-24.04
+    concurrency:
+      group: aws-pilot-terraform
+      cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
       - uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ inputs.role_to_assume }}
           aws-region: us-east-1
-      - run: aws sts get-caller-identity
-      - run: aws eks list-clusters --region us-east-1
+      - name: Verify short-lived identity
+        run: aws sts get-caller-identity
+      - name: Initialize pilot Terraform
+        env:
+          EXPECTED_AWS_ACCOUNT_ID: "654654474502"
+        run: |
+          terraform -chdir=infrastructure/terraform/pilot init -reconfigure \
+            -backend-config="bucket=ai-platform-control-plane-tfstate-${EXPECTED_AWS_ACCOUNT_ID}" \
+            -backend-config="key=pilot/terraform.tfstate" \
+            -backend-config="region=us-east-1" \
+            -backend-config="dynamodb_table=ai-platform-control-plane-pilot-terraform-locks" \
+            -backend-config="encrypt=true"
+      - name: Plan
+        if: inputs.action == 'plan'
+        run: terraform -chdir=infrastructure/terraform/pilot plan -input=false -var expected_account_id=654654474502
+      - name: Require apply confirmation
+        if: inputs.action == 'apply'
+        run: test "${{ inputs.confirmation }}" = "APPLY"
+      - name: Apply reviewed pilot plan
+        if: inputs.action == 'apply'
+        run: terraform -chdir=infrastructure/terraform/pilot apply -input=false -auto-approve -var expected_account_id=654654474502
+      - name: Require destroy confirmation
+        if: inputs.action == 'destroy'
+        run: test "${{ inputs.confirmation }}" = "DESTROY"
+      - name: Destroy pilot footprint
+        if: inputs.action == 'destroy'
+        run: terraform -chdir=infrastructure/terraform/pilot destroy -input=false -auto-approve -var expected_account_id=654654474502

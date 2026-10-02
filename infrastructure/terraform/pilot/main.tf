@@ -29,6 +29,10 @@ resource "aws_vpc" "pilot" {
   enable_dns_support   = true
 }
 
+data "tls_certificate" "eks_oidc" {
+  url = aws_eks_cluster.pilot.identity[0].oidc[0].issuer
+}
+
 resource "aws_internet_gateway" "pilot" {
   vpc_id = aws_vpc.pilot.id
 }
@@ -174,6 +178,12 @@ resource "aws_eks_cluster" "pilot" {
   depends_on = [aws_iam_role_policy_attachment.eks_cluster]
 }
 
+resource "aws_iam_openid_connect_provider" "eks" {
+  url             = aws_eks_cluster.pilot.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks_oidc.certificates[0].sha1_fingerprint]
+}
+
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.pilot.name
   addon_name   = "vpc-cni"
@@ -258,9 +268,17 @@ resource "aws_db_instance" "postgres" {
   apply_immediately           = true
 }
 
+# This container deliberately has no Terraform-managed secret value. An operator places the
+# GitHub App private key in it at pilot runtime; Terraform state must never contain that key.
+resource "aws_secretsmanager_secret" "gitops_publisher" {
+  name                    = "${local.prefix}/gitops-publisher"
+  recovery_window_in_days = 0
+}
+
 resource "aws_ecr_repository" "control_plane" {
   name                 = "ai-platform-control-plane"
   image_tag_mutability = "IMMUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -325,4 +343,66 @@ resource "aws_iam_role_policy" "github_readonly" {
   name   = "pilot-readonly-identity"
   role   = aws_iam_role.github_readonly.id
   policy = data.aws_iam_policy_document.github_readonly.json
+}
+
+data "aws_iam_policy_document" "github_terraform_assume_role" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.github.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:sub"
+      values   = ["repo:${var.github_repository}:ref:${var.github_ref}"]
+    }
+  }
+}
+
+resource "aws_iam_role" "github_terraform" {
+  name               = "${local.prefix}-github-terraform"
+  assume_role_policy = data.aws_iam_policy_document.github_terraform_assume_role.json
+}
+
+# This role is intentionally limited to the named pilot footprint. It is for manually
+# dispatched, branch-bound Terraform only; it is not an application workload role.
+data "aws_iam_policy_document" "github_terraform" {
+  statement {
+    actions = [
+      "ec2:Describe*", "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:ModifyVpcAttribute",
+      "ec2:CreateSubnet", "ec2:DeleteSubnet", "ec2:ModifySubnetAttribute",
+      "ec2:CreateRouteTable", "ec2:DeleteRouteTable", "ec2:AssociateRouteTable",
+      "ec2:DisassociateRouteTable", "ec2:CreateRoute", "ec2:DeleteRoute",
+      "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway", "ec2:AttachInternetGateway",
+      "ec2:DetachInternetGateway", "ec2:AllocateAddress", "ec2:ReleaseAddress",
+      "ec2:CreateNatGateway", "ec2:DeleteNatGateway", "ec2:CreateTags", "ec2:DeleteTags",
+      "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup", "ec2:AuthorizeSecurityGroupIngress",
+      "ec2:RevokeSecurityGroupIngress",
+      "eks:CreateCluster", "eks:DeleteCluster", "eks:Describe*", "eks:List*", "eks:TagResource",
+      "eks:UntagResource", "eks:CreateAddon", "eks:DeleteAddon", "eks:UpdateAddon",
+      "eks:CreateNodegroup", "eks:DeleteNodegroup", "eks:UpdateNodegroupConfig",
+      "rds:CreateDBInstance", "rds:DeleteDBInstance", "rds:Describe*", "rds:ListTagsForResource",
+      "rds:AddTagsToResource", "rds:CreateDBSubnetGroup", "rds:DeleteDBSubnetGroup",
+      "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:Describe*", "ecr:List*", "ecr:PutLifecyclePolicy",
+      "ecr:TagResource", "ecr:UntagResource", "secretsmanager:CreateSecret", "secretsmanager:DeleteSecret",
+      "secretsmanager:DescribeSecret", "secretsmanager:TagResource", "secretsmanager:UntagResource",
+      "iam:GetRole", "iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole",
+      "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy",
+      "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:PassRole",
+      "sts:GetCallerIdentity"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "github_terraform" {
+  name   = "pilot-terraform"
+  role   = aws_iam_role.github_terraform.id
+  policy = data.aws_iam_policy_document.github_terraform.json
 }

@@ -1,0 +1,22 @@
+persistence:
+  enabled: false
+adminUser: admin
+adminPassword: pilot-local-access-only
+service:
+  type: ClusterIP
+resources:
+  requests: {cpu: 100m, memory: 128Mi}
+  limits: {cpu: 500m, memory: 256Mi}
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.platform-observability.svc.cluster.local
+        isDefault: true
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.platform-observability.svc.cluster.local:3100

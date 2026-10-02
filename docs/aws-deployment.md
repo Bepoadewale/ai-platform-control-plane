@@ -1,14 +1,15 @@
 # Optional AWS deployment
 
-AWS is opt-in and **not executed by this repository today**. The checked-in Terraform is
-validate-only: its VPC, EKS, and IAM modules are contracts and the root environment creates no AWS
-resources by default. `make terraform-validate` is static validation, not a deployment test.
+AWS is opt-in and **not executed as a workload deployment by this repository today**. The pilot
+Terraform foundation is deployable and has an AWS-backed plan; it creates no AWS resources unless a
+guarded apply command is explicitly run. `make terraform-validate` and `make pilot-cloud-plan` are
+not deployment tests.
 
-Before a pilot, replace these contracts with reviewed, deployable modules for one non-production
-AWS account: VPC/private EKS subnets, EKS, ECR, RDS PostgreSQL, Secrets Manager references, and
-least-privilege workload identity. Use encrypted/locked remote Terraform state, required resource
-tags, budget alarms, and an explicit destroy procedure. CI should authenticate with GitHub OIDC and
-a scoped AWS role; never commit or configure long-lived AWS access keys.
+The reviewed pilot foundation supplies VPC/private EKS subnets, EKS, ECR, RDS PostgreSQL, an empty
+Secrets Manager container, and branch-bound GitHub OIDC roles. External Secrets plus workload
+identity is intentionally deferred until after the short pilot runtime. Use encrypted/locked remote
+Terraform state, required resource tags, budget alarms, and the explicit destroy procedure. CI must
+authenticate with GitHub OIDC and a scoped AWS role; never commit or configure long-lived AWS keys.
 
 The first pilot must record reviewed `plan`, explicit `apply`, smoke, failure, rollback, cost review,
 and `destroy` evidence before AWS can be described as executed. Do not enable GPU nodes, NAT-heavy
@@ -43,3 +44,21 @@ in a reviewed branch and apply only to the explicitly checked pilot account.
 The first execution created only this Phase 0 state/budget boundary. It did **not** create VPC, EKS,
 RDS, ECR, NAT Gateway, Secrets Manager, workloads, GitHub OIDC, or an AWS Argo deployment. See
 [validation evidence](VALIDATION.md#aws-pilot-phase-0--2026-10-02).
+
+## Pilot implementation — not executed
+
+The full command sequence is documented in [cloud-pilot-runbook.md](cloud-pilot-runbook.md):
+
+```bash
+make pilot-cloud-plan
+make pilot-cloud-apply
+make pilot-cloud-push-image
+make pilot-cloud-bootstrap-runtime
+make pilot-cloud-smoke
+make pilot-cloud-destroy
+```
+
+`pilot-cloud-apply` and `pilot-cloud-destroy` require explicit confirmation environment variables
+through their Make targets, reject an unexpected AWS account, and keep Terraform plans outside the
+repository. The manual `aws-pilot-terraform` GitHub Actions workflow offers the same future
+`plan`/`apply`/`destroy` selection through a dropdown and confirmation field. It has not been run.

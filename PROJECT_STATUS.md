@@ -51,15 +51,14 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Architecture / Contracts Only
 
-- VPC, EKS, RDS, ECR, Secrets Manager, and workload provisioning: current Terraform modules are
-  still validate-only contracts.
-- Production Git desired-state commits/PRs, asynchronous reconciliation workers, external secret
-  delivery/workload identity, and delegated MCP OIDC identity.
+- Durable worker reconciliation, external secret delivery/workload identity, and delegated MCP
+  OIDC identity.
 
 ## Explicitly Unexecuted Production Adapters
 
-- AWS/EKS/RDS/ECR/Secrets Manager workload pilot and GitHub Actions OIDC federation. Remote
-  Terraform state is executed only for Phase 0 guardrails; no application/infrastructure state is
+- AWS/EKS/RDS/ECR/Secrets Manager workload pilot and GitHub Actions OIDC federation. The
+  38-resource Terraform plan, manual OIDC workflow, GitHub App publisher, runtime manifests, and
+  guarded create/destroy scripts are implemented; no application or workload infrastructure is
   deployed yet.
 - Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
 - Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
@@ -75,9 +74,8 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open P0 work. The next focused hardening item is turning the validated Compose stack into
-CI-suitable smoke coverage. The next cloud P1 item is GitHub Actions OIDC with a narrowly scoped,
-read-only identity check; the USD 10 Phase 0 guardrails are already applied.
+No open local-first P0 work. The next cloud P1 item is the reviewed one-hour pilot: apply the
+foundation, run the runtime and bounded smoke/failure checks, record evidence, and destroy it.
 
 ## Last Validation
 
@@ -118,7 +116,11 @@ read-only identity check; the USD 10 Phase 0 guardrails are already applied.
   `ai-platform-control-plane-pilot-monthly-cost`. AWS API verification confirmed AES256 bucket
   encryption, versioning enabled, active lock table, zero current budget spend, and 50/80/100%
   actual-cost notifications. No VPC/EKS/RDS/ECR/NAT/workload resources were created.
+- AWS foundation implementation: `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-plan` produced
+  a reviewed **38 to add, 0 to change, 0 to destroy** plan, without applying it. Terraform validate,
+  Kustomize rendering, shell syntax checks, 29 Python tests, Ruff, and Helm lint passed.
 
 ## Last Updated
 
-2026-10-02, AWS pilot Phase 0 guardrails executed; local-first completion status unchanged.
+2026-10-02, AWS pilot foundation/runtime automation implemented and statically validated; no
+workload resources created and local-first completion status unchanged.

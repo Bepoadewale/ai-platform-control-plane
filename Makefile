@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-plan
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-plan pilot-cloud-apply pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-bootstrap-runtime pilot-cloud-smoke
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -53,3 +53,18 @@ pilot-guardrails-apply:
 
 pilot-cloud-plan:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-plan.sh
+
+pilot-cloud-apply:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} APPLY_CLOUD_PILOT=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-apply.sh
+
+pilot-cloud-destroy:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} DESTROY_CLOUD_PILOT=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-destroy.sh
+
+pilot-cloud-push-image:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-push-image.sh
+
+pilot-cloud-bootstrap-runtime:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-bootstrap-runtime.sh
+
+pilot-cloud-smoke:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-smoke.sh

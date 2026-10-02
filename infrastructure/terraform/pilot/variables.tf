@@ -48,3 +48,15 @@ variable "node_max_size" {
   type    = number
   default = 2
 }
+
+variable "github_app_id" {
+  type        = string
+  description = "GitHub App ID used by the runtime GitOps publisher. The private key is supplied outside Terraform."
+  default     = ""
+}
+
+variable "github_app_installation_id" {
+  type        = string
+  description = "GitHub App installation ID used by the runtime GitOps publisher. The private key is supplied outside Terraform."
+  default     = ""
+}

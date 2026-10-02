@@ -75,7 +75,8 @@ flowchart LR
 
 ## What this repository deliberately does not do
 
-- It does not create AWS/EKS infrastructure, incur cloud spend, or claim production HA validation.
+- It does not claim AWS/EKS execution, incur cloud workload spend by default, or claim production
+  HA validation. A guarded, plan-validated pilot path exists but remains unexecuted.
 - It does not expose raw Kubernetes credentials, Docker sockets, Terraform execution, long-lived
   cloud credentials, or secret values to callers or agents.
 - It does not treat a rendered Helm chart, a Terraform module, or a mocked unit test as proof of a
@@ -149,11 +150,12 @@ HA/managed persistence, enterprise identity, policy distribution, signed Git com
 branches, external secrets, managed database operations, and a durable job/reconciliation queue.
 AWS is intentionally opt-in; no expensive resources or GPUs are created by default.
 
-The next cloud milestone is deliberately separate from the local-first completion claim. It starts
-with GitHub OIDC (not stored AWS keys), remote Terraform state, a budget-bounded AWS account, one
-minimal EKS environment, and GitOps reconciliation where the control plane publishes intent while
-Argo CD applies it. See the [production-pilot plan](docs/production-pilot.md). Until that plan has
-executed evidence, AWS Terraform remains a static contract—not an AWS/EKS deployment claim.
+The next cloud milestone is deliberately separate from the local-first completion claim. The branch
+contains a plan-validated Terraform foundation, guarded create/destroy scripts, a GitHub Actions
+manual plan/apply/destroy dropdown workflow using OIDC rather than stored keys, Argo-managed EKS
+runtime manifests, and a GitHub App desired-state publisher boundary. It still needs a real,
+recorded pilot before AWS can be described as executed. See the
+[production-pilot plan](docs/production-pilot.md) and [cloud pilot runbook](docs/cloud-pilot-runbook.md).
 
 Phase 0 guardrails are the only AWS resources currently executed: an encrypted/versioned Terraform
 state bucket, a DynamoDB lock table, required resource tags, and a USD 10 monthly actual-cost

@@ -10,7 +10,8 @@ validated primary-path regression is discovered.
 - [x] Apply AWS pilot account guardrails: USD 10 Budget alerts, required tags, encrypted remote Terraform state, and lock table.
 - Add a project-scoped guardrail teardown procedure and record its safe execution after the AWS workload pilot is complete.
 - Create a GitHub OIDC role boundary and prove a read-only identity workflow before granting deployment permissions.
-- Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation.
+- [x] Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation. It remains unexecuted until the pilot runbook evidence exists.
+- [x] Add a GitHub App desired-state publication boundary and a GitHub Actions plan/apply/destroy workflow. Wire publication to a durable worker and execute it before claiming production GitOps.
 - Add protected Git desired-state publication and Argo status observation; do not let the production API invoke Helm/kubectl directly.
 - Separate reconciliation from the API process with durable job state and idempotent recovery.
 - Add external secret references/workload identity, lifecycle metrics/child spans, and measured SLO/alert evidence.

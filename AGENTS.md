@@ -23,5 +23,7 @@ does not authorize provisioning until the repository owner supplies a dedicated 
 and explicit deployment authority.
 
 The owner-authorized Phase 0 backend and USD 10 Budget are executed and recorded in
-`docs/VALIDATION.md`. They do not authorize EKS, VPC, RDS, workloads, GitHub deployment roles, or
-any other paid service; obtain a reviewed plan and explicit scope before each later phase.
+`docs/VALIDATION.md`. Cloud-pilot implementation is on `codex/production-pilot-roadmap`; before an
+actual apply, run the reviewed plan, use only the project-scoped scripts, record evidence, and
+destroy the workload footprint. The GitHub Actions workflow is manual and confirmation-gated; it
+must never receive AWS access keys or broad unattended deployment authority.

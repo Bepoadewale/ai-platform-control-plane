@@ -37,8 +37,8 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 | Phase | Scope | Evidence required before proceeding |
 | --- | --- | --- |
 | 0. Pilot guardrails | Dedicated AWS account, budget alarms, tags, remote Terraform state, break-glass process, destroy plan | **Executed 2026-10-02:** account guard, encrypted/versioned state, lock table, tags, and USD 10 alerts. No workload deployed; see `docs/VALIDATION.md`. |
-| 1. Identity and CI | GitHub Actions OIDC role with least privilege; no long-lived AWS keys | Workflow obtains short-lived credentials and can run a read-only identity check |
-| 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, and narrowly scoped IAM/IRSA or Pod Identity | `plan`, reviewed `apply`, smoke, and `destroy` evidence recorded |
+| 1. Identity and CI | GitHub Actions OIDC roles with least privilege; no long-lived AWS keys | **Implemented, not executed:** manual `plan`/`apply`/`destroy` workflow is branch-bound and confirmation-gated; record a real OIDC run before claiming it executed. |
+| 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Implemented, not executed:** reviewed plan adds the foundation; `apply`, smoke, and `destroy` evidence are still mandatory. |
 | 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | Health, policy denial, secret-reference-only behavior, and telemetry evidence recorded |
 | 4. GitOps lifecycle | Desired state becomes a protected Git commit/PR; Argo CD reconciles it | Plan → approval → Git change → Argo `Synced/Healthy` → EKS readiness → audit |
 | 5. Reliability | Worker/reconciler separation, retries, idempotency, failure/rollback and recovery tests | API restart and worker failure do not duplicate a mutation; failed deployment remains non-ready |
@@ -61,10 +61,10 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 
 ## Architecture changes required before a pilot can be claimed
 
-1. Replace validate-only Terraform contracts with reviewed, deployable modules. Start with one AWS
-   region and a minimal non-production EKS footprint; do not add multi-cloud or GPU nodes.
-2. Add a production Git desired-state adapter. It creates a signed commit or pull request in a
-   protected environment repository and records the immutable revision in the plan/audit trail.
+1. Apply the reviewed deployable Terraform foundation in one AWS region and a minimal
+   non-production EKS footprint; do not add multi-cloud or GPU nodes.
+2. Wire the implemented GitHub App desired-state publisher into durable worker reconciliation. It
+   creates a branch and protected pull request; it does not run Helm, kubectl, or Terraform.
 3. Move reconciliation out of the FastAPI request process. A worker with durable job state is the
    first step; an operator/CRD design is a later evolution, not a prerequisite for the first pilot.
 4. Replace development MCP identity environment variables with trusted OIDC/delegated-token
@@ -96,3 +96,6 @@ Record a separate pilot validation in `docs/VALIDATION.md` with:
 
 Only label an AWS component **EXECUTED** after this evidence exists. Until then it remains
 **ARCHITECTURE / CONTRACT ONLY** or **PLANNED**.
+
+The exact guarded commands, GitHub Actions dropdown workflow, runtime boundary, and teardown
+procedure are in [the AWS pilot runbook](cloud-pilot-runbook.md).
