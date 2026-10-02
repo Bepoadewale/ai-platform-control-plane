@@ -47,6 +47,14 @@ wait_http() {
   return 1
 }
 
+start_api_forward() {
+  [[ -n "$api_forward_pid" ]] && kill "$api_forward_pid" 2>/dev/null || true
+  [[ -n "$api_forward_pid" ]] && wait "$api_forward_pid" 2>/dev/null || true
+  kubectl -n platform-system port-forward service/control-plane "$api_port:8000" >"$tmp_dir/api-forward.log" 2>&1 &
+  api_forward_pid=$!
+  wait_http "http://127.0.0.1:$api_port/healthz"
+}
+
 kubectl -n argocd get application ai-platform-control-plane-runtime \
   -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}' | grep -qx 'Synced Healthy'
 kubectl -n platform-system get deployment control-plane -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
@@ -54,9 +62,7 @@ kubectl -n platform-system get deployment opa -o jsonpath='{.status.availableRep
 kubectl -n platform-observability get deployment prometheus-server -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-observability get deployment grafana -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 
-kubectl -n platform-system port-forward service/control-plane "$api_port:8000" >"$tmp_dir/api-forward.log" 2>&1 &
-api_forward_pid=$!
-wait_http "http://127.0.0.1:$api_port/healthz"
+start_api_forward
 
 # Keycloak is internal-only. Request the pilot developer token from a temporary
 # in-cluster curl pod so its issuer matches the FQDN FastAPI validates.
@@ -105,6 +111,7 @@ jq -e 'map(.action) | index("policy.rejected")' "$tmp_dir/audit.json" >/dev/null
 # timeline must still be readable after the new process reconnects to RDS.
 kubectl -n platform-system rollout restart deployment/control-plane >/dev/null
 kubectl -n platform-system rollout status deployment/control-plane --timeout=240s >/dev/null
+start_api_forward
 for _ in {1..30}; do
   if curl --fail --silent -H "Authorization: Bearer $token" \
     "http://127.0.0.1:$api_port/api/v1/environments/$environment_id" >"$tmp_dir/recovered.json"; then
