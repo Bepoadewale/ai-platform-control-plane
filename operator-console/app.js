@@ -2,6 +2,7 @@
   const config = window.PLATFORM_CONSOLE_CONFIG;
   const store = window.sessionStorage;
   const tokenKey = "platform_console_token";
+  const idTokenKey = "platform_console_id_token";
   const stateKey = "platform_console_oidc_state";
   const verifierKey = "platform_console_pkce_verifier";
   const byId = (id) => document.getElementById(id);
@@ -26,7 +27,10 @@
     if (url.searchParams.get("state") !== store.getItem(stateKey)) throw new Error("OIDC state did not match; sign in again.");
     const response = await fetch(`${config.issuer}/protocol/openid-connect/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "authorization_code", client_id: config.clientId, redirect_uri: redirectUri(), code, code_verifier: store.getItem(verifierKey) || "" }) });
     if (!response.ok) throw new Error("Keycloak did not issue an access token.");
-    store.setItem(tokenKey, (await response.json()).access_token); store.removeItem(stateKey); store.removeItem(verifierKey); window.history.replaceState({}, document.title, "/");
+    const tokens = await response.json();
+    store.setItem(tokenKey, tokens.access_token);
+    store.setItem(idTokenKey, tokens.id_token);
+    store.removeItem(stateKey); store.removeItem(verifierKey); window.history.replaceState({}, document.title, "/");
   }
 
   async function api(path, options = {}) {
@@ -57,12 +61,19 @@
   }
 
   function renderLoggedOut() { byId("app").hidden = true; byId("login-panel").hidden = false; byId("session").innerHTML = ""; }
+  function signOut() {
+    const idToken = store.getItem(idTokenKey);
+    store.removeItem(tokenKey); store.removeItem(idTokenKey);
+    const query = new URLSearchParams({ client_id: config.clientId, post_logout_redirect_uri: redirectUri() });
+    if (idToken) query.set("id_token_hint", idToken);
+    window.location.assign(`${config.issuer}/protocol/openid-connect/logout?${query}`);
+  }
   async function renderLoggedIn() {
     const token = getToken(); if (!token) return renderLoggedOut();
     const claims = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
     const roles = claims.realm_access?.roles?.join(", ") || "authenticated";
     byId("session").innerHTML = `<span>${escapeHtml(claims.preferred_username || claims.sub)} · ${escapeHtml(roles)}</span><button id="sign-out" class="button secondary">Sign out</button>`;
-    byId("sign-out").addEventListener("click", () => { store.removeItem(tokenKey); renderLoggedOut(); });
+    byId("sign-out").addEventListener("click", signOut);
     byId("login-panel").hidden = true; byId("app").hidden = false;
     try { await refresh(); } catch (error) { tell(error.message, true); }
   }
@@ -74,6 +85,6 @@
     const form = byId("request-form");
     byId("plan-request").addEventListener("click", async () => { try { showResult("request-result", await api("/api/v1/plans", { method: "POST", body: JSON.stringify(payloadFrom(form)) })); } catch (error) { tell(error.message, true); } });
     form.addEventListener("submit", async (event) => { event.preventDefault(); try { const response = await api("/api/v1/environments", { method: "POST", body: JSON.stringify(payloadFrom(form)) }); showResult("request-result", response); await refresh(); tell(`Environment is ${response.state}.`); } catch (error) { tell(error.message, true); } });
-    try { await finishLogin(); await renderLoggedIn(); } catch (error) { store.removeItem(tokenKey); renderLoggedOut(); tell(error.message, true); }
+    try { await finishLogin(); await renderLoggedIn(); } catch (error) { store.removeItem(tokenKey); store.removeItem(idTokenKey); renderLoggedOut(); tell(error.message, true); }
   });
 })();

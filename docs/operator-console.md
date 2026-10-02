@@ -32,9 +32,9 @@ Open `http://localhost:4173`, select **Sign in with Keycloak**, and use one of t
 users. The console shows tenant-visible environments, live catalog capabilities, request-plan and
 request submission flows, environment audit evidence, and the governing controls.
 
-`make compose-smoke` verifies the console health endpoint and static page, Keycloak token issuance,
-the explicit CORS preflight, authenticated API access, and the existing OTLP/Prometheus/Grafana
-path. It is not a substitute for a human browser sign-in test.
+`make compose-smoke` verifies the console health endpoint and static page, a browser-equivalent
+Keycloak Authorization Code + PKCE login/callback/token exchange, signed API access, Keycloak
+logout redirect, explicit CORS preflight, and the existing OTLP/Prometheus/Grafana path.
 
 ## Cloud boundary
 

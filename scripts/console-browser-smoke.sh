@@ -32,15 +32,24 @@ redirect_url="$(awk '/^[Ll]ocation:/{sub(/^[Ll]ocation:[[:space:]]*/, ""); sub(/
 [[ "$redirect_url" == "${console_origin}"/* ]] || { echo "Keycloak did not redirect to the console callback" >&2; exit 1; }
 
 authorization_code="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.parse_qs(urllib.parse.urlparse(sys.argv[1]).query)["code"][0])' "$redirect_url")"
-access_token="$(curl --fail --silent --show-error \
+tokens="$(curl --fail --silent --show-error \
   --data-urlencode grant_type=authorization_code \
   --data-urlencode client_id="$client_id" \
   --data-urlencode redirect_uri="${console_origin}/" \
   --data-urlencode code="$authorization_code" \
   --data-urlencode code_verifier="$code_verifier" \
-  "${issuer}/protocol/openid-connect/token" | jq -er '.access_token')"
+  "${issuer}/protocol/openid-connect/token")"
+access_token="$(jq -er '.access_token' <<<"$tokens")"
+id_token="$(jq -er '.id_token' <<<"$tokens")"
 
 curl --fail --silent --show-error -H "Authorization: Bearer ${access_token}" \
   http://localhost:8000/api/v1/catalog | jq -e '.capabilities | index("ttl") != null' >/dev/null
 
-echo "PASS: Keycloak Authorization Code + PKCE → signed Console API request."
+logout_hint="$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$id_token")"
+curl --fail --silent --show-error --dump-header "$scratch_dir/logout-headers" --output /dev/null \
+  --cookie "$scratch_dir/cookies" \
+  "${issuer}/protocol/openid-connect/logout?client_id=${client_id}&post_logout_redirect_uri=http%3A%2F%2Flocalhost%3A4173%2F&id_token_hint=${logout_hint}"
+logout_redirect="$(awk '/^[Ll]ocation:/{sub(/^[Ll]ocation:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$scratch_dir/logout-headers")"
+[[ "$logout_redirect" == "${console_origin}"/* ]] || { echo "Keycloak did not redirect logout to the console" >&2; exit 1; }
+
+echo "PASS: Keycloak Authorization Code + PKCE → signed Console API request → Keycloak logout."

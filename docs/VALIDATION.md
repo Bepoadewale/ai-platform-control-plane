@@ -46,7 +46,7 @@ an internal reuse option for validating already-started services; documented use
 | Evidence | Result |
 | --- | --- |
 | Console runtime | Nginx console served `http://localhost:4173/healthz` and its sign-in landing page |
-| Browser identity configuration | Local Keycloak accepted the console Authorization Code + PKCE request for the configured callback URL |
+| Browser identity configuration | Local Keycloak completed the console Authorization Code + PKCE login/callback/token exchange and Keycloak logout redirect for the configured callback URL |
 | API browser boundary | FastAPI returned an explicit CORS allow-list response for `http://localhost:4173`; wildcard CORS is not configured |
 | API authorization | A local Keycloak bearer token reached `/api/v1/catalog` successfully |
 | Existing service evidence | PostgreSQL-backed API, OTel Collector span, Prometheus query, and Grafana dashboard assertions passed |

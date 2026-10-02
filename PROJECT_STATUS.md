@@ -80,9 +80,9 @@ requirements. These are not local-first completion blockers and have not been st
 ## Current P0 Objective
 
 No open local-first P0 work. The bounded cloud pilot is torn down; its observed cost was not
-recorded. The Operator Console is locally smoke-validated but still needs human browser sign-in and
-later cloud evidence. GitOps publication, a durable reconciler, external secrets/workload identity,
-and GitHub Actions OIDC execution remain later P1 work.
+recorded. The Operator Console is locally smoke-validated; its cloud deployment remains unexecuted.
+GitOps publication, a durable reconciler, external secrets/workload identity, and GitHub Actions
+OIDC execution remain later P1 work.
 
 ## Last Validation
 
@@ -144,8 +144,8 @@ and GitHub Actions OIDC execution remain later P1 work.
   Budget alert remain intentionally retained as Phase 0 guardrails.
 - Operator Console: `make compose-smoke` started the Nginx console at `http://localhost:4173`,
   confirmed its static content and health endpoint, Keycloak accepted the Authorization Code + PKCE
-  request, FastAPI returned the configured CORS preflight, and the signed-token API/OTLP/Prometheus/
-  Grafana path passed. Browser-completed sign-in is not yet recorded.
+  login/callback/token exchange and logout redirect, FastAPI returned the configured CORS preflight,
+  and the signed-token API/OTLP/Prometheus/Grafana path passed.
 
 ## Last Updated
 
