@@ -10,11 +10,13 @@ aws_profile="${AWS_PROFILE:-ai-platform-pilot-key}"
 aws_region="${AWS_REGION:-us-east-1}"
 expected_account="${EXPECTED_AWS_ACCOUNT_ID:-654654474502}"
 api_port="${PILOT_VALIDATE_API_PORT:-18081}"
+recovery_api_port="${PILOT_VALIDATE_RECOVERY_API_PORT:-18082}"
 prometheus_port="${PILOT_VALIDATE_PROMETHEUS_PORT:-19091}"
 tempo_port="${PILOT_VALIDATE_TEMPO_PORT:-13201}"
 grafana_port="${PILOT_VALIDATE_GRAFANA_PORT:-13001}"
 token_pod="pilot-cloud-token-$RANDOM"
 api_forward_pid=""
+recovery_api_forward_pid=""
 prometheus_forward_pid=""
 tempo_forward_pid=""
 grafana_forward_pid=""
@@ -22,6 +24,7 @@ tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/ai-platform-cloud-validate.XXXXXX")"
 
 cleanup() {
   [[ -n "$api_forward_pid" ]] && kill "$api_forward_pid" 2>/dev/null || true
+  [[ -n "$recovery_api_forward_pid" ]] && kill "$recovery_api_forward_pid" 2>/dev/null || true
   [[ -n "$prometheus_forward_pid" ]] && kill "$prometheus_forward_pid" 2>/dev/null || true
   [[ -n "$tempo_forward_pid" ]] && kill "$tempo_forward_pid" 2>/dev/null || true
   [[ -n "$grafana_forward_pid" ]] && kill "$grafana_forward_pid" 2>/dev/null || true
@@ -48,8 +51,6 @@ wait_http() {
 }
 
 start_api_forward() {
-  [[ -n "$api_forward_pid" ]] && kill "$api_forward_pid" 2>/dev/null || true
-  [[ -n "$api_forward_pid" ]] && wait "$api_forward_pid" 2>/dev/null || true
   kubectl -n platform-system port-forward service/control-plane "$api_port:8000" >"$tmp_dir/api-forward.log" 2>&1 &
   api_forward_pid=$!
   wait_http "http://127.0.0.1:$api_port/healthz"
@@ -111,10 +112,12 @@ jq -e 'map(.action) | index("policy.rejected")' "$tmp_dir/audit.json" >/dev/null
 # timeline must still be readable after the new process reconnects to RDS.
 kubectl -n platform-system rollout restart deployment/control-plane >/dev/null
 kubectl -n platform-system rollout status deployment/control-plane --timeout=240s >/dev/null
-start_api_forward
+kubectl -n platform-system port-forward service/control-plane "$recovery_api_port:8000" >"$tmp_dir/recovery-api-forward.log" 2>&1 &
+recovery_api_forward_pid=$!
+wait_http "http://127.0.0.1:$recovery_api_port/healthz"
 for _ in {1..30}; do
   if curl --fail --silent -H "Authorization: Bearer $token" \
-    "http://127.0.0.1:$api_port/api/v1/environments/$environment_id" >"$tmp_dir/recovered.json"; then
+    "http://127.0.0.1:$recovery_api_port/api/v1/environments/$environment_id" >"$tmp_dir/recovered.json"; then
     break
   fi
   sleep 1

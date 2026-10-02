@@ -48,4 +48,8 @@ done
 echo "Temporary public cloud control-plane demo: $public_url/docs"
 echo "Unauthenticated Quick Tunnel for short-lived pilot viewing only. Ctrl-C stops the tunnel and port-forward; it does not destroy AWS resources."
 [[ "${PUBLIC_DEMO_EXIT_AFTER_URL:-0}" == 1 ]] && exit 0
-wait "$tunnel_pid"
+while kill -0 "$forward_pid" 2>/dev/null && kill -0 "$tunnel_pid" 2>/dev/null; do
+  sleep 2
+done
+echo "The Quick Tunnel or its local port-forward ended; start a new temporary review session." >&2
+exit 1
