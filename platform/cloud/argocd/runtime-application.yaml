@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/Bepoadewale/ai-platform-control-plane.git
-    targetRevision: codex/production-pilot-roadmap
+    targetRevision: main
     path: platform
   destination:
     server: https://kubernetes.default.svc

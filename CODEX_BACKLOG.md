@@ -10,8 +10,8 @@ validated primary-path regression is discovered.
 - [x] Implement PostgreSQL/SQLite outbox job state and a durable desired-state publication worker
   with restart and publication-failure tests. AWS GitHub publication remains unexecuted.
 - [ ] Publish an approved environment as a protected Git change and observe merge/Argo state.
-- [ ] Add Argo ApplicationSet-driven private EKS environment workloads with readiness, failure,
-  rollback, and destroy evidence.
+- [ ] Execute the rendered Argo ApplicationSet-driven private EKS environment workload path with
+  readiness, failure, rollback, and destroy evidence.
 - [ ] Add IRSA/Pod Identity and External Secrets for synthetic secret-reference validation.
 - [ ] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.

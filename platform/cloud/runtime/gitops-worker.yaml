@@ -1,0 +1,68 @@
+# The worker is intentionally separate from the API. It uses only the GitHub App credential
+# mounted by External Secrets in the later workload-identity slice; it has no Kubernetes API
+# credentials and never marks an environment Ready.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitops-worker
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitops-worker
+  labels:
+    app.kubernetes.io/name: gitops-worker
+spec:
+  # Enabled only once the scoped GitHub App secret is supplied by the identity/secrets slice.
+  replicas: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitops-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gitops-worker
+    spec:
+      serviceAccountName: gitops-worker
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: worker
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot
+          command: [python, -m, platform_control_plane.gitops.worker]
+          env:
+            - name: PLATFORM_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: database-url}}
+            - name: PLATFORM_OPA_DECISION_URL
+              value: http://opa.platform-system.svc.cluster.local:8181/v1/data/platform/environment
+            - name: PLATFORM_DESIRED_STATE_ROOT
+              value: /app/environments
+            - name: PLATFORM_GITHUB_APP_ID
+              valueFrom: {secretKeyRef: {name: github-app-credentials, key: app-id}}
+            - name: PLATFORM_GITHUB_APP_INSTALLATION_ID
+              valueFrom: {secretKeyRef: {name: github-app-credentials, key: installation-id}}
+            - name: PLATFORM_GITHUB_REPOSITORY
+              value: Bepoadewale/ai-platform-control-plane
+            - name: PLATFORM_GITHUB_APP_PRIVATE_KEY_PATH
+              value: /var/run/github-app/private-key.pem
+          volumeMounts:
+            - name: github-app
+              mountPath: /var/run/github-app
+              readOnly: true
+            - name: state
+              mountPath: /app/environments
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+      volumes:
+        - name: github-app
+          secret:
+            secretName: github-app-credentials
+        - name: state
+          emptyDir: {}

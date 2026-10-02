@@ -62,6 +62,8 @@ spec:
               value: http://otel-collector.platform-system.svc.cluster.local:4318
             - name: PLATFORM_RECONCILER
               value: render-only
+            - name: PLATFORM_RECONCILIATION_MODE
+              value: gitops-worker
           startupProbe:
             httpGet: {path: /healthz, port: http}
             failureThreshold: 30

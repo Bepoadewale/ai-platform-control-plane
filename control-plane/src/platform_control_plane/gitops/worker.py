@@ -7,7 +7,10 @@ It intentionally cannot call Helm/kubectl and never treats PR publication as rea
 
 from __future__ import annotations
 
+import os
+import time
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Protocol
 
 from platform_control_plane.gitops.github import GitOpsPublicationError
@@ -17,6 +20,7 @@ from platform_control_plane.models.domain import (
     ReconciliationJob,
     ReconciliationJobState,
 )
+from platform_control_plane.policy.engine import OPAPolicyEngine
 from platform_control_plane.provisioning.service import EnvironmentService
 
 
@@ -49,7 +53,9 @@ class GitOpsWorker:
         job.attempts += 1
         job.updated_at = datetime.now(UTC)
         self.service.repository.update_job(job)
-        path = environment.gitops_path
+        # API and worker pods do not share a mutable filesystem. Re-rendering is deterministic
+        # from the persisted request and allows a restarted worker to resume safely.
+        path = self.service.renderer.render(environment)
         content = (self.service.renderer.root.parent / path).read_text(encoding="utf-8")
         try:
             job.publication_url = self.publisher.publish(
@@ -84,3 +90,50 @@ class GitOpsWorker:
             environment.failure_reason = f"GITOPS_PUBLICATION_FAILED: {reason}"
             self.service._event(environment, job.actor, "gitops.publication_failed", reason=reason)
         return job
+
+
+def worker_from_environment() -> GitOpsWorker:
+    """Build the separately deployed worker from scoped runtime configuration."""
+    required = {
+        "PLATFORM_GITHUB_APP_ID": os.getenv("PLATFORM_GITHUB_APP_ID"),
+        "PLATFORM_GITHUB_APP_INSTALLATION_ID": os.getenv("PLATFORM_GITHUB_APP_INSTALLATION_ID"),
+        "PLATFORM_GITHUB_REPOSITORY": os.getenv("PLATFORM_GITHUB_REPOSITORY"),
+        "PLATFORM_GITHUB_APP_PRIVATE_KEY_PATH": os.getenv("PLATFORM_GITHUB_APP_PRIVATE_KEY_PATH"),
+    }
+    missing = [key for key, value in required.items() if not value]
+    if missing:
+        raise RuntimeError(f"GitOps worker configuration is incomplete: {', '.join(missing)}")
+    from platform_control_plane.gitops.github import GitHubAppConfig, GitHubAppPublisher
+
+    database_target = os.environ.get("PLATFORM_DATABASE_URL") or os.environ.get(
+        "PLATFORM_CONTROL_PLANE_DB", "state/control-plane.db"
+    )
+    service = EnvironmentService(
+        Path(os.environ.get("PLATFORM_DESIRED_STATE_ROOT", "environments")),
+        database_target if database_target.startswith("postgres") else Path(database_target),
+        policy=OPAPolicyEngine.from_environment(require_live=True),
+        reconciliation_mode="gitops-worker",
+    )
+    publisher = GitHubAppPublisher(
+        GitHubAppConfig(
+            app_id=required["PLATFORM_GITHUB_APP_ID"] or "",
+            installation_id=required["PLATFORM_GITHUB_APP_INSTALLATION_ID"] or "",
+            repository=required["PLATFORM_GITHUB_REPOSITORY"] or "",
+            private_key_path=Path(required["PLATFORM_GITHUB_APP_PRIVATE_KEY_PATH"] or ""),
+            base_branch=os.getenv("PLATFORM_GITHUB_BASE_BRANCH", "main"),
+        )
+    )
+    return GitOpsWorker(service, publisher)
+
+
+def main() -> None:
+    """Run a bounded-polling worker; Kubernetes restarts it after fatal configuration failures."""
+    worker = worker_from_environment()
+    poll_seconds = max(1, int(os.getenv("PLATFORM_GITOPS_WORKER_POLL_SECONDS", "5")))
+    while True:
+        worker.run_once()
+        time.sleep(poll_seconds)
+
+
+if __name__ == "__main__":  # pragma: no cover - exercised by the runtime manifest
+    main()
