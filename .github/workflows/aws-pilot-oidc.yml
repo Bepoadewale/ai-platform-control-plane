@@ -1,0 +1,24 @@
+name: aws-pilot-oidc
+
+on:
+  workflow_dispatch:
+    inputs:
+      role_to_assume:
+        description: AWS IAM role ARN emitted by the pilot Terraform stack
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  identity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ inputs.role_to_assume }}
+          aws-region: us-east-1
+      - run: aws sts get-caller-identity
+      - run: aws eks list-clusters --region us-east-1
