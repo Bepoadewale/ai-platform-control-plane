@@ -76,8 +76,8 @@ flowchart LR
 ## What this repository deliberately does not do
 
 - It does not create cloud workload spend by default or claim production HA validation. A bounded,
-  owner-authorized AWS pilot has executed VPC/EKS/RDS/ECR/Argo/telemetry validation; its teardown
-  remains pending owner review and it is not a production-certification claim.
+  owner-authorized AWS pilot executed VPC/EKS/RDS/ECR/Argo/telemetry validation and a verified
+  teardown; it is not a production-certification claim.
 - It does not expose raw Kubernetes credentials, Docker sockets, Terraform execution, long-lived
   cloud credentials, or secret values to callers or agents.
 - It does not treat a rendered Helm chart, a Terraform module, or a mocked unit test as proof of a
@@ -159,6 +159,6 @@ and GitHub App publisher remain implemented but unexecuted production adapters. 
 environment reconciler is explicitly `render-only`; it does not yet publish an individual request
 as a protected Git change and wait for Argo to create that workload. See the
 [production-pilot plan](docs/production-pilot.md), [cloud pilot runbook](docs/cloud-pilot-runbook.md),
-and [AWS validation evidence](docs/VALIDATION.md#aws-workload-pilot--2026-10-02-createvalidate--teardown-pending).
+and [AWS validation evidence](docs/VALIDATION.md#aws-workload-pilot--2026-10-02-createvalidatedestroy).
 
 Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).

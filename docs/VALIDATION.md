@@ -39,7 +39,7 @@ can accept its port before it is ready to serve. `COMPOSE_SKIP_UP=1 ./scripts/co
 an internal reuse option for validating already-started services; documented users should run
 `make compose-smoke`.
 
-## AWS workload pilot — 2026-10-02 (create/validate; teardown pending)
+## AWS workload pilot — 2026-10-02 (create/validate/destroy)
 
 Environment: macOS; AWS CLI v2; Terraform 1.14.0; AWS provider 5.100.0; EKS Kubernetes 1.35;
 Argo CD chart 10.9.6 / application 3.5.3; Prometheus chart 29.35.0 / application 3.15.0; Grafana
@@ -57,6 +57,7 @@ AWS_PROFILE=<operator-profile> make pilot-cloud-bootstrap-runtime
 AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
 AWS_PROFILE=<operator-profile> make pilot-cloud-validate
 AWS_PROFILE=<operator-profile> make pilot-cloud-public-demo
+AWS_PROFILE=<operator-profile> make pilot-cloud-destroy
 ```
 
 Observed evidence:
@@ -77,7 +78,8 @@ Observed evidence:
 | Public review | temporary Cloudflare Quick Tunnel exposed only a local `kubectl port-forward`; no public AWS load balancer or DNS record was created |
 | Environment workload success / GitOps publication | Not executed: the cloud runtime intentionally uses `render-only`; individual API environment requests do not yet become protected Git changes or Argo-managed workloads |
 | Observed cost during pilot | Not recorded in real time; the USD 10 Budget remains an alert, not a hard cap |
-| Terraform destroy / post-destroy query | Pending owner review of the temporary public URL; resources intentionally remain running |
+| Terraform destroy / post-destroy query | The EKS cluster was manually deleted during owner review. `make pilot-cloud-destroy` completed the remaining Terraform cleanup: 38 resources destroyed. Post-destroy AWS API checks found EKS, RDS, ECR, the GitOps secret, pilot IAM roles, tagged VPC resources absent; Terraform pilot state contained zero resources. |
+| Retained Phase 0 guardrails | Encrypted/versioned remote-state bucket, active DynamoDB lock table, and `ai-platform-control-plane-pilot-monthly-cost` Budget intentionally retained. Their two DynamoDB MD5 entries are Terraform backend bookkeeping, not workload locks. |
 
 The required sequence and security boundaries are in [Production pilot plan](production-pilot.md) and
 [the AWS pilot runbook](cloud-pilot-runbook.md).

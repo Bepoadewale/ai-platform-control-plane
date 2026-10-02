@@ -8,7 +8,7 @@ validated primary-path regression is discovered.
 - Add CI-suitable coverage for the Compose smoke stack when runner capacity allows.
 - Expand API-level authorization integration coverage for cross-tenant access.
 - [x] Apply AWS pilot account guardrails: USD 10 Budget alerts, required tags, encrypted remote Terraform state, and lock table.
-- [ ] Execute project-scoped AWS pilot teardown after owner completes public review; record destroy and remaining-resource evidence.
+- [x] Execute project-scoped AWS pilot teardown after owner completes public review; record destroy and remaining-resource evidence.
 - Create a GitHub OIDC role boundary and prove a read-only identity workflow before granting deployment permissions.
 - [x] Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation and execute the bounded runtime/policy/restart/telemetry pilot.
 - [x] Add a GitHub App desired-state publication boundary and a GitHub Actions plan/apply/destroy workflow. Wire publication to a durable worker and execute it before claiming production GitOps.

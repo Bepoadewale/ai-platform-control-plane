@@ -79,9 +79,9 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The active cloud P1 item is owner-approved teardown after public
-review, followed by a cost/remaining-resource record. GitOps publication, a durable reconciler,
-external secrets/workload identity, and GitHub Actions OIDC execution remain later P1 work.
+No open local-first P0 work. The bounded cloud pilot is torn down; its observed cost was not
+recorded. GitOps publication, a durable reconciler, external secrets/workload identity, and GitHub
+Actions OIDC execution remain later P1 work.
 
 ## Last Validation
 
@@ -134,8 +134,13 @@ external secrets/workload identity, and GitHub Actions OIDC execution remain lat
   live cross-tenant OPA denial/audit, RDS-backed control-plane restart recovery, Prometheus target
   scrape, Tempo trace search, and Grafana dashboard discovery. No environment workload was claimed:
   the cloud runtime deliberately uses the documented `render-only` adapter.
+- AWS pilot teardown: the EKS cluster was manually deleted during owner review; the guarded
+  `make pilot-cloud-destroy` then completed the remaining Terraform cleanup. Post-destroy AWS API
+  checks found no tagged pilot workload resources, no EKS/RDS/ECR/secret/IAM/VPC resources, and
+  zero resources in the pilot Terraform state. The encrypted state bucket, lock table, and USD 10
+  Budget alert remain intentionally retained as Phase 0 guardrails.
 
 ## Last Updated
 
-2026-10-02, bounded AWS workload pilot executed and validated; teardown remains deliberately
-pending owner review. Local-first completion status is unchanged.
+2026-10-02, bounded AWS workload pilot executed, validated, and torn down. Local-first completion
+status is unchanged.
