@@ -65,7 +65,10 @@ sustained production workload. Those omissions prevent any production-certified 
 
 ## Implemented but Not End-to-End Validated
 
-- No primary local control-loop capability is awaiting end-to-end validation.
+- A PostgreSQL/SQLite-backed reconciliation-job outbox and GitHub-publication worker are covered by
+  local restart and failure tests. The worker creates a protected desired-state pull request and
+  intentionally leaves the environment `APPLYING`; it does not yet have executed EKS/Argo
+  publication, readiness, rollback, or destroy evidence.
 
 ## Simulated
 
@@ -74,8 +77,7 @@ sustained production workload. Those omissions prevent any production-certified 
 
 ## Architecture / Contracts Only
 
-- Durable worker reconciliation, external secret delivery/workload identity, and delegated MCP
-  OIDC identity.
+- External secret delivery/workload identity and delegated MCP OIDC identity.
 
 ## Explicitly Unexecuted Production Adapters
 
@@ -96,13 +98,14 @@ requirements. These are not local-first completion blockers and have not been st
 ## Current P0 Objective
 
 No open local-first P0 work. The second bounded cloud validation was destroyed through the guarded
-Terraform command; its observed cost is not recorded. GitOps publication, a durable reconciler,
+Terraform command; its observed cost is not recorded. The durable GitOps publication worker is
+implemented and unit/restart-tested, but protected Git publication → Argo → EKS workload evidence,
 external secrets/workload identity, public TLS/enterprise OIDC, and GitHub Actions OIDC execution
 remain later P1 work.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 29 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q control-plane/tests`: 31 passed (2 upstream TestClient deprecation warnings).
 - Local Compose: Keycloak bearer token → FastAPI `/api/v1/catalog`: `200`.
 - `make compose-smoke`: Keycloak token, FastAPI catalog authorization, PostgreSQL state, Prometheus
   query, OTel Collector HTTP span, and Grafana dashboard assertions passed.

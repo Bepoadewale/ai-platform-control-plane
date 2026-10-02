@@ -178,5 +178,7 @@ environment reconciler is explicitly `render-only`; it does not yet publish an i
 as a protected Git change and wait for Argo to create that workload. See the
 [production-pilot plan](docs/production-pilot.md), [cloud pilot runbook](docs/cloud-pilot-runbook.md),
 and [AWS validation evidence](docs/VALIDATION.md#aws-workload-pilot--2026-10-02-createvalidatedestroy).
+The next cloud-hardening target is [production-shaped single-account validation](docs/production-shaped-validation.md):
+private, ephemeral, and tunnel-reviewed—not a public SaaS claim.
 
 Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).

@@ -30,7 +30,7 @@ service or that unexecuted production controls are present.
 | GitHub Actions Terraform OIDC workflow | 🟡 Implemented / Not Executed | manual plan/apply/destroy dropdown, branch-bound OIDC roles, and explicit confirmations; no OIDC workflow run yet |
 | EKS GitOps runtime manifests | ✅ Executed in a bounded AWS pilot | Argo CD synchronized the EKS control plane, OPA, Keycloak, OTel Collector, NetworkPolicy, probes, and ECR image to `Synced/Healthy` |
 | Cloud observability | ✅ Executed in a bounded AWS pilot | Prometheus scraped the control plane, Tempo returned FastAPI traces, and Grafana exposed the provisioned control-plane dashboard |
-| Production Git commit/PR → Argo reconciliation | 🟡 Implemented / Not Executed | GitHub App publisher is unit-tested; durable worker wiring and an AWS GitOps lifecycle remain pending |
-| Durable asynchronous reconciler | 📋 Roadmap | API-process local reconciler is executed; worker/operator is not |
+| Production Git commit/PR → Argo reconciliation | 🟡 Implemented / Not Executed | GitHub App publisher and durable worker are unit/restart-tested; protected AWS Git publication and Argo workload lifecycle remain pending |
+| Durable asynchronous reconciler | 🟡 Implemented / Not Fully Executed | PostgreSQL/SQLite job state and restart-safe Git publication worker are tested locally; no cloud worker deployment or EKS/Argo readiness evidence yet |
 | External secret delivery / workload identity | 📋 Roadmap | EKS OIDC provider and an empty Secrets Manager container are in the plan; IRSA/Pod Identity plus External Secrets is not executed |
 | Delegated MCP OIDC identity | 📋 Roadmap | local MCP runtime is executed; environment-variable authority is not production identity |

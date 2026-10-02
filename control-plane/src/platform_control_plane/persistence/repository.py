@@ -2,7 +2,11 @@ import sqlite3
 from pathlib import Path
 from threading import RLock
 
-from platform_control_plane.models.domain import Environment
+from platform_control_plane.models.domain import (
+    Environment,
+    ReconciliationJob,
+    ReconciliationJobState,
+)
 from platform_control_plane.persistence.migrations import apply_migrations
 
 
@@ -42,6 +46,43 @@ class EnvironmentRepository:
                     environment.request.idempotency_key,
                     environment.model_dump_json(),
                 ),
+            )
+            self.connection.commit()
+
+    def enqueue_job(self, job: ReconciliationJob) -> None:
+        with self.lock:
+            self.connection.execute(
+                """INSERT INTO reconciliation_jobs (id, environment_id, state, payload, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (
+                    str(job.id),
+                    str(job.environment_id),
+                    job.state.value,
+                    job.model_dump_json(),
+                    job.created_at.isoformat(),
+                    job.updated_at.isoformat(),
+                ),
+            )
+            self.connection.commit()
+
+    def load_jobs(self, states: set[ReconciliationJobState] | None = None) -> list[ReconciliationJob]:
+        with self.lock:
+            if states:
+                placeholders = ", ".join("?" for _ in states)
+                rows = self.connection.execute(
+                    f"SELECT payload FROM reconciliation_jobs WHERE state IN ({placeholders}) ORDER BY created_at",  # noqa: S608
+                    tuple(state.value for state in states),
+                ).fetchall()
+            else:
+                rows = self.connection.execute("SELECT payload FROM reconciliation_jobs ORDER BY created_at").fetchall()
+        return [ReconciliationJob.model_validate_json(row["payload"]) for row in rows]
+
+    def update_job(self, job: ReconciliationJob) -> None:
+        with self.lock:
+            self.connection.execute(
+                """UPDATE reconciliation_jobs
+                SET state = ?, payload = ?, updated_at = ? WHERE id = ?""",
+                (job.state.value, job.model_dump_json(), job.updated_at.isoformat(), str(job.id)),
             )
             self.connection.commit()
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 
-LATEST_SCHEMA_VERSION = 1
+LATEST_SCHEMA_VERSION = 2
 
 
 def apply_migrations(connection: sqlite3.Connection) -> None:
@@ -32,4 +32,20 @@ def apply_migrations(connection: sqlite3.Connection) -> None:
             """
         )
         connection.execute("INSERT INTO schema_migrations (version) VALUES (1)")
+    if 2 not in applied:
+        connection.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS reconciliation_jobs (
+              id TEXT PRIMARY KEY,
+              environment_id TEXT NOT NULL,
+              state TEXT NOT NULL,
+              payload TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS reconciliation_jobs_pending
+              ON reconciliation_jobs (state, created_at);
+            """
+        )
+        connection.execute("INSERT INTO schema_migrations (version) VALUES (2)")
     connection.commit()

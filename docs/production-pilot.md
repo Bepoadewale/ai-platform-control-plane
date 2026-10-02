@@ -102,3 +102,6 @@ Only label an AWS component **EXECUTED** after this evidence exists. Until then 
 
 The exact guarded commands, GitHub Actions dropdown workflow, runtime boundary, and teardown
 procedure are in [the AWS pilot runbook](cloud-pilot-runbook.md).
+
+The next bounded target is [production-shaped single-account validation](production-shaped-validation.md):
+private, ephemeral, and tunnel-reviewed rather than a public production service.
