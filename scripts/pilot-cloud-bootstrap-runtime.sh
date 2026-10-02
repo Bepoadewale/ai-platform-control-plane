@@ -37,17 +37,25 @@ kubectl create namespace platform-observability --dry-run=client -o yaml | kubec
 kubectl -n platform-observability create configmap ai-platform-control-plane-dashboard \
   --from-file=control-plane.json="$project_root/platform/observability/grafana/dashboards/control-plane.json" \
   --dry-run=client -o yaml | kubectl apply -f -
-helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace \
-  --set server.service.type=ClusterIP --wait --timeout 10m
+if ! kubectl -n argocd rollout status deployment/argocd-server --timeout=5s >/dev/null 2>&1; then
+  helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace \
+    --set server.service.type=ClusterIP --wait --timeout 10m
+else
+  echo "Argo CD is already Ready; skipping Helm upgrade."
+fi
 external_secrets_role_arn="$(AWS_PROFILE="$aws_profile" aws iam get-role \
   --role-name ai-platform-control-plane-pilot-external-secrets \
   --query 'Role.Arn' --output text)"
-helm upgrade --install external-secrets external-secrets/external-secrets \
-  --namespace external-secrets --create-namespace \
-  --set serviceAccount.create=true \
-  --set serviceAccount.name=external-secrets \
-  --set serviceAccount.annotations."eks\\.amazonaws\\.com/role-arn"="$external_secrets_role_arn" \
-  --wait --timeout 10m
+if ! kubectl -n external-secrets rollout status deployment/external-secrets --timeout=5s >/dev/null 2>&1; then
+  helm upgrade --install external-secrets external-secrets/external-secrets \
+    --namespace external-secrets --create-namespace \
+    --set serviceAccount.create=true \
+    --set serviceAccount.name=external-secrets \
+    --set serviceAccount.annotations."eks\\.amazonaws\\.com/role-arn"="$external_secrets_role_arn" \
+    --wait --timeout 10m
+else
+  echo "External Secrets Operator is already Ready; skipping Helm upgrade."
+fi
 helm upgrade --install tempo grafana/tempo --namespace platform-observability --create-namespace \
   --set persistence.enabled=false --set resources.requests.cpu=100m --set resources.requests.memory=128Mi \
   --set resources.limits.cpu=500m --set resources.limits.memory=256Mi --wait --timeout 10m
@@ -76,11 +84,14 @@ kubectl -n platform-system create secret generic platform-runtime-secrets \
   --from-literal=keycloak-admin-password="$(openssl rand -base64 24)" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl apply -f "$project_root/platform/cloud/runtime/external-secrets.yaml"
+external_secrets_manifest="$(mktemp "${TMPDIR:-/tmp}/ai-platform-external-secrets.XXXXXX.yaml")"
+trap 'rm -f "${runtime_manifest:-}" "${external_secrets_manifest:-}"' EXIT
+sed "s#\${EXTERNAL_SECRETS_ROLE_ARN}#${external_secrets_role_arn}#" \
+  "$project_root/platform/cloud/runtime/external-secrets.yaml" >"$external_secrets_manifest"
+kubectl apply -f "$external_secrets_manifest"
 kubectl -n platform-system wait --for=condition=Ready externalsecret/github-app-credentials --timeout=5m
 
 runtime_manifest="$(mktemp "${TMPDIR:-/tmp}/ai-platform-runtime-application.XXXXXX.yaml")"
-trap 'rm -f "$runtime_manifest"' EXIT
 sed "s#targetRevision: main#targetRevision: ${runtime_revision}#" \
   "$project_root/platform/cloud/argocd/runtime-application.yaml" >"$runtime_manifest"
 kubectl apply -f "$runtime_manifest"
