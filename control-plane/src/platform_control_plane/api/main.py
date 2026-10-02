@@ -102,12 +102,14 @@ def create(request: EnvironmentRequest, actor: Actor = Depends(actor_from_reques
 
 @app.get("/api/v1/environments")
 def list_environments(actor: Actor = Depends(actor_from_request)):
+    service.refresh_from_store()
     return service.list(actor)
 
 
 @app.get("/api/v1/environments/{environment_id}")
 def get_environment(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
+        service.refresh_from_store()
         return service.get(actor, environment_id)
     except (KeyError, PermissionError) as error:
         raise HTTPException(404, detail="environment not found") from error
@@ -162,6 +164,7 @@ def recover_pending(actor: Actor = Depends(actor_from_request)):
 
 @app.get("/api/v1/environments/{environment_id}/audit-events")
 def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
+    service.refresh_from_store()
     environment = service.get(actor, environment_id)
     return service.audit_events(environment.request.request_id)
 
@@ -169,6 +172,7 @@ def audit_events(environment_id: UUID, actor: Actor = Depends(actor_from_request
 @app.get("/api/v1/environments/{environment_id}/reconciliation-jobs")
 def reconciliation_jobs(environment_id: UUID, actor: Actor = Depends(actor_from_request)):
     try:
+        service.refresh_from_store()
         return service.reconciliation_jobs(actor, environment_id)
     except (KeyError, PermissionError) as error:
         raise HTTPException(404, detail="environment not found") from error
