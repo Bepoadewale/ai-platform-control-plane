@@ -43,6 +43,10 @@ if ! kubectl -n argocd rollout status deployment/argocd-server --timeout=5s >/de
 else
   echo "Argo CD is already Ready; skipping Helm upgrade."
 fi
+# ApplicationSet controllers commonly watch only Argo CD's own namespace. Keep this
+# cluster-scoped Git generator in argocd (not the platform Kustomize namespace) so it
+# can create per-environment Applications from reviewed desired-state changes.
+kubectl apply -f "$project_root/platform/cloud/argocd/environment-applicationset.yaml"
 external_secrets_role_arn="$(AWS_PROFILE="$aws_profile" aws iam get-role \
   --role-name ai-platform-control-plane-pilot-external-secrets \
   --query 'Role.Arn' --output text)"

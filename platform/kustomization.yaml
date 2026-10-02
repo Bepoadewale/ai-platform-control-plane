@@ -1,7 +1,6 @@
 namespace: platform-system
 
 resources:
-  - cloud/argocd/environment-applicationset.yaml
   - cloud/runtime/namespace.yaml
   - cloud/runtime/opa.yaml
   - cloud/runtime/keycloak.yaml
