@@ -7,28 +7,26 @@ metadata:
   name: status-observer
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  name: status-observer-argocd-read
-  namespace: argocd
+  name: ai-platform-status-observer-argocd-read
 rules:
   - apiGroups: [argoproj.io]
     resources: [applications]
     verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: status-observer-argocd-read
-  namespace: argocd
+  name: ai-platform-status-observer-argocd-read
 subjects:
   - kind: ServiceAccount
     name: status-observer
     namespace: platform-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: status-observer-argocd-read
+  kind: ClusterRole
+  name: ai-platform-status-observer-argocd-read
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
