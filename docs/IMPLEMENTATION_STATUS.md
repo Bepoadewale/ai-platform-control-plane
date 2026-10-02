@@ -33,5 +33,6 @@ service or that unexecuted production controls are present.
 | Production Git commit/PR → Argo reconciliation | 🟡 Implemented / Not Executed | GitHub App publisher and durable worker are unit/restart-tested; protected AWS Git publication and Argo workload lifecycle remain pending |
 | Durable asynchronous reconciler | 🟡 Implemented / Not Fully Executed | PostgreSQL/SQLite job state and restart-safe Git publication worker are tested locally; no cloud worker deployment or EKS/Argo readiness evidence yet |
 | Argo environment ApplicationSet | 🟡 Implemented / Not Executed | manifest is statically rendered; it discovers merged environment values and deploys the existing golden-path chart only after the cloud GitOps flow is executed |
+| Argo/Kubernetes status observer | 🟡 Implemented / Not Executed | separately deployed read-only observer has Ready/Degraded unit coverage; no EKS observation evidence yet |
 | External secret delivery / workload identity | 🟡 Implemented / Not Executed | Terraform defines an IRSA role limited to one Secrets Manager secret; External Secrets and the scoped worker secret are rendered. The live AWS retrieval path remains unexecuted. |
 | Delegated MCP OIDC identity | 📋 Roadmap | local MCP runtime is executed; environment-variable authority is not production identity |

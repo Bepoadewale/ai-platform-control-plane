@@ -32,8 +32,11 @@ kubectl in the cloud path.
 - [x] SQLite-backed job state survives a service restart; PostgreSQL uses the same explicit job
   schema and repository contract. A cloud PostgreSQL worker restart remains unexecuted.
 - [x] An Argo ApplicationSet contract discovers only merged `environments/<team>/<name>` values
-  directories and uses the repository's golden-path Helm chart. The worker Deployment is rendered
-  with zero replicas until its scoped credential delivery has executed.
+  directories and uses the repository's golden-path Helm chart. The worker starts only after
+  External Secrets materializes its scoped credential.
+- [x] A separately deployed, read-only Argo/Kubernetes observer has local unit coverage for Ready
+  and Degraded states; it cannot publish Git state or mutate workload resources. Its EKS execution
+  remains unvalidated.
 - [ ] Approved development request produces a protected Git change through the GitHub App.
 - [ ] Argo ApplicationSet discovers the merged desired state and creates a private environment
   workload in EKS.

@@ -8,6 +8,7 @@ resources:
   - cloud/runtime/control-plane.yaml
   - cloud/runtime/gitops-worker.yaml
   - cloud/runtime/external-secrets.yaml
+  - cloud/runtime/status-observer.yaml
   - cloud/runtime/operator-console.yaml
   - cloud/runtime/otel-collector.yaml
 

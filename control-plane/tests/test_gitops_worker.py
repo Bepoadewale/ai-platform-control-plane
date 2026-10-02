@@ -77,8 +77,9 @@ def test_worker_records_failed_publication_without_direct_reconciliation(tmp_pat
     processed = GitOpsWorker(service, RecordingPublisher(fail=True)).run_once()
 
     assert processed[0].state is ReconciliationJobState.FAILED
-    assert environment.state is LifecycleState.FAILED
-    assert "GitHub unavailable" in (environment.failure_reason or "")
+    persisted = service.get(developer(), environment.id)
+    assert persisted.state is LifecycleState.FAILED
+    assert "GitHub unavailable" in (persisted.failure_reason or "")
     assert any(
         event.action == "gitops.publication_failed"
         for event in service.audit_events(environment.request.request_id)

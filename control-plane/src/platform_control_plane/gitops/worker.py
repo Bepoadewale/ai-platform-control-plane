@@ -40,6 +40,7 @@ class GitOpsWorker:
         self.publisher = publisher
 
     def run_once(self) -> list[ReconciliationJob]:
+        self.service.refresh_from_store()
         processed: list[ReconciliationJob] = []
         for job in self.service.pending_reconciliation_jobs():
             processed.append(self._publish(job))

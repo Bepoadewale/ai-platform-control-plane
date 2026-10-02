@@ -79,6 +79,7 @@ kubectl -n platform-system rollout status deployment/opa --timeout=5m
 kubectl -n platform-system rollout status deployment/keycloak --timeout=10m
 kubectl -n platform-system rollout status deployment/control-plane --timeout=5m
 kubectl -n platform-system rollout status deployment/gitops-worker --timeout=5m
+kubectl -n platform-system rollout status deployment/status-observer --timeout=5m
 kubectl -n platform-system rollout status deployment/operator-console --timeout=5m
 kubectl -n platform-system rollout status deployment/otel-collector --timeout=5m
 kubectl -n platform-observability rollout status deployment/prometheus-server --timeout=5m

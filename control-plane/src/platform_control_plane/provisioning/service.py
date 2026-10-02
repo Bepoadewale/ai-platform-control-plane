@@ -55,6 +55,15 @@ class EnvironmentService:
             for environment in loaded
         }
 
+    def refresh_from_store(self) -> None:
+        """Refresh state owned by another API/worker process from durable storage."""
+        loaded = self.repository.load_all()
+        self._environments = {environment.id: environment for environment in loaded}
+        self._keys = {
+            (environment.tenant_id, environment.request.idempotency_key): environment.id
+            for environment in loaded
+        }
+
     def _event(self, env: Environment, actor: Actor, action: str, **details: str) -> None:
         event = AuditEvent(
                 request_id=env.request.request_id,
