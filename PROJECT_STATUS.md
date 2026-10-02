@@ -4,6 +4,16 @@
 
 PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
+## Cloud Validation Boundary
+
+CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
+
+The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
+Grafana, Tempo, governance scenarios, and guarded teardown. It did not execute real
+per-environment Git publication/Argo reconciliation, durable asynchronous reconciliation,
+enterprise identity, external secrets/workload identity, HA, measured SLO/cost evidence, or a
+sustained production workload. Those omissions prevent any production-certified claim.
+
 ## Executed and Verified
 
 - FastAPI lifecycle, tenancy, policy, approval, audit and GitOps-rendering tests/demos run locally.
@@ -35,6 +45,23 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 - A clean-room local reset removed the repository’s Compose containers, volumes, local image, and
   kind cluster. The documented bootstrap then recreated kind, Metrics Server, Argo CD, the Compose
   integration stack, the governed lifecycle demo, and Argo CD `Synced/Healthy` reconciliation.
+- AWS pilot Phase 0 was applied in the dedicated pilot account: Terraform created an encrypted,
+  versioned, public-access-blocked S3 state bucket, a project-scoped DynamoDB lock table, and a
+  USD 10 monthly actual-cost Budget with 50/80/100% alert thresholds. No workload infrastructure
+  was created.
+- A bounded AWS workload pilot created the tagged VPC, private EKS cluster, two `t3.large` CPU
+  nodes, RDS PostgreSQL, ECR repository/image, Secrets Manager container, OIDC providers, and
+  scoped IAM roles through Terraform. Argo CD reached `Synced/Healthy` for the ECR-hosted control
+  plane, OPA, Keycloak, and OTel Collector.
+- The EKS runtime accepted a Keycloak-issued RS256 JWT, rejected a cross-tenant request through
+  live OPA with a persisted audit trail, retained that rejected state after a control-plane restart,
+  and exposed live Prometheus metrics, Tempo traces, and the provisioned Grafana dashboard.
+- In the second bounded AWS pilot, the EKS-hosted Operator Console passed Keycloak PKCE
+  login/logout, explicit CORS, and a signed API request through local-only port-forwards. A
+  development request reached `READY` through the documented render-only adapter and was then
+  destroyed with its full audit timeline. A production request required the distinct operator role
+  for both apply and destroy approvals; an unsafe privileged request was rejected by live OPA with
+  no matching EKS workload.
 
 ## Implemented but Not End-to-End Validated
 
@@ -47,7 +74,18 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Architecture / Contracts Only
 
-- AWS provisioning.
+- Durable worker reconciliation, external secret delivery/workload identity, and delegated MCP
+  OIDC identity.
+
+## Explicitly Unexecuted Production Adapters
+
+- GitHub Actions OIDC federation. The manual plan/apply/destroy workflow and role are implemented,
+  but no GitHub-hosted OIDC workflow run has yet been executed.
+- Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
+- Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
+
+See [the production-pilot plan](docs/production-pilot.md) for scoped delivery gates and evidence
+requirements. These are not local-first completion blockers and have not been started.
 
 ## Known Failures
 
@@ -57,15 +95,19 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Current P0 Objective
 
-No open P0 work. The next focused hardening item is turning the validated Compose stack into
-CI-suitable smoke coverage.
+No open local-first P0 work. The second bounded cloud validation was destroyed through the guarded
+Terraform command; its observed cost is not recorded. GitOps publication, a durable reconciler,
+external secrets/workload identity, public TLS/enterprise OIDC, and GitHub Actions OIDC execution
+remain later P1 work.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 26 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q`: 29 passed (2 upstream TestClient deprecation warnings).
 - Local Compose: Keycloak bearer token → FastAPI `/api/v1/catalog`: `200`.
 - `make compose-smoke`: Keycloak token, FastAPI catalog authorization, PostgreSQL state, Prometheus
   query, OTel Collector HTTP span, and Grafana dashboard assertions passed.
+- `make console-smoke`: browser-equivalent Keycloak Authorization Code + PKCE callback, token
+  exchange, and signed Console API request passed without printing an access token.
 - Prometheus query `sum(platform_requests_total)`: returned `1`; Collector logs contained
   `GET /api/v1/catalog` spans with `service.name=ai-platform-control-plane`; Grafana dashboard API
   returned the provisioned `AI Platform Control Plane` dashboard.
@@ -94,7 +136,51 @@ CI-suitable smoke coverage.
   demo-local`; and `make argocd-demo`. The first command removed only Project 1 resources. The
   rebuilt stack passed direct API/Keycloak/Prometheus/Grafana/OTel assertions, the governed
   lifecycle demo, and Argo CD `Synced/Healthy` verification.
+- AWS Phase 0: `scripts/bootstrap-pilot-guardrails.sh` authenticated the expected pilot account,
+  initialized remote Terraform state, imported the secure backend resources, and applied only
+  `ai-platform-control-plane-pilot-monthly-cost`. AWS API verification confirmed AES256 bucket
+  encryption, versioning enabled, active lock table, zero current budget spend, and 50/80/100%
+  actual-cost notifications. No VPC/EKS/RDS/ECR/NAT/workload resources were created.
+- AWS foundation implementation: `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-plan` produced
+  a reviewed **38 to add, 0 to change, 0 to destroy** plan, without applying it. Terraform validate,
+  Kustomize rendering, shell syntax checks, 29 Python tests, Ruff, and Helm lint passed.
+- AWS workload pilot: Terraform applied the reviewed foundation; EKS reported two Ready CPU nodes,
+  ECR returned the immutable `pilot` image digest, and Argo Application
+  `ai-platform-control-plane-runtime` reported `Synced Healthy`.
+- `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-smoke`: passed for the EKS runtime, Argo,
+  control plane, OPA, Prometheus, Grafana, and metrics endpoint.
+- `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-validate`: passed signed Keycloak JWT,
+  live cross-tenant OPA denial/audit, RDS-backed control-plane restart recovery, Prometheus target
+  scrape, Tempo trace search, and Grafana dashboard discovery. No environment workload was claimed:
+  the cloud runtime deliberately uses the documented `render-only` adapter.
+- AWS pilot teardown: the EKS cluster was manually deleted during owner review; the guarded
+  `make pilot-cloud-destroy` then completed the remaining Terraform cleanup. Post-destroy AWS API
+  checks found no tagged pilot workload resources, no EKS/RDS/ECR/secret/IAM/VPC resources, and
+  zero resources in the pilot Terraform state. The encrypted state bucket, lock table, and USD 10
+  Budget alert remain intentionally retained as Phase 0 guardrails.
+- Operator Console: `make compose-smoke` started the Nginx console at `http://localhost:4173`,
+  confirmed its static content and health endpoint, Keycloak accepted the Authorization Code + PKCE
+  login/callback/token exchange and logout redirect, FastAPI returned the configured CORS preflight,
+  and the signed-token API/OTLP/Prometheus/Grafana path passed.
+- AWS Operator Console and governed lifecycle: `make pilot-cloud-smoke`, `make
+  pilot-cloud-validate`, and `make pilot-cloud-console-validate` passed. The cloud runtime was
+  Argo `Synced Healthy`; all five platform Deployments had one available replica. A developer
+  development request reached `READY` then `DESTROYED` with request/plan/render/destroy audit
+  actions. A production request reached `APPROVAL_REQUIRED`, a developer was denied approval
+  (`403`), an operator approved the exact apply and destroy hashes, and the final state was
+  `DESTROYED`. A privileged request was `REJECTED` by OPA with no matching EKS workload.
+- Cloud evidence query: API metrics reported 2 successful creates, 1 rejected create, and 1 policy
+  denial; Prometheus scraped the `control-plane` target as `up` and returned
+  `sum(platform_requests_total)=10`; Tempo returned 20 control-plane traces; Grafana returned the
+  provisioned `AI Platform Control Plane` dashboard.
+- Second AWS pilot teardown: `make pilot-cloud-destroy` removed the 38 Terraform-managed workload
+  resources. AWS API checks confirmed EKS, RDS, ECR, VPC, pilot IAM roles, EKS OIDC provider,
+  Secrets Manager objects, and the security-group rule absent; Terraform state listed zero
+  resources. The project-tagged NAT gateway is retained by AWS only as a historical record in
+  `deleted` state. The encrypted state bucket, active lock table, and USD 10 Budget remain by
+  design.
 
 ## Last Updated
 
-2026-09-20, clean-room local bootstrap and end-to-end validation completed.
+2026-10-02, local-first completion is unchanged. The second bounded AWS runtime validation,
+governed-lifecycle evidence, and guarded teardown are recorded.

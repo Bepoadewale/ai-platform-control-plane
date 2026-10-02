@@ -4,6 +4,12 @@ A governed internal developer platform that lets engineers and AI agents request
 
 It is deliberately a **control plane**, not an AI demo app. A request is authenticated, authorized, policy-checked, planned with a cost estimate, persisted as an auditable lifecycle, rendered to GitOps desired state, and then reconciled by Kubernetes tooling.
 
+> **Evidence boundary:** **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE.** A separate AWS pilot is
+> **CLOUD-PILOT VALIDATED**: its EKS runtime, Console, identity, policy, observability, and guarded
+> teardown were executed. It is **not production-certified**: per-environment AWS GitOps,
+> durable reconciliation, enterprise identity/secrets, HA, measured SLOs/cost, and sustained
+> workload evidence remain unexecuted.
+
 ## What this repository demonstrates
 
 It turns an infrastructure request into a governed lifecycle instead of handing a person or an AI
@@ -75,7 +81,9 @@ flowchart LR
 
 ## What this repository deliberately does not do
 
-- It does not create AWS/EKS infrastructure, incur cloud spend, or claim production HA validation.
+- It does not create cloud workload spend by default or claim production HA validation. A bounded,
+  owner-authorized AWS pilot executed VPC/EKS/RDS/ECR/Argo/telemetry validation and a verified
+  teardown; it is not a production-certification claim.
 - It does not expose raw Kubernetes credentials, Docker sockets, Terraform execution, long-lived
   cloud credentials, or secret values to callers or agents.
 - It does not treat a rendered Helm chart, a Terraform module, or a mocked unit test as proof of a
@@ -111,6 +119,15 @@ This bootstraps kind, Metrics Server, and Argo CD; validates the Keycloak/Postgr
 
 Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
 
+### Operator Console
+
+Run `make console-local`, then open `http://localhost:4173`. The separate browser console uses
+Keycloak Authorization Code + PKCE and calls the same signed-JWT, tenant-aware API; it does not
+receive Kubernetes, Terraform, cloud, or secret authority. See [Operator Console](docs/operator-console.md)
+for the local fixture boundary and exact validation status. In the bounded AWS pilot, `make
+pilot-cloud-console` serves the EKS-hosted Console only through `http://localhost:18083` local
+port-forwards; it is not a public endpoint.
+
 ### Temporary public demo URL
 
 Run `make public-demo` to bootstrap the local stack and print a temporary Cloudflare Quick Tunnel URL for the provisioned Grafana dashboard. It uses no Cloudflare account, named tunnel, or persistent credential; the URL changes every run and must never be committed. Anyone with the URL can reach that local dashboard, so use only disposable demonstration data. Keep the command running while sharing it; `Ctrl-C` stops only the tunnel and `make clean-local` removes project-owned local resources.
@@ -128,7 +145,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
 
 ## Execution boundary
 
-The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. `make argocd-demo` synchronizes the golden path with local Argo CD and waits for `Synced/Healthy`. The curl example above is explicitly development-only. AWS/EKS is not executed. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
+The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. `make argocd-demo` synchronizes the golden path with local Argo CD and waits for `Synced/Healthy`. The curl example above is explicitly development-only. A separate bounded AWS pilot has also executed the cloud runtime; see [implementation status](docs/IMPLEMENTATION_STATUS.md) for its narrower evidence boundary.
 
 The local demo has also passed a clean-room reset: `make clean-local` removes only this repository's
 Compose resources, local image, named volumes, and `ai-platform-local` kind cluster. Re-running the
@@ -143,6 +160,23 @@ See [architecture](docs/architecture.md), [local development](docs/local-develop
 
 ## Production boundary
 
-This portfolio implementation is locally runnable, not production-certified. Production needs durable PostgreSQL persistence, OIDC/JWKS validation, an OPA sidecar/bundle, Git commit signing and protected branches, Argo CD HA, external secrets, managed database operators, and a real job/reconciliation queue. AWS is intentionally opt-in; no expensive resources or GPUs are created by default.
+This portfolio implementation is **portfolio complete locally** and **cloud-pilot validated**, not
+production-certified. Local PostgreSQL, OIDC/JWKS validation, OPA, Argo CD, and telemetry are
+executed; the bounded AWS pilot also executed its runtime and teardown. Production certification
+would additionally require real per-environment GitOps/reconciliation, HA/managed persistence,
+enterprise identity, signed Git commits and protected branches, external secrets/workload identity,
+managed database operations, durable job/reconciliation, measured SLO/cost evidence, and sustained
+workload failure/rollback validation. AWS is intentionally opt-in; no expensive resources or GPUs
+are created by default.
+
+The AWS pilot is deliberately separate from the local-first completion claim. It used guarded
+Terraform create/destroy scripts, a tagged VPC/EKS/RDS/ECR foundation, an Argo-managed runtime,
+Keycloak JWT validation, OPA policy denial, RDS restart recovery, Prometheus, Tempo, Grafana, and a
+temporary Cloudflare review tunnel. The GitHub Actions manual plan/apply/destroy dropdown workflow
+and GitHub App publisher remain implemented but unexecuted production adapters. The runtime’s
+environment reconciler is explicitly `render-only`; it does not yet publish an individual request
+as a protected Git change and wait for Argo to create that workload. See the
+[production-pilot plan](docs/production-pilot.md), [cloud pilot runbook](docs/cloud-pilot-runbook.md),
+and [AWS validation evidence](docs/VALIDATION.md#aws-workload-pilot--2026-10-02-createvalidatedestroy).
 
 Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).

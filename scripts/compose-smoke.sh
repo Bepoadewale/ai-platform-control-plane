@@ -18,6 +18,7 @@ if [[ "${COMPOSE_SKIP_UP:-0}" != "1" ]]; then
   docker compose up -d --build
 fi
 wait_for http://localhost:8000/healthz
+wait_for http://localhost:4173/healthz
 wait_for http://localhost:9090/-/ready
 wait_for http://localhost:3000/api/health -u admin:local-development-only
 wait_for http://localhost:8081/realms/platform/.well-known/openid-configuration
@@ -40,6 +41,17 @@ curl --fail --silent --show-error \
   -H "Authorization: Bearer ${token}" \
   http://localhost:8000/api/v1/catalog | jq -e '.environment_types | index("development") != null' >/dev/null
 
+curl --fail --silent --show-error http://localhost:4173/ | \
+  grep 'Request capacity without receiving administrator credentials' >/dev/null
+
+curl --fail --silent --show-error --include --request OPTIONS \
+  -H 'Origin: http://localhost:4173' \
+  -H 'Access-Control-Request-Method: GET' \
+  http://localhost:8000/api/v1/catalog | \
+  grep -i 'access-control-allow-origin: http://localhost:4173' >/dev/null
+
+./scripts/console-browser-smoke.sh
+
 for _ in $(seq 1 60); do
   samples="$(curl --fail --silent --show-error \
     'http://localhost:9090/api/v1/query?query=sum(platform_requests_total)' | jq -r '.data.result[0].value[1] // "0"')"
@@ -58,7 +70,7 @@ for _ in $(seq 1 60); do
   # Do not use `grep -q` here: with `pipefail`, Docker can receive SIGPIPE
   # after grep exits early and make a successful trace look like a failure.
   if docker compose logs --no-color otel-collector | grep 'GET /api/v1/catalog' >/dev/null; then
-    echo "PASS: Keycloak OIDC → FastAPI → PostgreSQL-backed control plane → OTLP → Prometheus → Grafana"
+    echo "PASS: Keycloak OIDC → FastAPI → PostgreSQL-backed control plane → authenticated console → OTLP → Prometheus → Grafana"
     exit 0
   fi
   sleep 2

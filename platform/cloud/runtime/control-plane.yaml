@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: control-plane
+  annotations:
+    # Runtime secret delivery should use EKS Pod Identity/IRSA in a later pilot increment.
+    # This first runtime uses a short-lived, operator-created Kubernetes secret only.
+    platform.bepo.ai/secret-delivery: pilot-bootstrap-only
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: control-plane
+  labels:
+    app.kubernetes.io/name: control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-plane
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: control-plane
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8000"
+    spec:
+      serviceAccountName: control-plane
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: control-plane
+          # `pilot` is immutable in ECR. The pilot teardown deletes this project-scoped repository.
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: PLATFORM_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: database-url}}
+            - name: PLATFORM_OPA_DECISION_URL
+              value: http://opa.platform-system.svc.cluster.local:8181/v1/data/platform/environment
+            - name: PLATFORM_JWT_ISSUER
+              # Pilot-only: Keycloak is reached through a local port-forward by the
+              # browser console; the API keeps its JWKS fetch on the cluster network.
+              value: http://localhost:18081/realms/platform
+            - name: PLATFORM_JWT_AUDIENCE
+              value: ai-platform-control-plane
+            - name: PLATFORM_JWKS_URL
+              value: http://keycloak.platform-system.svc.cluster.local:8080/realms/platform/protocol/openid-connect/certs
+            - name: PLATFORM_CORS_ORIGINS
+              value: http://localhost:18083,http://127.0.0.1:18083
+            - name: PLATFORM_DESIRED_STATE_ROOT
+              value: /app/environments
+            - name: OTEL_SERVICE_NAME
+              value: ai-platform-control-plane
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.platform-system.svc.cluster.local:4318
+            - name: PLATFORM_RECONCILER
+              value: render-only
+          startupProbe:
+            httpGet: {path: /healthz, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /healthz, port: http}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - name: state
+              mountPath: /app/environments
+      volumes:
+        - name: state
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: control-plane
+spec:
+  selector:
+    app.kubernetes.io/name: control-plane
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: control-plane-egress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: control-plane
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - {protocol: UDP, port: 53}
+        - {protocol: TCP, port: 53}
+    - to:
+        - podSelector: {}
+      ports:
+        - {protocol: TCP, port: 8181}
+        - {protocol: TCP, port: 8080}
+        - {protocol: TCP, port: 4318}
+    - to:
+        - ipBlock: {cidr: 10.42.0.0/16}
+      ports:
+        - {protocol: TCP, port: 5432}

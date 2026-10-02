@@ -15,3 +15,11 @@ executed local evidence.
 Suggested SLOs: 99.9% successful authenticated read requests over 30 days; 99% of accepted
 development requests reach a terminal state within 10 minutes; 100% of state transitions emit an
 audit event. These are illustrative objectives, not measured production SLOs.
+
+The bounded AWS pilot did execute a control-plane scrape, Tempo trace search, and Grafana dashboard
+discovery. Before a **production-certified** deployment can claim operational readiness, add and
+exercise metrics for active/ready environments, reconciliation duration/failure, approval-required
+count and wait latency, TTL expiry, destroy failures, recovery attempts, policy-evaluation duration,
+and estimated cost. Add child spans for policy, plan, approval, desired-state publication,
+GitOps/Argo observation, and reconciliation. Then define alerts and calculate SLO/error-budget
+results from measured data rather than the illustrative targets above.

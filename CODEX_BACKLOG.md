@@ -7,6 +7,19 @@ validated primary-path regression is discovered.
 
 - Add CI-suitable coverage for the Compose smoke stack when runner capacity allows.
 - Expand API-level authorization integration coverage for cross-tenant access.
+- [x] Apply AWS pilot account guardrails: USD 10 Budget alerts, required tags, encrypted remote Terraform state, and lock table.
+- [x] Execute project-scoped AWS pilot teardown after owner completes public review; record destroy and remaining-resource evidence.
+- Create a GitHub OIDC role boundary and prove a read-only identity workflow before granting deployment permissions.
+- [x] Execute the authenticated Operator Console against the bounded EKS runtime through
+  project-scoped local port-forwards; record its Keycloak PKCE, explicit CORS, and signed API
+  evidence. A public TLS/enterprise-OIDC ingress remains a separate production hardening task.
+- [x] Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation and execute the bounded runtime/policy/restart/telemetry pilot.
+- [x] Add a GitHub App desired-state publication boundary and a GitHub Actions plan/apply/destroy workflow.
+- Wire GitHub App publication to a durable worker and execute a protected Git change → Argo reconciliation before claiming production GitOps.
+- Add protected Git desired-state publication and Argo status observation; do not let the production API invoke Helm/kubectl directly.
+- Separate reconciliation from the API process with durable job state and idempotent recovery.
+- Add external secret references/workload identity, lifecycle metrics/child spans, and measured SLO/alert evidence.
+- Replace development MCP identity environment variables with trusted delegated OIDC identity.
 
 # P2 — Enhancements
 
@@ -14,4 +27,4 @@ validated primary-path regression is discovered.
 
 # P3 — Future / Cloud / Hardware
 
-- AWS, enterprise OIDC, and multi-cluster delivery.
+- Enterprise OIDC validation, multi-cluster delivery, HA/failover, and GPU/cloud workload execution.

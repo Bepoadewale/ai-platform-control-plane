@@ -1,0 +1,23 @@
+namespace: platform-system
+
+resources:
+  - cloud/runtime/namespace.yaml
+  - cloud/runtime/opa.yaml
+  - cloud/runtime/keycloak.yaml
+  - cloud/runtime/control-plane.yaml
+  - cloud/runtime/operator-console.yaml
+  - cloud/runtime/otel-collector.yaml
+
+configMapGenerator:
+  - name: platform-policy
+    files:
+      - environment.rego=policies/environment.rego
+  - name: keycloak-realm
+    files:
+      - platform-realm.json=keycloak/platform-realm.json
+  - name: otel-collector-config
+    files:
+      - config.yaml=cloud/otel-collector.yaml
+
+generatorOptions:
+  disableNameSuffixHash: false

@@ -14,7 +14,23 @@
       "clientId": "ai-platform-control-plane",
       "enabled": true,
       "publicClient": true,
+      "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:4173/*",
+        "http://127.0.0.1:4173/*",
+        "http://localhost:18083/*",
+        "http://127.0.0.1:18083/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4173",
+        "http://127.0.0.1:4173",
+        "http://localhost:18083",
+        "http://127.0.0.1:18083"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:4173/*##http://127.0.0.1:4173/*##http://localhost:18083/*##http://127.0.0.1:18083/*"
+      },
       "protocol": "openid-connect",
       "protocolMappers": [
         {

@@ -4,3 +4,27 @@
 - **Level 2 — Partially Validated:** API and one local dependency are exercised with integration tests.
 - **Level 3 — Local End-to-End Validated:** signed identity → policy → plan/approval → kind workload Ready → audit; denial and destroy paths are exercised.
 - **Level 4 — Portfolio Complete:** Level 3 plus reproducible demo, accurate README/status, CI, failure recovery and no unlabelled simulated infrastructure claim. **Met 2026-09-19:** `make demo-local` validates the signed FastAPI/OPA/kind success, denial, approval, and cleanup paths; optional cloud and observability-stack adapters remain explicitly marked.
+
+## Separate production-pilot gate
+
+AWS or production-platform execution may only be claimed after a separate pilot completes the
+evidence gates in [docs/production-pilot.md](docs/production-pilot.md): GitHub OIDC, reviewed
+Terraform plan/apply/destroy, EKS/Argo lifecycle, external secret/workload identity boundary,
+failure/recovery evidence, and measured observability/cost evidence. Static Terraform validation,
+local kind, or a successful container build are not substitutes.
+
+## Production-certification gate
+
+The following is deliberately stricter than `PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE` and
+`CLOUD-PILOT VALIDATED`. Do not describe this repository as production-certified until every
+applicable item has executed evidence:
+
+- [x] Bounded cloud create → validate → destroy pilot, with EKS/Argo/runtime/Console evidence.
+- [ ] Individual environment request publishes a protected Git change and Argo reconciles that
+  workload in EKS with observed readiness, failure, rollback, and cleanup.
+- [ ] Durable outbox/worker reconciliation with idempotent retry and recovery has executed.
+- [ ] Enterprise identity, GitHub Actions AWS OIDC, and external secret/workload identity paths have
+  executed without long-lived credentials.
+- [ ] HA, backup/restore, failure/rollback, and sustained workload behavior have been measured.
+- [ ] Production observability, SLO/error-budget, alerting, and cost evidence have been collected.
+- [ ] Public TLS ingress and a production Console identity/CORS boundary have been validated.

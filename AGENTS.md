@@ -6,10 +6,34 @@ Stack: Python 3.12, FastAPI, Pydantic, SQLite/PostgreSQL, Keycloak/JWKS, OPA, He
 Prometheus, Grafana, OpenTelemetry, and Terraform contracts.
 
 Commands: `make install`, `make test`, `make lint`, `make demo`, `make bootstrap-local`,
-`make compose-smoke`, `make demo-local`, `make argocd-demo`, `make clean-local`, `make helm-lint`,
+`make compose-smoke`, `make console-local`, `make demo-local`, `make argocd-demo`, `make clean-local`, `make helm-lint`,
 and `make terraform-validate`.
 
 Rules: never claim AWS execution without an integration test; never trust request headers as production
 identity; no secrets; do not push main; preserve lifecycle/idempotency semantics. Argo/kind/OPA,
 Keycloak, PostgreSQL, OTel, Prometheus, and Grafana are locally executed only when evidence exists.
 Meaningful changes need tests. Update status/backlog after work and report exact validation.
+
+Operator Console rule: the browser UI is only an authenticated API client. It must use trusted OIDC
+tokens, an explicit CORS allow-list, and existing API policy/approval/audit boundaries; never add
+browser-held cloud/Kubernetes credentials, a policy decision in JavaScript, or a direct infrastructure
+execution path.
+
+Production-pilot rule: do not add long-lived AWS credentials to GitHub or the repository. A
+temporary local bootstrap profile may exist only in the operator's `~/.aws` directory and must never
+be logged, copied, or committed; replace it with SSO for humans and a least-privilege GitHub Actions
+OIDC role for CI. Record real `plan`, `apply`, smoke, failure, cost, and `destroy` evidence before
+labeling any AWS component executed. The production pilot plan is `docs/production-pilot.md`; it
+does not authorize provisioning until the repository owner supplies a dedicated account, budget,
+and explicit deployment authority.
+
+The owner-authorized Phase 0 backend and USD 10 Budget are executed and recorded in
+`docs/VALIDATION.md`. Cloud-pilot implementation is on `codex/production-pilot-roadmap`; before an
+actual apply, run the reviewed plan, use only the project-scoped scripts, record evidence, and
+destroy the workload footprint. The GitHub Actions workflow is manual and confirmation-gated; it
+must never receive AWS access keys or broad unattended deployment authority.
+
+Evidence-label rule: keep `PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE`, `CLOUD-PILOT VALIDATED`, and
+`production-certified` distinct. A bounded cloud create/validate/destroy pass validates only the
+recorded pilot capabilities; it never authorizes a production-certified claim until the separate
+production-certification gate in `DEFINITION_OF_DONE.md` has executed evidence.
