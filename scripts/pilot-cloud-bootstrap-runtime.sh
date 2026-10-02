@@ -87,8 +87,9 @@ kubectl -n platform-system create secret generic platform-runtime-secrets \
 external_secrets_manifest="$(mktemp "${TMPDIR:-/tmp}/ai-platform-external-secrets.XXXXXX.yaml")"
 trap 'rm -f "${runtime_manifest:-}" "${external_secrets_manifest:-}"' EXIT
 sed "s#\${EXTERNAL_SECRETS_ROLE_ARN}#${external_secrets_role_arn}#" \
-  "$project_root/platform/cloud/runtime/external-secrets.yaml" >"$external_secrets_manifest"
+  "$project_root/platform/cloud/runtime/pilot-secrets-reader.yaml.tmpl" >"$external_secrets_manifest"
 kubectl apply -f "$external_secrets_manifest"
+kubectl apply -f "$project_root/platform/cloud/runtime/external-secrets.yaml"
 kubectl -n platform-system wait --for=condition=Ready externalsecret/github-app-credentials --timeout=5m
 
 runtime_manifest="$(mktemp "${TMPDIR:-/tmp}/ai-platform-runtime-application.XXXXXX.yaml")"
