@@ -77,7 +77,7 @@ sustained production workload. Those omissions prevent any production-certified 
 
 ## Architecture / Contracts Only
 
-- External secret delivery/workload identity and delegated MCP OIDC identity.
+- Delegated MCP OIDC identity.
 
 ## Explicitly Unexecuted Production Adapters
 

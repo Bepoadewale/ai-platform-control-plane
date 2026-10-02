@@ -12,7 +12,8 @@ validated primary-path regression is discovered.
 - [ ] Publish an approved environment as a protected Git change and observe merge/Argo state.
 - [ ] Execute the rendered Argo ApplicationSet-driven private EKS environment workload path with
   readiness, failure, rollback, and destroy evidence.
-- [ ] Add IRSA/Pod Identity and External Secrets for synthetic secret-reference validation.
+- [ ] Execute the rendered IRSA + External Secrets path for the scoped GitHub App credential and
+  record a secret-rotation/recovery check.
 - [ ] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.
 - [ ] Run and record one private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass.

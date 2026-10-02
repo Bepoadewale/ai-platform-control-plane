@@ -38,7 +38,7 @@ kubectl in the cloud path.
 - [ ] Argo ApplicationSet discovers the merged desired state and creates a private environment
   workload in EKS.
 - [ ] Readiness, failure, rollback, and destroy are observed and written to the audit timeline.
-- [ ] EKS workloads retrieve a synthetic secret through IRSA/Pod Identity plus External Secrets;
+- [ ] EKS workloads retrieve a synthetic secret through the rendered IRSA + External Secrets path;
   no secret value is stored in Git, request payloads, or audit records.
 - [ ] Control plane and worker run at more than one replica with probes, PDBs, bounded retries, and
   a deliberate pod-loss/recovery test.

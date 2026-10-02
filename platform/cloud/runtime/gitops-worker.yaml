@@ -14,8 +14,8 @@ metadata:
   labels:
     app.kubernetes.io/name: gitops-worker
 spec:
-  # Enabled only once the scoped GitHub App secret is supplied by the identity/secrets slice.
-  replicas: 0
+  # Starts only after External Secrets materializes the scoped GitHub App credential.
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: gitops-worker

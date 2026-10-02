@@ -21,6 +21,7 @@ kubectl get nodes --request-timeout=30s >/dev/null
 # The identity and telemetry components have no public load balancer. Pilot evidence uses local
 # port-forwarding so this short run does not create another billable service.
 helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
+helm repo add external-secrets https://charts.external-secrets.io >/dev/null
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
 helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
 helm repo update >/dev/null
@@ -30,6 +31,15 @@ kubectl -n platform-observability create configmap ai-platform-control-plane-das
   --dry-run=client -o yaml | kubectl apply -f -
 helm upgrade --install argocd argo/argo-cd --namespace argocd --create-namespace \
   --set server.service.type=ClusterIP --wait --timeout 10m
+external_secrets_role_arn="$(AWS_PROFILE="$aws_profile" aws iam get-role \
+  --role-name ai-platform-control-plane-pilot-external-secrets \
+  --query 'Role.Arn' --output text)"
+helm upgrade --install external-secrets external-secrets/external-secrets \
+  --namespace external-secrets --create-namespace \
+  --set serviceAccount.create=true \
+  --set serviceAccount.name=external-secrets \
+  --set serviceAccount.annotations."eks\\.amazonaws\\.com/role-arn"="$external_secrets_role_arn" \
+  --wait --timeout 10m
 helm upgrade --install tempo grafana/tempo --namespace platform-observability --create-namespace \
   --set persistence.enabled=false --set resources.requests.cpu=100m --set resources.requests.memory=128Mi \
   --set resources.limits.cpu=500m --set resources.limits.memory=256Mi --wait --timeout 10m
@@ -58,6 +68,9 @@ kubectl -n platform-system create secret generic platform-runtime-secrets \
   --from-literal=keycloak-admin-password="$(openssl rand -base64 24)" \
   --dry-run=client -o yaml | kubectl apply -f -
 
+kubectl apply -f "$project_root/platform/cloud/runtime/external-secrets.yaml"
+kubectl -n platform-system wait --for=condition=Ready externalsecret/github-app-credentials --timeout=5m
+
 kubectl apply -f "$project_root/platform/cloud/argocd/runtime-application.yaml"
 kubectl -n argocd rollout status deployment/argocd-server --timeout=10m
 kubectl -n argocd wait --for=jsonpath='{.status.sync.status}'=Synced application/ai-platform-control-plane-runtime --timeout=10m
@@ -65,6 +78,7 @@ kubectl -n argocd wait --for=jsonpath='{.status.health.status}'=Healthy applicat
 kubectl -n platform-system rollout status deployment/opa --timeout=5m
 kubectl -n platform-system rollout status deployment/keycloak --timeout=10m
 kubectl -n platform-system rollout status deployment/control-plane --timeout=5m
+kubectl -n platform-system rollout status deployment/gitops-worker --timeout=5m
 kubectl -n platform-system rollout status deployment/operator-console --timeout=5m
 kubectl -n platform-system rollout status deployment/otel-collector --timeout=5m
 kubectl -n platform-observability rollout status deployment/prometheus-server --timeout=5m
