@@ -71,6 +71,18 @@ for _ in {1..60}; do
   jq -e 'map(select(.action == "APPLY" and .state == "PUBLISHED")) | length == 1' "$tmp_dir/jobs.json" >/dev/null && break
   sleep 2
 done
+merge_if_open() {
+  local pull_request="$1"
+  local state
+  state="$(gh pr view "$pull_request" --json state --jq '.state')"
+  if [[ "$state" == "MERGED" ]]; then
+    echo "GitOps pull request is already merged: $pull_request"
+    return 0
+  fi
+  [[ "$state" == "OPEN" ]] || { echo "GitOps pull request is not mergeable: $pull_request ($state)" >&2; return 1; }
+  gh pr merge "$pull_request" --merge --delete-branch
+}
+
 apply_pr="$(jq -er 'map(select(.action == "APPLY" and .state == "PUBLISHED"))[0].publication_url' "$tmp_dir/jobs.json")"
 echo "GitOps apply pull request: $apply_pr"
 
@@ -79,7 +91,7 @@ if [[ "${MERGE_GITOPS_CHANGE:-}" != "$environment_id" ]]; then
   exit 0
 fi
 command -v gh >/dev/null 2>&1 || { echo "gh is required to merge the reviewed GitOps PR." >&2; exit 1; }
-gh pr merge "$apply_pr" --merge --delete-branch
+merge_if_open "$apply_pr"
 
 namespace="team-demo-$name"
 for _ in {1..90}; do
@@ -106,7 +118,7 @@ for _ in {1..60}; do
 done
 destroy_pr="$(jq -er 'map(select(.action == "DESTROY" and .state == "PUBLISHED"))[0].publication_url' "$tmp_dir/destroy-jobs.json")"
 echo "GitOps destroy pull request: $destroy_pr"
-gh pr merge "$destroy_pr" --merge --delete-branch
+merge_if_open "$destroy_pr"
 
 for _ in {1..90}; do
   ! kubectl get namespace "$namespace" >/dev/null 2>&1 && break
