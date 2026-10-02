@@ -85,10 +85,10 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. A second bounded cloud validation is active; its observed cost is not
-recorded and it must be destroyed through the guarded Terraform command after review. GitOps
-publication, a durable reconciler, external secrets/workload identity, public TLS/enterprise OIDC,
-and GitHub Actions OIDC execution remain later P1 work.
+No open local-first P0 work. The second bounded cloud validation was destroyed through the guarded
+Terraform command; its observed cost is not recorded. GitOps publication, a durable reconciler,
+external secrets/workload identity, public TLS/enterprise OIDC, and GitHub Actions OIDC execution
+remain later P1 work.
 
 ## Last Validation
 
@@ -163,8 +163,14 @@ and GitHub Actions OIDC execution remain later P1 work.
   denial; Prometheus scraped the `control-plane` target as `up` and returned
   `sum(platform_requests_total)=10`; Tempo returned 20 control-plane traces; Grafana returned the
   provisioned `AI Platform Control Plane` dashboard.
+- Second AWS pilot teardown: `make pilot-cloud-destroy` removed the 38 Terraform-managed workload
+  resources. AWS API checks confirmed EKS, RDS, ECR, VPC, pilot IAM roles, EKS OIDC provider,
+  Secrets Manager objects, and the security-group rule absent; Terraform state listed zero
+  resources. The project-tagged NAT gateway is retained by AWS only as a historical record in
+  `deleted` state. The encrypted state bucket, active lock table, and USD 10 Budget remain by
+  design.
 
 ## Last Updated
 
-2026-10-02, local-first completion is unchanged. A second bounded AWS runtime validation is active
-and its Console/governed-lifecycle evidence is recorded pending guarded Terraform teardown.
+2026-10-02, local-first completion is unchanged. The second bounded AWS runtime validation,
+governed-lifecycle evidence, and guarded teardown are recorded.

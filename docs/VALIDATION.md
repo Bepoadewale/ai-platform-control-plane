@@ -99,12 +99,12 @@ Observed evidence:
 The required sequence and security boundaries are in [Production pilot plan](production-pilot.md) and
 [the AWS pilot runbook](cloud-pilot-runbook.md).
 
-## AWS Operator Console and governed lifecycle — 2026-10-02 (active bounded pilot)
+## AWS Operator Console and governed lifecycle — 2026-10-02 (create/validate/destroy)
 
 The second bounded pilot reused the reviewed Terraform foundation after a graceful local Terraform
 interrupt tainted only CoreDNS; Terraform then replaced that add-on and returned a consistent state.
-The pilot remains active at the time of this record and must still be destroyed with the guarded
-Terraform command after review.
+After the recorded validation, the guarded destroy completed and the workload footprint was
+independently queried as absent.
 
 Commands executed:
 
@@ -115,6 +115,7 @@ AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
 AWS_PROFILE=<operator-profile> make pilot-cloud-validate
 AWS_PROFILE=<operator-profile> make pilot-cloud-console-validate
 AWS_PROFILE=<operator-profile> make pilot-cloud-console
+AWS_PROFILE=<operator-profile> make pilot-cloud-destroy
 ```
 
 Observed evidence:
@@ -127,6 +128,7 @@ Observed evidence:
 | Protected production lifecycle | A developer production request became `APPROVAL_REQUIRED` with an immutable plan. A developer approval attempt returned `403` because it lacked the platform-operator role. The distinct operator approved the exact apply plan, then the exact destruction plan; final state was `DESTROYED`. |
 | Policy denial | A development request with `privileged=true` became `REJECTED` with `privileged containers are prohibited`; its audit contained `environment.requested`, `policy.evaluating`, and `policy.rejected`. Querying all EKS Deployments/Services found no workload with that request name. |
 | Metrics and traces | API metrics showed two successful creates, one rejected create, and one policy denial. Prometheus reported its `control-plane` target `up` and `sum(platform_requests_total)=10`; Tempo returned 20 control-plane traces; Grafana returned the provisioned `AI Platform Control Plane` dashboard. |
+| Guarded teardown | `make pilot-cloud-destroy` destroyed the 38 Terraform-managed workload resources. AWS API queries confirmed the EKS cluster, RDS instance, ECR repository, VPC, pilot IAM roles, EKS OIDC provider, Secrets Manager objects, and pilot security-group rule absent; pilot Terraform state listed zero resources. The NAT gateway's historical AWS record reported `deleted`. Only the encrypted state bucket, DynamoDB lock table, and USD 10 Budget remain intentionally. |
 
 This is runtime/governance evidence, not a claim that an individual request reconciled to an EKS
 workload. The cloud adapter is intentionally `render-only`; the local kind path remains the
