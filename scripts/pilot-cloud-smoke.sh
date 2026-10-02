@@ -10,7 +10,7 @@ actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query
 AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region" >/dev/null
 
 kubectl -n argocd get application ai-platform-control-plane-runtime \
-  -o jsonpath='{.status.sync.status} {.status.health.status}{"\\n"}' | grep -qx 'Synced Healthy'
+  -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}' | grep -qx 'Synced Healthy'
 kubectl -n platform-system get deployment control-plane -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-system get deployment opa -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-observability get deployment prometheus-server -o jsonpath='{.status.availableReplicas}' | grep -qx '1'

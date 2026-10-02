@@ -27,7 +27,12 @@ spec:
             - name: KC_BOOTSTRAP_ADMIN_PASSWORD
               valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: keycloak-admin-password}}
             - name: KC_HOSTNAME_STRICT
-              value: "false"
+              value: "true"
+            # Pin the issuer that FastAPI validates. Without this, Keycloak derives
+            # a short service hostname from the token request and creates tokens
+            # that fail the control plane's issuer check.
+            - name: KC_HOSTNAME
+              value: http://keycloak.platform-system.svc.cluster.local:8080
           resources:
             requests: {cpu: 250m, memory: 512Mi}
             limits: {cpu: "1", memory: 1Gi}
