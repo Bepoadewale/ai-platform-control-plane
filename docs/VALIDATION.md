@@ -39,35 +39,45 @@ can accept its port before it is ready to serve. `COMPOSE_SKIP_UP=1 ./scripts/co
 an internal reuse option for validating already-started services; documented users should run
 `make compose-smoke`.
 
-## Future AWS workload-pilot validation template — NOT EXECUTED
+## AWS workload pilot — 2026-10-02 (create/validate; teardown pending)
 
-Do not fill this section from a local kind run or a Terraform-only validation. When an
-owner-authorized pilot occurs, record the commit SHA, AWS region, non-sensitive resource tags,
-tool versions, GitHub OIDC role boundary, exact reviewed `terraform plan`/`apply`/smoke/failure/
-rollback/`destroy` commands, Argo and EKS readiness evidence, OPA/audit/telemetry evidence, and
-observed pilot cost. Confirm teardown by checking that only documented retained resources remain.
+Environment: macOS; AWS CLI v2; Terraform 1.14.0; AWS provider 5.100.0; EKS Kubernetes 1.35;
+Argo CD chart 10.9.6 / application 3.5.3; Prometheus chart 29.35.0 / application 3.15.0; Grafana
+chart 10.5.15 / application 12.3.1; Tempo chart 1.24.4. The pilot ran only in the dedicated,
+budget-alerted account and region. No credentials, token values, database password, or public
+tunnel URL are recorded here.
 
-### Cloud create → validate → destroy evidence
+Commands executed:
 
-When this pilot is actually run, record only observed evidence:
+```console
+AWS_PROFILE=<operator-profile> make pilot-cloud-plan
+AWS_PROFILE=<operator-profile> make pilot-cloud-apply
+AWS_PROFILE=<operator-profile> make pilot-cloud-push-image
+AWS_PROFILE=<operator-profile> make pilot-cloud-bootstrap-runtime
+AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
+AWS_PROFILE=<operator-profile> make pilot-cloud-validate
+AWS_PROFILE=<operator-profile> make pilot-cloud-public-demo
+```
+
+Observed evidence:
 
 | Evidence | Value / result |
 | --- | --- |
-| Date / commit | — |
-| Operator OS and tool versions | — |
-| AWS region / project tags | — |
-| Reviewed Terraform plan summary | — |
-| Manual GitHub Actions OIDC run (action / run URL) | — |
-| EKS / nodes ready | — |
-| ECR image digest | — |
-| Argo Application sync / health | — |
-| Control-plane, OPA, Keycloak, and RDS smoke | — |
-| Prometheus query / Grafana datasource / Tempo trace | — |
-| API success / policy-denial / approval / failure scenario | — |
-| Restart or recovery scenario | — |
-| Observed cost during pilot | — |
-| Terraform destroy result | — |
-| Post-destroy resource query | — |
+| Date / commit | 2026-10-02; runtime application `Synced Healthy` at `38884c73816d3ce81345eec7880bbfe339a8de04` |
+| AWS region / project tags | `us-east-1`; Terraform project-scoped pilot tags |
+| Reviewed Terraform plan / apply | Foundation was reviewed as 38 additions, then applied; state later contained 47 managed records including provider-managed add-ons and OIDC dependencies |
+| Manual GitHub Actions OIDC run | Not executed; manual confirmation-gated workflow remains an unexecuted adapter |
+| EKS / nodes ready | two `cpu-pilot` `t3.large` nodes Ready |
+| ECR image digest | immutable `pilot` tag: `sha256:3fc303e43d603e18a9984c3197b824e92afc437ceb85a55cb43dd73aaed21f94` |
+| Argo Application sync / health | `ai-platform-control-plane-runtime`: `Synced Healthy` |
+| Control-plane, OPA, Keycloak, and RDS smoke | `make pilot-cloud-smoke` passed; health, OPA, Prometheus, Grafana, and metrics endpoints were reachable |
+| Signed identity / policy denial | in-cluster Keycloak issued an RS256 JWT accepted by FastAPI; a cross-tenant create reached live OPA, returned `REJECTED`, and persisted `policy.rejected` audit evidence |
+| Restart or recovery scenario | control-plane Deployment restarted; the rejected environment and its audit timeline were retrieved afterward from RDS |
+| Prometheus / Grafana / Tempo | Prometheus `control-plane` target reported `up` and query returned `platform_requests_total`; Grafana returned Prometheus and Tempo datasources plus the `AI Platform Control Plane` dashboard; Tempo search returned FastAPI `GET /api/v1/catalog` traces |
+| Public review | temporary Cloudflare Quick Tunnel exposed only a local `kubectl port-forward`; no public AWS load balancer or DNS record was created |
+| Environment workload success / GitOps publication | Not executed: the cloud runtime intentionally uses `render-only`; individual API environment requests do not yet become protected Git changes or Argo-managed workloads |
+| Observed cost during pilot | Not recorded in real time; the USD 10 Budget remains an alert, not a hard cap |
+| Terraform destroy / post-destroy query | Pending owner review of the temporary public URL; resources intentionally remain running |
 
 The required sequence and security boundaries are in [Production pilot plan](production-pilot.md) and
 [the AWS pilot runbook](cloud-pilot-runbook.md).

@@ -75,8 +75,9 @@ flowchart LR
 
 ## What this repository deliberately does not do
 
-- It does not claim AWS/EKS execution, incur cloud workload spend by default, or claim production
-  HA validation. A guarded, plan-validated pilot path exists but remains unexecuted.
+- It does not create cloud workload spend by default or claim production HA validation. A bounded,
+  owner-authorized AWS pilot has executed VPC/EKS/RDS/ECR/Argo/telemetry validation; its teardown
+  remains pending owner review and it is not a production-certification claim.
 - It does not expose raw Kubernetes credentials, Docker sockets, Terraform execution, long-lived
   cloud credentials, or secret values to callers or agents.
 - It does not treat a rendered Helm chart, a Terraform module, or a mocked unit test as proof of a
@@ -129,7 +130,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/environments \
 
 ## Execution boundary
 
-The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. `make argocd-demo` synchronizes the golden path with local Argo CD and waits for `Synced/Healthy`. The curl example above is explicitly development-only. AWS/EKS is not executed. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
+The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. `make argocd-demo` synchronizes the golden path with local Argo CD and waits for `Synced/Healthy`. The curl example above is explicitly development-only. A separate bounded AWS pilot has also executed the cloud runtime; see [implementation status](docs/IMPLEMENTATION_STATUS.md) for its narrower evidence boundary.
 
 The local demo has also passed a clean-room reset: `make clean-local` removes only this repository's
 Compose resources, local image, named volumes, and `ai-platform-local` kind cluster. Re-running the
@@ -150,16 +151,14 @@ HA/managed persistence, enterprise identity, policy distribution, signed Git com
 branches, external secrets, managed database operations, and a durable job/reconciliation queue.
 AWS is intentionally opt-in; no expensive resources or GPUs are created by default.
 
-The next cloud milestone is deliberately separate from the local-first completion claim. The branch
-contains a plan-validated Terraform foundation, guarded create/destroy scripts, a GitHub Actions
-manual plan/apply/destroy dropdown workflow using OIDC rather than stored keys, Argo-managed EKS
-runtime manifests, and a GitHub App desired-state publisher boundary. It still needs a real,
-recorded pilot before AWS can be described as executed. See the
-[production-pilot plan](docs/production-pilot.md) and [cloud pilot runbook](docs/cloud-pilot-runbook.md).
-
-Phase 0 guardrails are the only AWS resources currently executed: an encrypted/versioned Terraform
-state bucket, a DynamoDB lock table, required resource tags, and a USD 10 monthly actual-cost
-Budget. No VPC, EKS, EC2, RDS, ECR, NAT Gateway, Secrets Manager, or application workload has been
-created. See [AWS validation evidence](docs/VALIDATION.md#aws-pilot-phase-0--2026-10-02).
+The AWS pilot is deliberately separate from the local-first completion claim. It used guarded
+Terraform create/destroy scripts, a tagged VPC/EKS/RDS/ECR foundation, an Argo-managed runtime,
+Keycloak JWT validation, OPA policy denial, RDS restart recovery, Prometheus, Tempo, Grafana, and a
+temporary Cloudflare review tunnel. The GitHub Actions manual plan/apply/destroy dropdown workflow
+and GitHub App publisher remain implemented but unexecuted production adapters. The runtime’s
+environment reconciler is explicitly `render-only`; it does not yet publish an individual request
+as a protected Git change and wait for Argo to create that workload. See the
+[production-pilot plan](docs/production-pilot.md), [cloud pilot runbook](docs/cloud-pilot-runbook.md),
+and [AWS validation evidence](docs/VALIDATION.md#aws-workload-pilot--2026-10-02-createvalidate--teardown-pending).
 
 Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).

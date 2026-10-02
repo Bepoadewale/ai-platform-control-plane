@@ -43,6 +43,7 @@ make pilot-cloud-apply
 make pilot-cloud-push-image
 make pilot-cloud-bootstrap-runtime
 make pilot-cloud-smoke
+make pilot-cloud-validate
 ```
 
 `pilot-cloud-bootstrap-runtime` installs Argo CD and creates one short-lived Kubernetes secret from
@@ -70,9 +71,11 @@ while reviewing disposable pilot data. `Ctrl-C` closes the tunnel and local port
 **not** destroy the AWS pilot. Run `make pilot-cloud-destroy` only after the owner has confirmed the
 public review is complete.
 
-Record the Argo Application state, EKS deployment readiness, health endpoint, OPA denial test,
-database persistence, `/metrics`, and trace output before teardown. Populate the evidence template
-in `docs/VALIDATION.md` only with observed values.
+`pilot-cloud-validate` runs the bounded signed-JWT, live OPA cross-tenant denial/audit, RDS restart
+recovery, Prometheus target/query, Tempo trace, and Grafana dashboard checks. It intentionally does
+not claim an individual environment workload was reconciled: that production GitOps path remains
+`render-only`. Record the Argo Application state, EKS deployment readiness, health endpoint, and
+all observed evidence in `docs/VALIDATION.md` before teardown.
 
 ## GitHub Actions future operation
 
@@ -105,7 +108,7 @@ Docker/Kubernetes prune commands as pilot cleanup.
   GitHub pull request and wait for their Argo reconciliation. `GitHubAppPublisher` is implemented
   and unit-tested as the narrow desired-state publication boundary; wiring it into durable worker
   reconciliation remains a required next production increment.
-- Prometheus, Grafana, and Tempo run locally today. The first cloud runtime deploys OTel ingestion;
-  production-grade cloud dashboard/tracing chart installation and evidence remain pending.
+- Prometheus, Grafana, and Tempo have been exercised in the bounded pilot. Their storage is
+  deliberately ephemeral and their charts are not a production HA/retention design.
 - GitHub App private-key storage and External Secrets/Pod Identity are intentionally not claimed as
   executed by this bootstrap path.

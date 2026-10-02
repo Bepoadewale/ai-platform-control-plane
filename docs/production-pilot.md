@@ -4,9 +4,9 @@ This repository is **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE**. Its governed li
 locally with kind, Keycloak, OPA, PostgreSQL, Argo CD, Prometheus, Grafana, and OpenTelemetry.
 That does not constitute an AWS production deployment.
 
-This document defines the next, separate milestone: a small, budget-bounded AWS pilot that proves
-the same control-plane boundary with real cloud infrastructure. It is a plan, not evidence that the
-items below have run.
+This document defines the separate, budget-bounded AWS pilot and records its current evidence
+boundary. The foundation and runtime validation below ran on 2026-10-02; unfinished phases remain
+plans, not implied production capability.
 
 ## Pilot outcome
 
@@ -38,8 +38,8 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 | --- | --- | --- |
 | 0. Pilot guardrails | Dedicated AWS account, budget alarms, tags, remote Terraform state, break-glass process, destroy plan | **Executed 2026-10-02:** account guard, encrypted/versioned state, lock table, tags, and USD 10 alerts. No workload deployed; see `docs/VALIDATION.md`. |
 | 1. Identity and CI | GitHub Actions OIDC roles with least privilege; no long-lived AWS keys | **Implemented, not executed:** manual `plan`/`apply`/`destroy` workflow is branch-bound and confirmation-gated; record a real OIDC run before claiming it executed. |
-| 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Implemented, not executed:** reviewed plan adds the foundation; `apply`, smoke, and `destroy` evidence are still mandatory. |
-| 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | Health, policy denial, secret-reference-only behavior, and telemetry evidence recorded |
+| 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Executed 2026-10-02:** bounded pilot applied the foundation and ran two Ready CPU nodes. Teardown/cost evidence remains pending. |
+| 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | **Partially executed 2026-10-02:** Argo-synchronized control plane, OPA, Keycloak, OTel, Prometheus, Grafana, and Tempo passed health/policy/restart/telemetry checks. Bootstrap-only Kubernetes secret delivery was used; external secrets/workload identity remain pending. |
 | 4. GitOps lifecycle | Desired state becomes a protected Git commit/PR; Argo CD reconciles it | Plan → approval → Git change → Argo `Synced/Healthy` → EKS readiness → audit |
 | 5. Reliability | Worker/reconciler separation, retries, idempotency, failure/rollback and recovery tests | API restart and worker failure do not duplicate a mutation; failed deployment remains non-ready |
 | 6. Operations | Release/merge integration CI, dashboards, alerts, SLO measurement, and cost review | Measured pilot data, alert exercise, documented teardown, and post-pilot cost review |
@@ -59,7 +59,7 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 - Terraform apply/destroy requires a reviewed plan, explicit environment selection, bounded tags,
   and a documented rollback or teardown path.
 
-## Architecture changes required before a pilot can be claimed
+## Architecture changes required before production-shaped expansion
 
 1. Apply the reviewed deployable Terraform foundation in one AWS region and a minimal
    non-production EKS footprint; do not add multi-cloud or GPU nodes.

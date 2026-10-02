@@ -39,6 +39,13 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
   versioned, public-access-blocked S3 state bucket, a project-scoped DynamoDB lock table, and a
   USD 10 monthly actual-cost Budget with 50/80/100% alert thresholds. No workload infrastructure
   was created.
+- A bounded AWS workload pilot created the tagged VPC, private EKS cluster, two `t3.large` CPU
+  nodes, RDS PostgreSQL, ECR repository/image, Secrets Manager container, OIDC providers, and
+  scoped IAM roles through Terraform. Argo CD reached `Synced/Healthy` for the ECR-hosted control
+  plane, OPA, Keycloak, and OTel Collector.
+- The EKS runtime accepted a Keycloak-issued RS256 JWT, rejected a cross-tenant request through
+  live OPA with a persisted audit trail, retained that rejected state after a control-plane restart,
+  and exposed live Prometheus metrics, Tempo traces, and the provisioned Grafana dashboard.
 
 ## Implemented but Not End-to-End Validated
 
@@ -56,10 +63,8 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 
 ## Explicitly Unexecuted Production Adapters
 
-- AWS/EKS/RDS/ECR/Secrets Manager workload pilot and GitHub Actions OIDC federation. The
-  38-resource Terraform plan, manual OIDC workflow, GitHub App publisher, runtime manifests, and
-  guarded create/destroy scripts are implemented; no application or workload infrastructure is
-  deployed yet.
+- GitHub Actions OIDC federation. The manual plan/apply/destroy workflow and role are implemented,
+  but no GitHub-hosted OIDC workflow run has yet been executed.
 - Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
 - Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
 
@@ -74,8 +79,9 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The next cloud P1 item is the reviewed one-hour pilot: apply the
-foundation, run the runtime and bounded smoke/failure checks, record evidence, and destroy it.
+No open local-first P0 work. The active cloud P1 item is owner-approved teardown after public
+review, followed by a cost/remaining-resource record. GitOps publication, a durable reconciler,
+external secrets/workload identity, and GitHub Actions OIDC execution remain later P1 work.
 
 ## Last Validation
 
@@ -119,8 +125,17 @@ foundation, run the runtime and bounded smoke/failure checks, record evidence, a
 - AWS foundation implementation: `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-plan` produced
   a reviewed **38 to add, 0 to change, 0 to destroy** plan, without applying it. Terraform validate,
   Kustomize rendering, shell syntax checks, 29 Python tests, Ruff, and Helm lint passed.
+- AWS workload pilot: Terraform applied the reviewed foundation; EKS reported two Ready CPU nodes,
+  ECR returned the immutable `pilot` image digest, and Argo Application
+  `ai-platform-control-plane-runtime` reported `Synced Healthy`.
+- `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-smoke`: passed for the EKS runtime, Argo,
+  control plane, OPA, Prometheus, Grafana, and metrics endpoint.
+- `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-validate`: passed signed Keycloak JWT,
+  live cross-tenant OPA denial/audit, RDS-backed control-plane restart recovery, Prometheus target
+  scrape, Tempo trace search, and Grafana dashboard discovery. No environment workload was claimed:
+  the cloud runtime deliberately uses the documented `render-only` adapter.
 
 ## Last Updated
 
-2026-10-02, AWS pilot foundation/runtime automation implemented and statically validated; no
-workload resources created and local-first completion status unchanged.
+2026-10-02, bounded AWS workload pilot executed and validated; teardown remains deliberately
+pending owner review. Local-first completion status is unchanged.
