@@ -33,6 +33,9 @@ endpoints. The intended pilot window is short; Budget alerts are notifications, 
 The node group intentionally does not wait for the CoreDNS add-on: CoreDNS cannot become healthy
 until schedulable nodes exist, so that dependency would create a startup deadlock.
 
+The cloud OPA manifest mounts its Rego policy as one file rather than a ConfigMap directory. This
+avoids the ConfigMap `..data` symlink tree being recursively loaded by OPA as duplicate policies.
+
 ## Create and validate
 
 ```bash

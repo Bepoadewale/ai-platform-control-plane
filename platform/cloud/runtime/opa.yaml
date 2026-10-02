@@ -20,7 +20,7 @@ spec:
       containers:
         - name: opa
           image: openpolicyagent/opa:1.20.2
-          args: ["run", "--server", "--addr=0.0.0.0:8181", "/policies"]
+          args: ["run", "--server", "--addr=0.0.0.0:8181", "/policies/environment.rego"]
           ports:
             - name: http
               containerPort: 8181
@@ -34,7 +34,8 @@ spec:
             capabilities: {drop: ["ALL"]}
           volumeMounts:
             - name: policy
-              mountPath: /policies
+              mountPath: /policies/environment.rego
+              subPath: environment.rego
               readOnly: true
       volumes:
         - name: policy
