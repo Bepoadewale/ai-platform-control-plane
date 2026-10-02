@@ -118,7 +118,9 @@ Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the defa
 Run `make console-local`, then open `http://localhost:4173`. The separate browser console uses
 Keycloak Authorization Code + PKCE and calls the same signed-JWT, tenant-aware API; it does not
 receive Kubernetes, Terraform, cloud, or secret authority. See [Operator Console](docs/operator-console.md)
-for the local fixture boundary and exact validation status.
+for the local fixture boundary and exact validation status. In the bounded AWS pilot, `make
+pilot-cloud-console` serves the EKS-hosted Console only through `http://localhost:18083` local
+port-forwards; it is not a public endpoint.
 
 ### Temporary public demo URL
 

@@ -10,10 +10,12 @@ validated primary-path regression is discovered.
 - [x] Apply AWS pilot account guardrails: USD 10 Budget alerts, required tags, encrypted remote Terraform state, and lock table.
 - [x] Execute project-scoped AWS pilot teardown after owner completes public review; record destroy and remaining-resource evidence.
 - Create a GitHub OIDC role boundary and prove a read-only identity workflow before granting deployment permissions.
-- Complete a human browser sign-in and tenant-visible workflow in the Operator Console, then deploy
-  it behind a TLS/enterprise-OIDC cloud boundary before claiming cloud UI execution.
+- [x] Execute the authenticated Operator Console against the bounded EKS runtime through
+  project-scoped local port-forwards; record its Keycloak PKCE, explicit CORS, and signed API
+  evidence. A public TLS/enterprise-OIDC ingress remains a separate production hardening task.
 - [x] Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation and execute the bounded runtime/policy/restart/telemetry pilot.
-- [x] Add a GitHub App desired-state publication boundary and a GitHub Actions plan/apply/destroy workflow. Wire publication to a durable worker and execute it before claiming production GitOps.
+- [x] Add a GitHub App desired-state publication boundary and a GitHub Actions plan/apply/destroy workflow.
+- Wire GitHub App publication to a durable worker and execute a protected Git change → Argo reconciliation before claiming production GitOps.
 - Add protected Git desired-state publication and Argo status observation; do not let the production API invoke Helm/kubectl directly.
 - Separate reconciliation from the API process with durable job state and idempotent recovery.
 - Add external secret references/workload identity, lifecycle metrics/child spans, and measured SLO/alert evidence.

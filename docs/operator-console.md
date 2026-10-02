@@ -36,9 +36,23 @@ request submission flows, environment audit evidence, and the governing controls
 Keycloak Authorization Code + PKCE login/callback/token exchange, signed API access, Keycloak
 logout redirect, explicit CORS preflight, and the existing OTLP/Prometheus/Grafana path.
 
-## Cloud boundary
+## Bounded AWS pilot execution
 
-The console has not been deployed to AWS. A later cloud validation must use a real browser callback
-URL, TLS, an enterprise identity client, an explicit production CORS allow-list, and a public
-ingress or authenticated tunnel. It must not expose Keycloak, Grafana, OPA, or the API directly to
-the internet merely to make the UI available.
+The Console was executed on EKS on 2026-10-02. Its hardened Nginx Deployment was reconciled by
+Argo CD alongside the control plane, Keycloak, and OPA. It is intentionally inspected through
+local port-forwards rather than a public endpoint:
+
+```bash
+AWS_PROFILE=<operator-profile> make pilot-cloud-console
+```
+
+Open `http://localhost:18083`. The helper also forwards the API and Keycloak only to loopback, so
+the browser completes Keycloak Authorization Code + PKCE and calls the EKS-hosted API with the same
+signed bearer-token boundary as the local Console. `make pilot-cloud-console-validate` exercised
+that complete login → callback → token exchange → signed catalog request → logout sequence, plus
+the explicit CORS preflight.
+
+This is cloud UI execution, not a public web-product claim. A later public deployment needs a
+real browser callback URL, TLS, an enterprise identity client, an explicit production CORS
+allow-list, and authenticated ingress. It must not expose Keycloak, Grafana, OPA, or the API
+directly to the internet merely to make the UI available.

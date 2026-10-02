@@ -46,6 +46,12 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 - The EKS runtime accepted a Keycloak-issued RS256 JWT, rejected a cross-tenant request through
   live OPA with a persisted audit trail, retained that rejected state after a control-plane restart,
   and exposed live Prometheus metrics, Tempo traces, and the provisioned Grafana dashboard.
+- In the active bounded AWS pilot, the EKS-hosted Operator Console passed Keycloak PKCE
+  login/logout, explicit CORS, and a signed API request through local-only port-forwards. A
+  development request reached `READY` through the documented render-only adapter and was then
+  destroyed with its full audit timeline. A production request required the distinct operator role
+  for both apply and destroy approvals; an unsafe privileged request was rejected by live OPA with
+  no matching EKS workload.
 
 ## Implemented but Not End-to-End Validated
 
@@ -79,10 +85,10 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The bounded cloud pilot is torn down; its observed cost was not
-recorded. The Operator Console is locally smoke-validated; its cloud deployment remains unexecuted.
-GitOps publication, a durable reconciler, external secrets/workload identity, and GitHub Actions
-OIDC execution remain later P1 work.
+No open local-first P0 work. A second bounded cloud validation is active; its observed cost is not
+recorded and it must be destroyed through the guarded Terraform command after review. GitOps
+publication, a durable reconciler, external secrets/workload identity, public TLS/enterprise OIDC,
+and GitHub Actions OIDC execution remain later P1 work.
 
 ## Last Validation
 
@@ -146,8 +152,19 @@ OIDC execution remain later P1 work.
   confirmed its static content and health endpoint, Keycloak accepted the Authorization Code + PKCE
   login/callback/token exchange and logout redirect, FastAPI returned the configured CORS preflight,
   and the signed-token API/OTLP/Prometheus/Grafana path passed.
+- AWS Operator Console and governed lifecycle: `make pilot-cloud-smoke`, `make
+  pilot-cloud-validate`, and `make pilot-cloud-console-validate` passed. The cloud runtime was
+  Argo `Synced Healthy`; all five platform Deployments had one available replica. A developer
+  development request reached `READY` then `DESTROYED` with request/plan/render/destroy audit
+  actions. A production request reached `APPROVAL_REQUIRED`, a developer was denied approval
+  (`403`), an operator approved the exact apply and destroy hashes, and the final state was
+  `DESTROYED`. A privileged request was `REJECTED` by OPA with no matching EKS workload.
+- Cloud evidence query: API metrics reported 2 successful creates, 1 rejected create, and 1 policy
+  denial; Prometheus scraped the `control-plane` target as `up` and returned
+  `sum(platform_requests_total)=10`; Tempo returned 20 control-plane traces; Grafana returned the
+  provisioned `AI Platform Control Plane` dashboard.
 
 ## Last Updated
 
-2026-10-02, bounded AWS workload pilot executed, validated, and torn down. Local-first completion
-status is unchanged.
+2026-10-02, local-first completion is unchanged. A second bounded AWS runtime validation is active
+and its Console/governed-lifecycle evidence is recorded pending guarded Terraform teardown.

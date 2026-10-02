@@ -99,6 +99,39 @@ Observed evidence:
 The required sequence and security boundaries are in [Production pilot plan](production-pilot.md) and
 [the AWS pilot runbook](cloud-pilot-runbook.md).
 
+## AWS Operator Console and governed lifecycle — 2026-10-02 (active bounded pilot)
+
+The second bounded pilot reused the reviewed Terraform foundation after a graceful local Terraform
+interrupt tainted only CoreDNS; Terraform then replaced that add-on and returned a consistent state.
+The pilot remains active at the time of this record and must still be destroyed with the guarded
+Terraform command after review.
+
+Commands executed:
+
+```console
+AWS_PROFILE=<operator-profile> make pilot-cloud-push-image
+AWS_PROFILE=<operator-profile> make pilot-cloud-bootstrap-runtime
+AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
+AWS_PROFILE=<operator-profile> make pilot-cloud-validate
+AWS_PROFILE=<operator-profile> make pilot-cloud-console-validate
+AWS_PROFILE=<operator-profile> make pilot-cloud-console
+```
+
+Observed evidence:
+
+| Evidence | Result |
+| --- | --- |
+| Argo and runtime readiness | Application `ai-platform-control-plane-runtime` was `Synced Healthy`; control plane, Keycloak, OPA, Operator Console, and OTel Collector each had one available replica. |
+| Cloud Operator Console | EKS-hosted hardened Nginx Console was served at loopback `http://localhost:18083`; the validation completed Keycloak Authorization Code + PKCE login/callback/token exchange/logout, explicit CORS preflight, and a signed API request. No public AWS endpoint was created. |
+| Development lifecycle | A tenant-scoped development request reached `READY` through the cloud runtime's deliberately `render-only` adapter, then API destroy reached `DESTROYED`. Its audit contained `environment.requested`, `policy.evaluating`, `environment.planned`, `gitops.rendering`, `environment.ready`, `destroy.requested`, `destroy.applying`, and `destroy.complete`. No environment namespace or workload was created; real per-environment GitOps publication remains unexecuted. |
+| Protected production lifecycle | A developer production request became `APPROVAL_REQUIRED` with an immutable plan. A developer approval attempt returned `403` because it lacked the platform-operator role. The distinct operator approved the exact apply plan, then the exact destruction plan; final state was `DESTROYED`. |
+| Policy denial | A development request with `privileged=true` became `REJECTED` with `privileged containers are prohibited`; its audit contained `environment.requested`, `policy.evaluating`, and `policy.rejected`. Querying all EKS Deployments/Services found no workload with that request name. |
+| Metrics and traces | API metrics showed two successful creates, one rejected create, and one policy denial. Prometheus reported its `control-plane` target `up` and `sum(platform_requests_total)=10`; Tempo returned 20 control-plane traces; Grafana returned the provisioned `AI Platform Control Plane` dashboard. |
+
+This is runtime/governance evidence, not a claim that an individual request reconciled to an EKS
+workload. The cloud adapter is intentionally `render-only`; the local kind path remains the
+executed workload-readiness demonstration.
+
 ## AWS pilot Phase 0 — 2026-10-02
 
 Environment: dedicated AWS pilot account in `us-east-1`; Terraform 1.14.0; AWS provider 5.100.0;

@@ -44,6 +44,7 @@ make pilot-cloud-push-image
 make pilot-cloud-bootstrap-runtime
 make pilot-cloud-smoke
 make pilot-cloud-validate
+make pilot-cloud-console-validate
 ```
 
 `pilot-cloud-bootstrap-runtime` installs Argo CD and creates one short-lived Kubernetes secret from
@@ -76,6 +77,16 @@ recovery, Prometheus target/query, Tempo trace, and Grafana dashboard checks. It
 not claim an individual environment workload was reconciled: that production GitOps path remains
 `render-only`. Record the Argo Application state, EKS deployment readiness, health endpoint, and
 all observed evidence in `docs/VALIDATION.md` before teardown.
+
+To inspect the EKS-hosted authenticated Operator Console without creating a public AWS endpoint:
+
+```bash
+make pilot-cloud-console
+```
+
+The helper prints `http://localhost:18083` and forwards the Console, API, and Keycloak services to
+loopback only. `make pilot-cloud-console-validate` validates the Console's Keycloak PKCE
+login/logout, explicit API CORS policy, and signed API request against EKS.
 
 ## GitHub Actions future operation
 
