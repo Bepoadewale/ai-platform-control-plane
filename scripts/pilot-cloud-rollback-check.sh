@@ -52,12 +52,13 @@ get_values() {
 }
 write_pr() {
   local content_file="$1" title="$2" branch="$3"
-  local base_sha encoded pr
+  local base_sha current_sha encoded pr
   base_sha="$(gh api "repos/$repository/git/ref/heads/main" --jq '.object.sha')"
+  current_sha="$(gh api "repos/$repository/contents/$values_path?ref=main" --jq '.sha')"
   gh api --method POST "repos/$repository/git/refs" -f "ref=refs/heads/$branch" -f "sha=$base_sha" >/dev/null
   encoded="$(base64 <"$content_file" | tr -d '\n')"
   gh api --method PUT "repos/$repository/contents/$values_path" \
-    -f "message=$title" -f "content=$encoded" -f "branch=$branch" >/dev/null
+    -f "message=$title" -f "content=$encoded" -f "branch=$branch" -f "sha=$current_sha" >/dev/null
   pr="$(gh pr create --repo "$repository" --base main --head "$branch" --title "$title" --body 'Disposable, reviewed cloud-pilot rollback drill.')"
   merge_when_checks_pass "$pr"
 }
