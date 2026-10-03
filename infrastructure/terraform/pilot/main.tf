@@ -178,6 +178,25 @@ resource "aws_eks_cluster" "pilot" {
   depends_on = [aws_iam_role_policy_attachment.eks_cluster]
 }
 
+# EKS API authentication grants the cluster creator (the short-lived GitHub
+# Terraform role) administrator access. The pilot also needs an explicit human
+# operator entry for bounded, auditable runtime bootstrap and verification.
+resource "aws_eks_access_entry" "pilot_operator" {
+  cluster_name  = aws_eks_cluster.pilot.name
+  principal_arn = var.pilot_operator_principal_arn
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "pilot_operator_admin" {
+  cluster_name  = aws_eks_cluster.pilot.name
+  principal_arn = aws_eks_access_entry.pilot_operator.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
+
 resource "aws_iam_openid_connect_provider" "eks" {
   url             = aws_eks_cluster.pilot.identity[0].oidc[0].issuer
   client_id_list  = ["sts.amazonaws.com"]
@@ -434,7 +453,7 @@ data "aws_iam_policy_document" "github_terraform" {
       "ec2:RevokeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress", "ec2:RevokeSecurityGroupEgress",
       "eks:CreateCluster", "eks:DeleteCluster", "eks:Describe*", "eks:List*", "eks:TagResource",
       "eks:UntagResource", "eks:CreateAddon", "eks:DeleteAddon", "eks:UpdateAddon",
-      "eks:CreateNodegroup", "eks:DeleteNodegroup", "eks:UpdateNodegroupConfig",
+      "eks:CreateNodegroup", "eks:DeleteNodegroup", "eks:UpdateNodegroupConfig", "eks:CreateAccessEntry", "eks:DeleteAccessEntry", "eks:DescribeAccessEntry", "eks:ListAccessEntries", "eks:AssociateAccessPolicy", "eks:DisassociateAccessPolicy", "eks:ListAssociatedAccessPolicies",
       "rds:CreateDBInstance", "rds:DeleteDBInstance", "rds:Describe*", "rds:ListTagsForResource",
       "rds:AddTagsToResource", "rds:CreateDBSubnetGroup", "rds:DeleteDBSubnetGroup",
       "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:Describe*", "ecr:List*", "ecr:GetLifecyclePolicy", "ecr:PutLifecyclePolicy",
