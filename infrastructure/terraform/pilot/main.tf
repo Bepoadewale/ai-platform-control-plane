@@ -443,7 +443,7 @@ data "aws_iam_policy_document" "github_terraform" {
       "iam:GetRole", "iam:GetRolePolicy", "iam:GetOpenIDConnectProvider", "iam:CreateOpenIDConnectProvider", "iam:DeleteOpenIDConnectProvider", "iam:TagOpenIDConnectProvider", "iam:UntagOpenIDConnectProvider", "iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole",
       "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy",
       "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:PassRole",
-      "kms:ListAliases", "sts:GetCallerIdentity"
+      "kms:ListAliases", "kms:DescribeKey", "sts:GetCallerIdentity"
     ]
     resources = ["*"]
   }
