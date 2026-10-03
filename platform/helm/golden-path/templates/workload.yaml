@@ -11,6 +11,9 @@ metadata:
   name: {{ include "golden-path.fullname" . }}
   namespace: {{ .Values.namespace }}
 spec:
+  # Keep a bad disposable release observable and bounded during control-plane validation.
+  # Kubernetes defaults this to ten minutes, which is too slow for a governed rollback decision.
+  progressDeadlineSeconds: {{ .Values.progressDeadlineSeconds }}
   replicas: 1
   selector: {matchLabels: {app.kubernetes.io/name: {{ include "golden-path.fullname" . }}}}
   template:
