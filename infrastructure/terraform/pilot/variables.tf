@@ -18,6 +18,12 @@ variable "cluster_name" {
   default = "ai-platform-control-plane-pilot"
 }
 
+variable "pilot_operator_principal_arn" {
+  type        = string
+  description = "Named human operator granted cluster-admin only for this disposable pilot. Production should use an enterprise OIDC group/role instead."
+  default     = "arn:aws:iam::654654474502:user/adewale-terminal"
+}
+
 variable "kubernetes_version" {
   type        = string
   default     = "1.35"
