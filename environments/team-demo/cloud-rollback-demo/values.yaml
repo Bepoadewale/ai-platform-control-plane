@@ -1,0 +1,12 @@
+name: cloud-rollback-demo
+namespace: team-demo-cloud-rollback-demo
+team: team-demo
+environmentType: development
+ttlHours: 1
+profile: small
+postgresql: false
+redis: false
+objectStorage: false
+serviceExposure: ingress
+image: nginxinc/nginx-unprivileged:1.27-alpine
+observability: true
