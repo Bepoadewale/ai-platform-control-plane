@@ -363,7 +363,7 @@ data "aws_iam_policy_document" "github_oidc_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:${var.github_ref}"]
+      values   = [var.github_oidc_subject]
     }
   }
 }
@@ -401,7 +401,7 @@ data "aws_iam_policy_document" "github_terraform_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:${var.github_ref}"]
+      values   = [var.github_oidc_subject]
     }
   }
 }

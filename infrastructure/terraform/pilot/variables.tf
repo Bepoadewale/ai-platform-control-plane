@@ -7,16 +7,10 @@ variable "expected_account_id" {
   type = string
 }
 
-variable "github_repository" {
-  type    = string
-  default = "Bepoadewale/ai-platform-control-plane"
-}
-
-variable "github_ref" {
-  type = string
-  # The manually dispatched OIDC workflow is released from protected main. Feature branches
-  # never receive the Terraform role merely by opening a pull request.
-  default = "refs/heads/main"
+variable "github_oidc_subject" {
+  type        = string
+  description = "Exact GitHub Actions OIDC subject for protected main. Owner and repository IDs prevent a renamed repository from inheriting this role."
+  default     = "repo:Bepoadewale@99020860/ai-platform-control-plane@1376870793:ref:refs/heads/main"
 }
 
 variable "cluster_name" {
