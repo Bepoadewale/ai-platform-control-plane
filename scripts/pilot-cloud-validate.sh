@@ -62,7 +62,7 @@ kubectl -n platform-system get externalsecret github-app-credentials \
   -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}{"\n"}' | grep -qx 'True'
 kubectl -n platform-system get deployment control-plane -o json | jq -e '.status.availableReplicas >= 2' >/dev/null
 kubectl -n platform-system get deployment gitops-worker -o json | jq -e '.status.availableReplicas >= 2' >/dev/null
-kubectl -n platform-system get deployment opa -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
+kubectl -n platform-system get deployment opa -o json | jq -e '.status.availableReplicas >= 2' >/dev/null
 kubectl -n platform-observability get deployment prometheus-server -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-observability get deployment grafana -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 
