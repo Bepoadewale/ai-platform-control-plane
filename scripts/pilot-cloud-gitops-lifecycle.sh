@@ -86,7 +86,7 @@ merge_if_open() {
 apply_pr="$(jq -er 'map(select(.action == "APPLY" and .state == "PUBLISHED")) | sort_by(.created_at) | last.publication_url' "$tmp_dir/jobs.json")"
 echo "GitOps apply pull request: $apply_pr"
 
-if [[ "${MERGE_GITOPS_CHANGE:-}" != "$environment_id" ]]; then
+if [[ "${MERGE_GITOPS_CHANGE:-}" != "$environment_id" && "${MERGE_GITOPS_CHANGE:-}" != "auto" ]]; then
   echo "Review the PR, then rerun with PILOT_GITOPS_ENVIRONMENT_ID=$environment_id MERGE_GITOPS_CHANGE=$environment_id to perform the explicit merge." >&2
   exit 0
 fi
@@ -106,6 +106,12 @@ for _ in {1..60}; do
   sleep 2
 done
 jq -e '.state == "READY"' "$tmp_dir/ready.json" >/dev/null
+
+if [[ "${PILOT_GITOPS_SKIP_DESTROY:-}" == "1" ]]; then
+  echo "GitOps creation passed: approved intent → Git PR → Argo/EKS Ready. Environment id: $environment_id"
+  echo "Destroy is intentionally deferred for the caller's bounded follow-up drill."
+  exit 0
+fi
 
 curl --fail --silent -X POST -H "Authorization: Bearer $token" \
   "http://127.0.0.1:$api_port/api/v1/environments/$environment_id/destroy" >"$tmp_dir/destroy.json"

@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-demo pilot-cloud-console-public-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-bootstrap-github-oidc pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-slo-alert-check pilot-cloud-rollback-check pilot-cloud-cost-evidence pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-demo pilot-cloud-console-public-demo
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -64,6 +64,9 @@ pilot-cloud-plan:
 pilot-cloud-apply:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} APPLY_CLOUD_PILOT=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-apply.sh
 
+pilot-cloud-bootstrap-github-oidc:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} BOOTSTRAP_GITHUB_OIDC=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-bootstrap-github-oidc.sh
+
 pilot-cloud-destroy:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} DESTROY_CLOUD_PILOT=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-destroy.sh
 
@@ -87,6 +90,15 @@ pilot-cloud-ha-check:
 
 pilot-cloud-load-slo:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-load-slo.sh
+
+pilot-cloud-slo-alert-check:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-slo-alert-check.sh
+
+pilot-cloud-rollback-check:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-rollback-check.sh
+
+pilot-cloud-cost-evidence:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-cost-evidence.sh
 
 pilot-cloud-validate:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-validate.sh

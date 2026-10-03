@@ -424,7 +424,7 @@ data "aws_iam_policy_document" "github_terraform" {
       "ec2:DetachInternetGateway", "ec2:AllocateAddress", "ec2:ReleaseAddress",
       "ec2:CreateNatGateway", "ec2:DeleteNatGateway", "ec2:CreateTags", "ec2:DeleteTags",
       "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup", "ec2:AuthorizeSecurityGroupIngress",
-      "ec2:RevokeSecurityGroupIngress",
+      "ec2:RevokeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress", "ec2:RevokeSecurityGroupEgress",
       "eks:CreateCluster", "eks:DeleteCluster", "eks:Describe*", "eks:List*", "eks:TagResource",
       "eks:UntagResource", "eks:CreateAddon", "eks:DeleteAddon", "eks:UpdateAddon",
       "eks:CreateNodegroup", "eks:DeleteNodegroup", "eks:UpdateNodegroupConfig",
@@ -433,7 +433,7 @@ data "aws_iam_policy_document" "github_terraform" {
       "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:Describe*", "ecr:List*", "ecr:GetLifecyclePolicy", "ecr:PutLifecyclePolicy",
       "ecr:TagResource", "ecr:UntagResource", "secretsmanager:CreateSecret", "secretsmanager:DeleteSecret",
       "secretsmanager:DescribeSecret", "secretsmanager:GetResourcePolicy", "secretsmanager:TagResource", "secretsmanager:UntagResource",
-      "iam:GetRole", "iam:GetRolePolicy", "iam:GetOpenIDConnectProvider", "iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole",
+      "iam:GetRole", "iam:GetRolePolicy", "iam:GetOpenIDConnectProvider", "iam:CreateOpenIDConnectProvider", "iam:DeleteOpenIDConnectProvider", "iam:TagOpenIDConnectProvider", "iam:UntagOpenIDConnectProvider", "iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole",
       "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy",
       "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:PassRole",
       "sts:GetCallerIdentity"
