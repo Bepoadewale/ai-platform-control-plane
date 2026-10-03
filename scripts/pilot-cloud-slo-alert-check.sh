@@ -10,7 +10,7 @@ aws_region="${AWS_REGION:-us-east-1}"
 expected_account="${EXPECTED_AWS_ACCOUNT_ID:-654654474502}"
 actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query Account --output text)"
 [[ "$actual_account" == "$expected_account" ]] || { echo "Unexpected AWS account." >&2; exit 1; }
-AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region" >/dev/null
+aws eks update-kubeconfig --profile "$aws_profile" --name "$cluster_name" --region "$aws_region" >/dev/null
 
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/ai-platform-slo.XXXXXX")"
 api_pid=""; prometheus_pid=""
@@ -33,8 +33,11 @@ done
 alert_name="PilotUnauthorizedRequestBurst"
 firing=false
 for _ in {1..45}; do
-  firing="$(curl -fsSG http://127.0.0.1:19090/api/v1/alerts --data-urlencode "query=ALERTS{alertname=\"$alert_name\",alertstate=\"firing\"}" | jq -er '.data.result | length > 0')"
-  [[ "$firing" == true ]] && break
+  if curl -fsS http://127.0.0.1:19090/api/v1/alerts \
+    | jq -e --arg alert_name "$alert_name" '[.data.alerts[] | select(.labels.alertname == $alert_name and .state == "firing")] | length > 0' >/dev/null; then
+    firing=true
+    break
+  fi
   sleep 2
 done
 [[ "$firing" == true ]] || { echo "Expected $alert_name to fire." >&2; exit 1; }
