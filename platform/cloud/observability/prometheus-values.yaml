@@ -1,6 +1,6 @@
 alertmanager:
   enabled: true
-  persistentVolume:
+  persistence:
     # The disposable pilot has no EBS CSI driver or default StorageClass. Alert
     # history is intentionally ephemeral for this bounded validation run.
     enabled: false
