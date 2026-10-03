@@ -80,6 +80,9 @@ merge_if_open() {
     return 0
   fi
   [[ "$state" == "OPEN" ]] || { echo "GitOps pull request is not mergeable: $pull_request ($state)" >&2; return 1; }
+  # A generated desired-state change is still subject to protected-main CI.
+  # Waiting eliminates the race between PR creation and the merge gate.
+  gh pr checks "$pull_request" --watch --interval 10
   gh pr merge "$pull_request" --merge --delete-branch
 }
 
