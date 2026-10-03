@@ -430,10 +430,10 @@ data "aws_iam_policy_document" "github_terraform" {
       "eks:CreateNodegroup", "eks:DeleteNodegroup", "eks:UpdateNodegroupConfig",
       "rds:CreateDBInstance", "rds:DeleteDBInstance", "rds:Describe*", "rds:ListTagsForResource",
       "rds:AddTagsToResource", "rds:CreateDBSubnetGroup", "rds:DeleteDBSubnetGroup",
-      "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:Describe*", "ecr:List*", "ecr:PutLifecyclePolicy",
+      "ecr:CreateRepository", "ecr:DeleteRepository", "ecr:Describe*", "ecr:List*", "ecr:GetLifecyclePolicy", "ecr:PutLifecyclePolicy",
       "ecr:TagResource", "ecr:UntagResource", "secretsmanager:CreateSecret", "secretsmanager:DeleteSecret",
-      "secretsmanager:DescribeSecret", "secretsmanager:TagResource", "secretsmanager:UntagResource",
-      "iam:GetRole", "iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole",
+      "secretsmanager:DescribeSecret", "secretsmanager:GetResourcePolicy", "secretsmanager:TagResource", "secretsmanager:UntagResource",
+      "iam:GetRole", "iam:GetOpenIDConnectProvider", "iam:CreateRole", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole",
       "iam:AttachRolePolicy", "iam:DetachRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy",
       "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:PassRole",
       "sts:GetCallerIdentity"
