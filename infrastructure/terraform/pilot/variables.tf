@@ -13,8 +13,10 @@ variable "github_repository" {
 }
 
 variable "github_ref" {
-  type    = string
-  default = "refs/heads/codex/production-pilot-roadmap"
+  type = string
+  # The manually dispatched OIDC workflow is released from protected main. Feature branches
+  # never receive the Terraform role merely by opening a pull request.
+  default = "refs/heads/main"
 }
 
 variable "cluster_name" {
