@@ -7,7 +7,12 @@ from uuid import UUID
 
 import psycopg
 
-from platform_control_plane.models.domain import AuditEvent, Environment
+from platform_control_plane.models.domain import (
+    AuditEvent,
+    Environment,
+    ReconciliationJob,
+    ReconciliationJobState,
+)
 
 
 class PostgresStore:
@@ -25,6 +30,12 @@ class PostgresStore:
                   event_id UUID PRIMARY KEY, request_id UUID NOT NULL, payload JSONB NOT NULL,
                   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
                 );
+                CREATE TABLE IF NOT EXISTS reconciliation_jobs (
+                  id UUID PRIMARY KEY, environment_id UUID NOT NULL, state TEXT NOT NULL,
+                  payload JSONB NOT NULL, created_at TIMESTAMPTZ NOT NULL, updated_at TIMESTAMPTZ NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS reconciliation_jobs_pending
+                  ON reconciliation_jobs (state, created_at);
                 """
             )
         self.connection.commit()
@@ -56,6 +67,34 @@ class PostgresStore:
         with self.lock, self.connection.cursor() as cursor:
             cursor.execute("SELECT payload::text FROM audit_events WHERE request_id = %s ORDER BY created_at", (request_id,))
             return [AuditEvent.model_validate_json(row[0]) for row in cursor.fetchall()]
+
+    def enqueue_job(self, job: ReconciliationJob) -> None:
+        with self.lock, self.connection.cursor() as cursor:
+            cursor.execute(
+                """INSERT INTO reconciliation_jobs (id, environment_id, state, payload, created_at, updated_at)
+                VALUES (%s, %s, %s, %s::jsonb, %s, %s)""",
+                (job.id, job.environment_id, job.state.value, job.model_dump_json(), job.created_at, job.updated_at),
+            )
+        self.connection.commit()
+
+    def load_jobs(self, states: set[ReconciliationJobState] | None = None) -> list[ReconciliationJob]:
+        with self.lock, self.connection.cursor() as cursor:
+            if states:
+                cursor.execute(
+                    "SELECT payload::text FROM reconciliation_jobs WHERE state = ANY(%s) ORDER BY created_at",
+                    ([state.value for state in states],),
+                )
+            else:
+                cursor.execute("SELECT payload::text FROM reconciliation_jobs ORDER BY created_at")
+            return [ReconciliationJob.model_validate_json(row[0]) for row in cursor.fetchall()]
+
+    def update_job(self, job: ReconciliationJob) -> None:
+        with self.lock, self.connection.cursor() as cursor:
+            cursor.execute(
+                """UPDATE reconciliation_jobs SET state = %s, payload = %s::jsonb, updated_at = %s WHERE id = %s""",
+                (job.state.value, job.model_dump_json(), job.updated_at, job.id),
+            )
+        self.connection.commit()
 
     def close(self) -> None:
         self.connection.close()

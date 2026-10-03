@@ -21,6 +21,16 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+          startupProbe:
+            httpGet: {path: /realms/platform/.well-known/openid-configuration, port: http}
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet: {path: /realms/platform/.well-known/openid-configuration, port: http}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /realms/platform/.well-known/openid-configuration, port: http}
+            periodSeconds: 15
           env:
             - name: KC_BOOTSTRAP_ADMIN_USERNAME
               valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: keycloak-admin-username}}
@@ -28,6 +38,8 @@ spec:
               valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: keycloak-admin-password}}
             - name: KC_HOSTNAME_STRICT
               value: "true"
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
             # Pilot-only local-review hostname. The Console reaches Keycloak over a
             # local port-forward; FastAPI verifies this issuer but fetches JWKS via
             # the in-cluster service URL. A production deployment needs TLS and a
@@ -41,10 +53,21 @@ spec:
             - name: realm
               mountPath: /opt/keycloak/data/import
               readOnly: true
+            - name: login-theme
+              mountPath: /opt/keycloak/themes/ai-platform/login/theme.properties
+              subPath: theme.properties
+              readOnly: true
+            - name: login-theme
+              mountPath: /opt/keycloak/themes/ai-platform/login/resources/css/ai-platform.css
+              subPath: ai-platform.css
+              readOnly: true
       volumes:
         - name: realm
           configMap:
             name: keycloak-realm
+        - name: login-theme
+          configMap:
+            name: keycloak-login-theme
 ---
 apiVersion: v1
 kind: Service

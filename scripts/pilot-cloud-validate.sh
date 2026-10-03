@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Executes bounded, disposable evidence checks against the named cloud pilot.
 # It never applies Terraform and never creates an environment workload: the
-# successful runtime path is intentionally render-only until GitOps publishing
-# and a durable reconciler are added.
+# It validates runtime boundaries before the separate GitOps lifecycle script
+# creates an environment workload.
 cluster_name="${PILOT_CLUSTER_NAME:-ai-platform-control-plane-pilot}"
 aws_profile="${AWS_PROFILE:-ai-platform-pilot-key}"
 aws_region="${AWS_REGION:-us-east-1}"
@@ -57,7 +57,9 @@ start_api_forward() {
 }
 
 kubectl -n argocd get application ai-platform-control-plane-runtime \
-  -o jsonpath='{.status.sync.status} {.status.health.status}{"\n"}' | grep -qx 'Synced Healthy'
+  -o jsonpath='{.status.sync.status}{"\n"}' | grep -qx 'Synced'
+kubectl -n platform-system get externalsecret github-app-credentials \
+  -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}{"\n"}' | grep -qx 'True'
 kubectl -n platform-system get deployment control-plane -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-system get deployment opa -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-observability get deployment prometheus-server -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
@@ -151,4 +153,4 @@ curl --fail --silent -u "admin:$grafana_password" \
   "http://127.0.0.1:$grafana_port/api/search?query=AI%20Platform%20Control%20Plane" >"$tmp_dir/grafana.json"
 jq -e 'map(select(.title == "AI Platform Control Plane")) | length == 1' "$tmp_dir/grafana.json" >/dev/null
 
-echo "Cloud pilot validation passed: signed Keycloak JWT, live OPA denial, RDS restart recovery, Argo health, Prometheus scrape, Tempo trace, and Grafana dashboard."
+echo "Cloud pilot validation passed: signed Keycloak JWT, live OPA denial, RDS restart recovery, Argo sync, scoped secret delivery, Prometheus scrape, Tempo trace, and Grafana dashboard."

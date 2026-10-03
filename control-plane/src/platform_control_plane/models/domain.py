@@ -37,6 +37,18 @@ class LifecycleState(StrEnum):
     DESTROYED = "DESTROYED"
 
 
+class ReconciliationAction(StrEnum):
+    APPLY = "APPLY"
+    DESTROY = "DESTROY"
+
+
+class ReconciliationJobState(StrEnum):
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    PUBLISHED = "PUBLISHED"
+    FAILED = "FAILED"
+
+
 RESOURCE_PROFILES = {
     "small": {"cpu": "250m", "memory": "256Mi", "monthly_usd": 8.0},
     "medium": {"cpu": "500m", "memory": "512Mi", "monthly_usd": 16.0},
@@ -165,6 +177,25 @@ class Approval(BaseModel):
 
 class ApprovalRequest(BaseModel):
     plan_hash: str = Field(min_length=64, max_length=64)
+
+
+class ReconciliationJob(BaseModel):
+    """Durable hand-off from request handling to the GitOps publisher.
+
+    A published job means only that a governed desired-state pull request exists.
+    It does not mean Argo CD or Kubernetes made the environment ready.
+    """
+
+    id: UUID = Field(default_factory=uuid4)
+    environment_id: UUID
+    action: ReconciliationAction
+    actor: Actor
+    state: ReconciliationJobState = ReconciliationJobState.PENDING
+    attempts: int = 0
+    publication_url: str | None = None
+    failure_reason: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class Environment(BaseModel):

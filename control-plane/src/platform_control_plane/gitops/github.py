@@ -72,12 +72,7 @@ class GitHubAppPublisher:
         base_sha = ref.json().get("object", {}).get("sha")
         if not isinstance(base_sha, str):
             raise GitOpsPublicationError("GitHub base branch response was invalid")
-        branch = f"gitops/{change_id}"
-        created = self.client.post(
-            f"{repo_url}/git/refs", headers=headers, json={"ref": f"refs/heads/{branch}", "sha": base_sha}
-        )
-        if created.status_code not in {201, 422}:
-            raise GitOpsPublicationError(f"GitHub branch creation failed: {created.status_code}")
+        branch = self._create_branch(repo_url, headers, base_sha, change_id)
         encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
         updated = self.client.put(
             f"{repo_url}/contents/{path}",
@@ -86,6 +81,50 @@ class GitHubAppPublisher:
         )
         if updated.status_code not in {200, 201}:
             raise GitOpsPublicationError(f"GitHub desired-state write failed: {updated.status_code}")
+        return self._open_pull_request(repo_url, headers, branch, title)
+
+    def delete(self, *, path: str, change_id: str, title: str) -> str:
+        """Create an isolated pull request that removes one governed desired-state file."""
+        if not path.startswith("environments/") or ".." in Path(path).parts:
+            raise GitOpsPublicationError("desired-state path must remain under environments/")
+        token = self._installation_token()
+        headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+        repo_url = f"{self.config.api_url}/repos/{self.config.repository}"
+        ref = self.client.get(f"{repo_url}/git/ref/heads/{self.config.base_branch}", headers=headers)
+        if ref.status_code != 200:
+            raise GitOpsPublicationError(f"GitHub base branch lookup failed: {ref.status_code}")
+        base_sha = ref.json().get("object", {}).get("sha")
+        if not isinstance(base_sha, str):
+            raise GitOpsPublicationError("GitHub base branch response was invalid")
+        branch = self._create_branch(repo_url, headers, base_sha, change_id)
+        current = self.client.get(f"{repo_url}/contents/{path}", headers=headers)
+        if current.status_code != 200:
+            raise GitOpsPublicationError(f"GitHub desired-state lookup failed: {current.status_code}")
+        sha = current.json().get("sha")
+        if not isinstance(sha, str):
+            raise GitOpsPublicationError("GitHub desired-state lookup response was invalid")
+        deleted = self.client.request(
+            "DELETE",
+            f"{repo_url}/contents/{path}",
+            headers=headers,
+            json={"message": title, "sha": sha, "branch": branch},
+        )
+        if deleted.status_code != 200:
+            raise GitOpsPublicationError(f"GitHub desired-state delete failed: {deleted.status_code}")
+        return self._open_pull_request(repo_url, headers, branch, title)
+
+    def _create_branch(self, repo_url: str, headers: dict[str, str], base_sha: str, change_id: str) -> str:
+        branch = f"gitops/{change_id}"
+        created = self.client.post(
+            f"{repo_url}/git/refs", headers=headers, json={"ref": f"refs/heads/{branch}", "sha": base_sha}
+        )
+        if created.status_code not in {201, 422}:
+            raise GitOpsPublicationError(f"GitHub branch creation failed: {created.status_code}")
+        return branch
+
+    def _open_pull_request(
+        self, repo_url: str, headers: dict[str, str], branch: str, title: str
+    ) -> str:
         pull_request = self.client.post(
             f"{repo_url}/pulls",
             headers=headers,

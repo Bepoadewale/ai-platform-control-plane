@@ -9,10 +9,11 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
 
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
-Grafana, Tempo, governance scenarios, and guarded teardown. It did not execute real
-per-environment Git publication/Argo reconciliation, durable asynchronous reconciliation,
-enterprise identity, external secrets/workload identity, HA, measured SLO/cost evidence, or a
-sustained production workload. Those omissions prevent any production-certified claim.
+Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
+reconciliation, IRSA/External Secrets delivery, a themed Keycloak PKCE Console through a temporary
+Cloudflare tunnel, and a bad-workload failure/cleanup drill. It did not execute enterprise identity,
+HA, measured SLO/cost evidence, quality rollback, or a sustained production workload.
+Those omissions prevent any production-certified claim.
 
 ## Executed and Verified
 
@@ -62,10 +63,20 @@ sustained production workload. Those omissions prevent any production-certified 
   destroyed with its full audit timeline. A production request required the distinct operator role
   for both apply and destroy approvals; an unsafe privileged request was rejected by live OPA with
   no matching EKS workload.
+- A private EKS GitOps lifecycle published reviewed GitHub App pull requests for creation and
+  deletion. Argo ApplicationSet created a `1/1` Ready workload, then pruned its Application and
+  namespace after deletion. A disposable bad-image workload reached `ImagePullBackOff` and
+  `ProgressDeadlineExceeded`; the observer persisted `FAILED`, and GitOps cleanup returned the
+  environment to `DESTROYED` with an audit timeline.
+- The EKS Operator Console was additionally reviewed through a short-lived Cloudflare Quick Tunnel.
+  A local same-origin proxy kept API and Keycloak requests scoped to loopback port-forwards; the
+  Keycloak client received only the exact temporary origin for the session. No AWS public ingress,
+  DNS, or load balancer was created.
 
 ## Implemented but Not End-to-End Validated
 
-- No primary local control-loop capability is awaiting end-to-end validation.
+- HA-shaped replicas/PDBs, sustained load, measured SLO/error-budget, quality rollback, and cost
+  evidence remain unexecuted in EKS.
 
 ## Simulated
 
@@ -74,8 +85,7 @@ sustained production workload. Those omissions prevent any production-certified 
 
 ## Architecture / Contracts Only
 
-- Durable worker reconciliation, external secret delivery/workload identity, and delegated MCP
-  OIDC identity.
+- Delegated MCP OIDC identity.
 
 ## Explicitly Unexecuted Production Adapters
 
@@ -95,14 +105,14 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The second bounded cloud validation was destroyed through the guarded
-Terraform command; its observed cost is not recorded. GitOps publication, a durable reconciler,
-external secrets/workload identity, public TLS/enterprise OIDC, and GitHub Actions OIDC execution
-remain later P1 work.
+No open local-first P0 work. The active bounded cloud validation has executed protected Git
+publication → Argo → EKS workload readiness and deletion, plus External Secrets/workload identity.
+Cloud P1 remains HA/recovery, quality rollback, SLO/cost/load evidence, public TLS/enterprise OIDC,
+and GitHub Actions OIDC execution. The active 2026-10-03 pilot has been torn down.
 
 ## Last Validation
 
-- `.venv/bin/python -m pytest -q`: 29 passed (2 upstream TestClient deprecation warnings).
+- `.venv/bin/python -m pytest -q control-plane/tests`: 31 passed (2 upstream TestClient deprecation warnings).
 - Local Compose: Keycloak bearer token → FastAPI `/api/v1/catalog`: `200`.
 - `make compose-smoke`: Keycloak token, FastAPI catalog authorization, PostgreSQL state, Prometheus
   query, OTel Collector HTTP span, and Grafana dashboard assertions passed.
@@ -179,8 +189,14 @@ remain later P1 work.
   resources. The project-tagged NAT gateway is retained by AWS only as a historical record in
   `deleted` state. The encrypted state bucket, active lock table, and USD 10 Budget remain by
   design.
+- Final production-shaped pilot teardown: after the GitOps success, failure, Console, and smoke
+  evidence, the guarded destroy removed the active 40-resource workload footprint. Direct AWS
+  queries found EKS, RDS, ECR, pilot IAM roles, project-tagged VPCs, and pilot GitOps secrets absent;
+  the configured remote pilot Terraform state listed zero resources. The encrypted/versioned state
+  bucket, active lock table, and USD 10 Budget remain intentionally.
 
 ## Last Updated
 
-2026-10-02, local-first completion is unchanged. The second bounded AWS runtime validation,
-governed-lifecycle evidence, and guarded teardown are recorded.
+2026-10-03, local-first completion is unchanged. The completed production-shaped AWS validation,
+GitOps lifecycle/failure evidence, themed temporary Console review, and guarded teardown are
+recorded. This is not production certification.

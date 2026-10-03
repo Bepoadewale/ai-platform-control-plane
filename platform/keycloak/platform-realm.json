@@ -1,5 +1,7 @@
 {
   "realm": "platform",
+  "displayName": "AI Platform Control Plane",
+  "loginTheme": "ai-platform",
   "enabled": true,
   "sslRequired": "NONE",
   "roles": {

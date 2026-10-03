@@ -1,0 +1,97 @@
+# This component has read-only Kubernetes status authority only. It updates durable lifecycle
+# state after Argo and the target Deployment are observed; it cannot publish Git changes or mutate
+# workload resources.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: status-observer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ai-platform-status-observer-argocd-read
+rules:
+  - apiGroups: [argoproj.io]
+    resources: [applications]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ai-platform-status-observer-argocd-read
+subjects:
+  - kind: ServiceAccount
+    name: status-observer
+    namespace: platform-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ai-platform-status-observer-argocd-read
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ai-platform-status-observer-deployment-read
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ai-platform-status-observer-deployment-read
+subjects:
+  - kind: ServiceAccount
+    name: status-observer
+    namespace: platform-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ai-platform-status-observer-deployment-read
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: status-observer
+  labels:
+    app.kubernetes.io/name: status-observer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: status-observer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: status-observer
+    spec:
+      serviceAccountName: status-observer
+      securityContext:
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: observer
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-691e4d4
+          imagePullPolicy: Always
+          command: [python, -m, platform_control_plane.gitops.observer]
+          env:
+            - name: PLATFORM_DATABASE_URL
+              valueFrom: {secretKeyRef: {name: platform-runtime-secrets, key: database-url}}
+            - name: PLATFORM_DESIRED_STATE_ROOT
+              value: /app/environments
+            - name: PLATFORM_STATUS_OBSERVER_POLL_SECONDS
+              value: '10'
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 250m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - name: state
+              mountPath: /app/environments
+      volumes:
+        - name: state
+          emptyDir: {}

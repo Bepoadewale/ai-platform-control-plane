@@ -26,6 +26,8 @@ jobs:
       - run: terraform fmt -check -recursive infrastructure/terraform
       - run: terraform -chdir=infrastructure/terraform/environments/aws init -backend=false
       - run: terraform -chdir=infrastructure/terraform/environments/aws validate
+      - run: terraform -chdir=infrastructure/terraform/pilot init -backend=false
+      - run: terraform -chdir=infrastructure/terraform/pilot validate
       - uses: azure/setup-helm@v4
       - run: helm lint platform/helm/golden-path
   supply-chain:

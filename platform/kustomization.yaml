@@ -5,6 +5,9 @@ resources:
   - cloud/runtime/opa.yaml
   - cloud/runtime/keycloak.yaml
   - cloud/runtime/control-plane.yaml
+  - cloud/runtime/gitops-worker.yaml
+  - cloud/runtime/external-secrets.yaml
+  - cloud/runtime/status-observer.yaml
   - cloud/runtime/operator-console.yaml
   - cloud/runtime/otel-collector.yaml
 
@@ -15,6 +18,10 @@ configMapGenerator:
   - name: keycloak-realm
     files:
       - platform-realm.json=keycloak/platform-realm.json
+  - name: keycloak-login-theme
+    files:
+      - theme.properties=keycloak/theme/login/theme.properties
+      - ai-platform.css=keycloak/theme/login/resources/css/ai-platform.css
   - name: otel-collector-config
     files:
       - config.yaml=cloud/otel-collector.yaml

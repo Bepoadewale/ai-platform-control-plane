@@ -16,5 +16,5 @@ def test_empty_database_receives_versioned_schema(tmp_path: Path):
             row[0]
             for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
         }
-    assert versions == [(LATEST_SCHEMA_VERSION,)]
-    assert {"environments", "audit_events"}.issubset(tables)
+    assert versions == [(1,), (LATEST_SCHEMA_VERSION,)]
+    assert {"environments", "audit_events", "reconciliation_jobs"}.issubset(tables)

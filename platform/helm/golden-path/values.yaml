@@ -4,6 +4,7 @@ team: team-demo
 environmentType: development
 ttlHours: 12
 profile: small
+progressDeadlineSeconds: 60
 image: nginxinc/nginx-unprivileged:1.27-alpine
 postgresql: false
 redis: false

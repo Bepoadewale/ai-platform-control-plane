@@ -42,16 +42,19 @@ avoids the ConfigMap `..data` symlink tree being recursively loaded by OPA as du
 ```bash
 make pilot-cloud-apply
 make pilot-cloud-push-image
+make pilot-cloud-put-gitops-secret
 make pilot-cloud-bootstrap-runtime
 make pilot-cloud-smoke
 make pilot-cloud-validate
 make pilot-cloud-console-validate
 ```
 
-`pilot-cloud-bootstrap-runtime` installs Argo CD and creates one short-lived Kubernetes secret from
-the RDS managed secret. That is deliberately a bootstrap-only compromise for this pilot: no secret
-value is committed or stored in Terraform state. EKS Pod Identity/IRSA plus External Secrets remains
-a required hardening step before a long-lived deployment is claimed.
+`pilot-cloud-put-gitops-secret` places the locally held GitHub App credential directly into the
+project-scoped Secrets Manager entry through the AWS CLI. It never prints the key or passes it to
+Terraform. `pilot-cloud-bootstrap-runtime` installs External Secrets with an IRSA role limited to
+that secret, waits for the namespace-local worker Secret, then starts the API, GitOps worker and
+read-only status observer. The separate RDS bootstrap secret remains a short-lived pilot compromise;
+no secret value is committed or stored in Terraform state.
 
 The runtime starts the control plane, OPA, Keycloak, and an OpenTelemetry Collector under Argo CD.
 Use port forwarding for inspection; the pilot does not create a public load balancer:
@@ -67,6 +70,17 @@ After the runtime smoke test passes, use a temporary public review URL if needed
 make pilot-cloud-public-demo
 ```
 
+For a short-lived, authenticated review of the real EKS-hosted Operator Console, use:
+
+```bash
+make pilot-cloud-console-public-demo
+```
+
+This starts only local port-forwards, a same-origin local proxy, and a Cloudflare Quick Tunnel. It
+temporarily adds that exact `trycloudflare.com` origin to the synthetic pilot Keycloak client, then
+restores the original client configuration when the command exits. It does not create AWS ingress,
+DNS, TLS, a load balancer, or a persistent public endpoint. Do not use it with non-synthetic data.
+
 It exposes only a local `kubectl port-forward` through an unauthenticated Cloudflare Quick Tunnel,
 prints a temporary `/docs` URL, and creates no AWS load balancer or DNS resource. Keep it open only
 while reviewing disposable pilot data. `Ctrl-C` closes the tunnel and local port-forward; it does
@@ -74,10 +88,22 @@ while reviewing disposable pilot data. `Ctrl-C` closes the tunnel and local port
 public review is complete.
 
 `pilot-cloud-validate` runs the bounded signed-JWT, live OPA cross-tenant denial/audit, RDS restart
-recovery, Prometheus target/query, Tempo trace, and Grafana dashboard checks. It intentionally does
-not claim an individual environment workload was reconciled: that production GitOps path remains
-`render-only`. Record the Argo Application state, EKS deployment readiness, health endpoint, and
-all observed evidence in `docs/VALIDATION.md` before teardown.
+recovery, Prometheus target/query, Tempo trace, and Grafana dashboard checks. The real lifecycle
+exercise is separate and uses GitHub pull requests deliberately:
+
+```bash
+PILOT_RUNTIME_REVISION=codex/production-shaped-single-account make pilot-cloud-bootstrap-runtime
+make pilot-cloud-gitops-lifecycle
+# Review the printed GitOps pull request, then continue with the exact environment UUID it prints.
+# The second command performs the explicit merge:
+PILOT_GITOPS_ENVIRONMENT_ID=<environment-id> MERGE_GITOPS_CHANGE=<environment-id> make pilot-cloud-gitops-lifecycle
+```
+
+The lifecycle command proves API intent → durable worker → GitHub PR → merged desired state →
+Argo ApplicationSet → private EKS workload → read-only observer → Git deletion PR → Argo prune.
+It uses a disposable development environment and requires an explicit reviewed merge; it does not
+give the API or worker Kubernetes mutation authority. Record all observed evidence in
+`docs/VALIDATION.md` before teardown.
 
 To inspect the EKS-hosted authenticated Operator Console without creating a public AWS endpoint:
 
@@ -116,10 +142,9 @@ Docker/Kubernetes prune commands as pilot cleanup.
 
 ## Known pilot limits
 
-- The runtime’s `render-only` adapter does not yet publish individual environment requests to a
-  GitHub pull request and wait for their Argo reconciliation. `GitHubAppPublisher` is implemented
-  and unit-tested as the narrow desired-state publication boundary; wiring it into durable worker
-  reconciliation remains a required next production increment.
+- The GitOps worker, External Secrets contract, ApplicationSet and read-only status observer are
+  implemented and locally tested. Their complete AWS lifecycle is not claimed until the documented
+  disposable create → PR → merge → Ready → deletion → destroy run is recorded.
 - Prometheus, Grafana, and Tempo have been exercised in the bounded pilot. Their storage is
   deliberately ephemeral and their charts are not a production HA/retention design.
 - GitHub App private-key storage and External Secrets/Pod Identity are intentionally not claimed as

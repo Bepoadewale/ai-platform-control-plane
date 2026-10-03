@@ -36,3 +36,8 @@ output "gitops_publisher_secret_arn" {
 output "eks_oidc_provider_arn" {
   value = aws_iam_openid_connect_provider.eks.arn
 }
+
+output "external_secrets_role_arn" {
+  value       = aws_iam_role.external_secrets.arn
+  description = "IRSA role limited to the GitHub App secret used by External Secrets."
+}

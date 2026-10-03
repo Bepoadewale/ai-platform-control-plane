@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from uuid import UUID
 
@@ -12,7 +13,11 @@ from platform_control_plane.models.domain import (
     Environment,
     EnvironmentRequest,
     LifecycleState,
+    ReconciliationAction,
+    ReconciliationJob,
+    ReconciliationJobState,
 )
+from platform_control_plane.observability.metrics import RECONCILIATION_QUEUE_DEPTH
 from platform_control_plane.persistence.postgres import PostgresStore
 from platform_control_plane.persistence.repository import EnvironmentRepository
 from platform_control_plane.planner.service import Planner
@@ -31,6 +36,7 @@ class EnvironmentService:
         database_path: Path | str | None = None,
         reconciler: Reconciler | None = None,
         policy: PolicyEngine | OPAPolicyEngine | None = None,
+        reconciliation_mode: str | None = None,
     ) -> None:
         self.policy = policy or OPAPolicyEngine.from_environment()
         self.planner = Planner()
@@ -39,9 +45,21 @@ class EnvironmentService:
         self.renderer = GitOpsRenderer(desired_state_root)
         self.reconciler = reconciler or KindHelmReconciler.from_environment()
         self.repository = EnvironmentRepository(database_path) if self.postgres is None else self.postgres
+        self.reconciliation_mode = reconciliation_mode or os.getenv("PLATFORM_RECONCILIATION_MODE", "synchronous")
+        if self.reconciliation_mode not in {"synchronous", "gitops-worker"}:
+            raise ValueError("PLATFORM_RECONCILIATION_MODE must be synchronous or gitops-worker")
         loaded = self.repository.load_all()
         self._environments: dict[UUID, Environment] = {environment.id: environment for environment in loaded}
         self._keys: dict[tuple[str, str], UUID] = {
+            (environment.tenant_id, environment.request.idempotency_key): environment.id
+            for environment in loaded
+        }
+
+    def refresh_from_store(self) -> None:
+        """Refresh state owned by another API/worker process from durable storage."""
+        loaded = self.repository.load_all()
+        self._environments = {environment.id: environment for environment in loaded}
+        self._keys = {
             (environment.tenant_id, environment.request.idempotency_key): environment.id
             for environment in loaded
         }
@@ -102,6 +120,16 @@ class EnvironmentService:
         env.state = LifecycleState.APPLYING
         self._event(env, actor, "gitops.rendering")
         env.gitops_path = self.renderer.render(env)
+        if self.reconciliation_mode == "gitops-worker":
+            job = ReconciliationJob(
+                environment_id=env.id,
+                action=ReconciliationAction.APPLY,
+                actor=actor,
+            )
+            self.repository.enqueue_job(job)
+            RECONCILIATION_QUEUE_DEPTH.set(len(self.pending_reconciliation_jobs()))
+            self._event(env, actor, "reconciliation.queued", job_id=str(job.id))
+            return env
         try:
             env.endpoint = self.reconciler.apply(env, self.renderer.root.parent / env.gitops_path)
         except ReconciliationError as error:
@@ -112,6 +140,17 @@ class EnvironmentService:
         env.state = LifecycleState.READY
         self._event(env, actor, "environment.ready", gitops_path=env.gitops_path, endpoint=env.endpoint)
         return env
+
+    def pending_reconciliation_jobs(self) -> list[ReconciliationJob]:
+        return self.repository.load_jobs({ReconciliationJobState.PENDING})
+
+    def reconciliation_jobs(self, actor: Actor, environment_id: UUID) -> list[ReconciliationJob]:
+        self.get(actor, environment_id)
+        return [
+            job
+            for job in self.repository.load_jobs()
+            if job.environment_id == environment_id
+        ]
 
     def close(self) -> None:
         self.repository.close()
@@ -194,6 +233,16 @@ class EnvironmentService:
         self._event(env, actor, "destroy.requested")
         env.state = LifecycleState.DESTROYING
         self._event(env, actor, "destroy.applying")
+        if self.reconciliation_mode == "gitops-worker":
+            job = ReconciliationJob(
+                environment_id=env.id,
+                action=ReconciliationAction.DESTROY,
+                actor=actor,
+            )
+            self.repository.enqueue_job(job)
+            RECONCILIATION_QUEUE_DEPTH.set(len(self.pending_reconciliation_jobs()))
+            self._event(env, actor, "destroy.queued", job_id=str(job.id))
+            return env
         try:
             self.reconciler.destroy(env)
         except ReconciliationError as error:

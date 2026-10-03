@@ -6,7 +6,8 @@ aws_profile="${AWS_PROFILE:-ai-platform-pilot-key}"
 expected_account="${EXPECTED_AWS_ACCOUNT_ID:-654654474502}"
 aws_region="${AWS_REGION:-us-east-1}"
 repository="${PILOT_ECR_REPOSITORY:-ai-platform-control-plane}"
-image_tag="${PILOT_IMAGE_TAG:-pilot}"
+git_revision="$(git -C "$project_root" rev-parse --short=7 HEAD)"
+image_tag="${PILOT_IMAGE_TAG:-pilot-${git_revision}}"
 
 command -v aws >/dev/null && command -v docker >/dev/null || {
   echo "AWS CLI and Docker are required." >&2; exit 1;

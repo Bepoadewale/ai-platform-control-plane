@@ -34,7 +34,7 @@ spec:
       containers:
         - name: control-plane
           # `pilot` is immutable in ECR. The pilot teardown deletes this project-scoped repository.
-          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-691e4d4
           imagePullPolicy: Always
           ports:
             - name: http
@@ -62,6 +62,8 @@ spec:
               value: http://otel-collector.platform-system.svc.cluster.local:4318
             - name: PLATFORM_RECONCILER
               value: render-only
+            - name: PLATFORM_RECONCILIATION_MODE
+              value: gitops-worker
           startupProbe:
             httpGet: {path: /healthz, port: http}
             failureThreshold: 30

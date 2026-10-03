@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: governed-environments
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: ai-platform-control-plane
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/Bepoadewale/ai-platform-control-plane.git
+        revision: main
+        # The pilot is deliberately short lived; poll reviewed desired state promptly.
+        requeueAfterSeconds: 30
+        directories:
+          - path: environments/*/*
+  template:
+    metadata:
+      name: 'environment-{{path.basename}}'
+      labels:
+        app.kubernetes.io/part-of: ai-platform-control-plane
+        platform.bepo.ai/managed: 'true'
+    spec:
+      project: default
+      sources:
+        - repoURL: https://github.com/Bepoadewale/ai-platform-control-plane.git
+          targetRevision: main
+          path: platform/helm/golden-path
+          helm:
+            valueFiles:
+              - '$values/{{path}}/values.yaml'
+        - repoURL: https://github.com/Bepoadewale/ai-platform-control-plane.git
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: platform-system
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
