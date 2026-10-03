@@ -110,13 +110,13 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The active bounded cloud validation has executed protected Git
+No open local-first P0 work. The completed bounded cloud validation executed protected Git
 publication → Argo → EKS workload readiness and deletion, External Secrets/workload identity,
 two-replica pod-loss recovery, bounded authenticated availability evidence, alert firing,
-bad-image restore, Cost Explorer querying, and a hosted GitHub OIDC Terraform apply. The final
-guarded teardown and post-destroy verification remain the immediate cloud-pilot task. Cloud P1
-remains model-quality rollback, sustained SLO/cost/load evidence, public TLS/enterprise OIDC, and
-GitHub-hosted destroy execution.
+bad-image restore, Cost Explorer querying, a hosted GitHub OIDC Terraform apply, and final
+guarded teardown with post-destroy AWS/Terraform checks. Cloud P1 remains model-quality rollback,
+sustained SLO/cost/load evidence, public TLS/enterprise OIDC, backup/restore, and GitHub-hosted
+destroy execution.
 
 ## Last Validation
 
@@ -211,6 +211,7 @@ GitHub-hosted destroy execution.
 
 ## Last Updated
 
-2026-10-04, local-first completion is unchanged. The active production-shaped AWS validation has
+2026-10-04, local-first completion is unchanged. The completed production-shaped AWS validation
 executed GitOps lifecycle/failure/restore evidence, HA, bounded load, alert, hosted OIDC apply,
-and themed temporary Console review. This is not production certification.
+themed temporary Console review, and guarded Terraform teardown. This is not production
+certification.
