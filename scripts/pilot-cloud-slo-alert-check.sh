@@ -44,6 +44,6 @@ for _ in {1..45}; do
 done
 [[ "$firing" == true ]] || { echo "Expected $alert_name to fire." >&2; exit 1; }
 
-availability_query='1 - (sum(rate(platform_http_requests_total{route="/api/v1/catalog",status_code=~"5.."}[2m])) / clamp_min(sum(rate(platform_http_requests_total{route="/api/v1/catalog"}[2m])), 1))'
+availability_query='1 - ((sum(rate(platform_http_requests_total{route="/api/v1/catalog",status_code=~"5.."}[2m])) or vector(0)) / clamp_min((sum(rate(platform_http_requests_total{route="/api/v1/catalog"}[2m])) or vector(0)), 1))'
 availability="$(curl -fsSG http://127.0.0.1:19090/api/v1/query --data-urlencode "query=$availability_query" | jq -er '.data.result[0].value[1]')"
 echo "Prometheus alert/SLO drill passed: $alert_name firing; catalog two-minute availability estimate=$availability. No external alert receiver was configured."
