@@ -68,7 +68,7 @@ fi
 for _ in {1..60}; do
   curl --fail --silent -H "Authorization: Bearer $token" \
     "http://127.0.0.1:$api_port/api/v1/environments/$environment_id/reconciliation-jobs" >"$tmp_dir/jobs.json"
-  jq -e 'map(select(.action == "APPLY" and .state == "PUBLISHED")) | length == 1' "$tmp_dir/jobs.json" >/dev/null && break
+  jq -e 'map(select(.action == "APPLY" and .state == "PUBLISHED")) | length >= 1' "$tmp_dir/jobs.json" >/dev/null && break
   sleep 2
 done
 merge_if_open() {
@@ -83,7 +83,7 @@ merge_if_open() {
   gh pr merge "$pull_request" --merge --delete-branch
 }
 
-apply_pr="$(jq -er 'map(select(.action == "APPLY" and .state == "PUBLISHED"))[0].publication_url' "$tmp_dir/jobs.json")"
+apply_pr="$(jq -er 'map(select(.action == "APPLY" and .state == "PUBLISHED")) | sort_by(.created_at) | last.publication_url' "$tmp_dir/jobs.json")"
 echo "GitOps apply pull request: $apply_pr"
 
 if [[ "${MERGE_GITOPS_CHANGE:-}" != "$environment_id" ]]; then
@@ -113,10 +113,10 @@ jq -e '.state == "DESTROYING"' "$tmp_dir/destroy.json" >/dev/null
 for _ in {1..60}; do
   curl --fail --silent -H "Authorization: Bearer $token" \
     "http://127.0.0.1:$api_port/api/v1/environments/$environment_id/reconciliation-jobs" >"$tmp_dir/destroy-jobs.json"
-  jq -e 'map(select(.action == "DESTROY" and .state == "PUBLISHED")) | length == 1' "$tmp_dir/destroy-jobs.json" >/dev/null && break
+  jq -e 'map(select(.action == "DESTROY" and .state == "PUBLISHED")) | length >= 1' "$tmp_dir/destroy-jobs.json" >/dev/null && break
   sleep 2
 done
-destroy_pr="$(jq -er 'map(select(.action == "DESTROY" and .state == "PUBLISHED"))[0].publication_url' "$tmp_dir/destroy-jobs.json")"
+destroy_pr="$(jq -er 'map(select(.action == "DESTROY" and .state == "PUBLISHED")) | sort_by(.created_at) | last.publication_url' "$tmp_dir/destroy-jobs.json")"
 echo "GitOps destroy pull request: $destroy_pr"
 merge_if_open "$destroy_pr"
 
