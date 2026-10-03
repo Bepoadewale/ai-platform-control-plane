@@ -24,8 +24,10 @@ kubectl -n platform-system port-forward service/control-plane 18000:8000 >"$tmp_
 kubectl -n platform-observability port-forward service/prometheus-server 19090:80 >"$tmp_dir/prometheus.log" 2>&1 & prometheus_pid=$!
 for _ in {1..30}; do curl -fs http://127.0.0.1:18000/healthz >/dev/null && break; sleep 1; done
 curl -fs http://127.0.0.1:18000/healthz >/dev/null
+for _ in {1..30}; do curl -fs http://127.0.0.1:19090/-/ready >/dev/null && break; sleep 1; done
+curl -fs http://127.0.0.1:19090/-/ready >/dev/null
 
-for _ in {1..8}; do
+for _ in {1..20}; do
   status="$(curl -sS -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer deliberately-invalid-pilot-token' http://127.0.0.1:18000/api/v1/catalog)"
   [[ "$status" == "401" ]] || { echo "Expected bounded 401 drill, got $status." >&2; exit 1; }
 done
