@@ -1,5 +1,9 @@
 alertmanager:
   enabled: true
+  persistentVolume:
+    # The disposable pilot has no EBS CSI driver or default StorageClass. Alert
+    # history is intentionally ephemeral for this bounded validation run.
+    enabled: false
   # The disposable pilot deliberately has no external receiver. The alert drill queries
   # Prometheus' firing state instead of sending synthetic alerts to people.
   config:
