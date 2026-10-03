@@ -23,7 +23,9 @@ AWS_PROFILE="$aws_profile" aws secretsmanager get-secret-value \
     exit 1
   }
 
-AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region"
+# Persist the selected profile in kubeconfig's exec stanza. Without --profile,
+# later kubectl calls can lose the pilot identity and fail token refresh.
+aws eks update-kubeconfig --profile "$aws_profile" --name "$cluster_name" --region "$aws_region"
 kubectl get nodes --request-timeout=30s >/dev/null
 
 # The identity and telemetry components have no public load balancer. Pilot evidence uses local
