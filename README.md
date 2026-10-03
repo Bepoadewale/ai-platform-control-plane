@@ -40,7 +40,7 @@ flowchart TB
   API --> PromLocal
 
   subgraph cloud[AWS pilot: private, ephemeral, executed then torn down]
-    Actions[GitHub Actions manual workflow] -. implemented—not executed .-> OIDC[GitHub OIDC role]
+    Actions[GitHub Actions manual workflow] -. short-lived credentials .-> OIDC[GitHub OIDC role]
     OIDC -.-> Terraform
     Terraform[Terraform] --> VPC[Tagged VPC\nprivate EKS subnets]
     VPC --> EKS[Amazon EKS\nCPU node group]
@@ -150,11 +150,12 @@ The teardown verified EKS, RDS, ECR, pilot IAM roles, VPC, and pilot secrets abs
 encrypted/versioned Terraform state bucket, DynamoDB lock table, and USD 10 budget guardrail remain
 intentionally. This was realistic cloud validation, not a public SaaS or production certification.
 
-Unexecuted production controls include enterprise OIDC, quality rollback, sustained load,
-measured SLO/error-budget/cost evidence, public TLS ingress, and GitHub-hosted Terraform
-apply/destroy. The pilot did execute two-replica API/OPA/worker pod-loss recovery, a bounded
-authenticated availability sample, and a GitHub-hosted OIDC Terraform plan; those are not
-substitutes for full production certification. See the [pilot plan](docs/production-pilot.md),
+Unexecuted production controls include enterprise OIDC, model/quality rollback, sustained load,
+measured error-budget policy and delayed AWS billing data, public TLS ingress, and the
+confirmation-gated GitHub-hosted Terraform destroy workflow. The pilot did execute two-replica
+API/OPA/worker pod-loss recovery, a bounded authenticated availability sample, a firing
+Prometheus alert, a bad-image health rollback/cleanup, a Cost Explorer query, and a GitHub-hosted
+OIDC Terraform apply; these are not substitutes for full production certification. See the [pilot plan](docs/production-pilot.md),
 [runbook](docs/cloud-pilot-runbook.md), and
 [production-shaped evidence](docs/production-shaped-validation.md).
 

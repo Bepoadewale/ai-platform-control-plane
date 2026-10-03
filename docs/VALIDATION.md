@@ -172,6 +172,25 @@ remain explicitly unexecuted.
 Hosted Terraform apply/destroy, a quality rollback, alert firing, measured error-budget policy, AWS
 Cost Explorer evidence, enterprise OIDC, and trusted public AWS TLS ingress remain unexecuted.
 
+## AWS HA, alert, rollback, and hosted-OIDC extension — 2026-10-04
+
+This extension reused the disposable private EKS pilot. It remains cloud-pilot evidence, not a
+production certification or a claim of a public service.
+
+| Evidence | Result |
+| --- | --- |
+| GitHub-hosted Terraform OIDC apply | A protected GitHub Actions run assumed the branch-bound AWS role using short-lived credentials and completed the reviewed Terraform apply. No GitHub AWS access key was used. The hosted destroy action remains confirmation-gated and unexecuted. |
+| HA / pod-loss | `make pilot-cloud-ha-check` verified two API, two OPA, and two worker replicas plus `minAvailable: 1` PDBs, deleted one ready API Pod and one worker Pod, and observed both Deployments return to `2/2` available. |
+| Bounded load | `PILOT_LOAD_REQUESTS=20 PILOT_LOAD_CONCURRENCY=4 make pilot-cloud-load-slo` completed 20 authenticated catalog requests at concurrency four. Prometheus observed 160 successful requests in the two-minute query window. This is a bounded sample, not a sustained throughput or capacity claim. |
+| Alert / availability signal | `make pilot-cloud-slo-alert-check` issued 20 invalid bearer requests, observed the firing `PilotUnauthorizedRequestBurst` alert, and returned catalog two-minute availability `1`. No external alert receiver or error-budget policy was configured. |
+| GitOps rollback | `make pilot-cloud-rollback-check` published reviewed create, bad-image, restore, and destroy changes. Kubernetes recorded `ProgressDeadlineExceeded` for the bad image; the reviewed restore reached Ready; governed deletion then pruned the namespace. This is deployment-health rollback/cleanup, not model-quality rollback. |
+| Cost Explorer | `make pilot-cloud-cost-evidence` queried 2026-10-01 through 2026-10-03. It returned estimated zero/empty groups while AWS billing remained within its documented 24–48-hour delay. This is not a zero-cost claim or settled cost evidence. |
+| Temporary Console review | The EKS Operator Console was exposed only via a short-lived Cloudflare Quick Tunnel to a local same-origin proxy over `kubectl port-forward`. Keycloak allowed only the temporary origin for that session; no AWS public ingress, DNS, or load balancer was created. |
+
+At the time of this record, enterprise identity, trusted public TLS ingress, model/quality rollback,
+sustained-load/error-budget evidence, backup/restore, settled AWS billing data, and the hosted
+Terraform destroy action remain unexecuted.
+
 ## AWS resilience-pilot final teardown — 2026-10-03
 
 The live final sequence completed before teardown:

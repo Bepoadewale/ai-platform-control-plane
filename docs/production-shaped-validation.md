@@ -50,12 +50,15 @@ kubectl in the cloud path.
 - [x] A disposable bad-image environment reached `ImagePullBackOff` then Kubernetes
   `ProgressDeadlineExceeded`; the observer persisted `FAILED`, and GitOps deletion pruned its
   Application and namespace. This is a safe failure-and-cleanup drill, not a quality rollback.
-- [ ] Control plane and worker run at more than one replica with probes, PDBs, bounded retries, and
-  a deliberate pod-loss/recovery test.
-- [ ] Prometheus, Tempo, and Grafana show lifecycle metrics/traces; an alert and error-budget/SLO
-  calculation consume generated workload evidence.
-- [ ] A bounded load drill runs against disposable tenant workloads. The bad-workload failure drill
-  executed; sustained load/capacity evidence remains pending.
+- [x] Control plane and worker run at more than one replica with probes, PDBs, bounded retries, and
+  a deliberate pod-loss/recovery test. Two API, OPA, and worker Pods ran; deleting one API and one
+  worker Pod restored each Deployment to `2/2` available.
+- [x] Prometheus, Tempo, and Grafana show lifecycle metrics/traces; a deliberate invalid-token
+  burst fired `PilotUnauthorizedRequestBurst` and the two-minute catalog availability query
+  returned `1`. No external receiver or error-budget policy was configured.
+- [x] A bounded authenticated load drill completed 20 catalog requests at concurrency 4. Prometheus
+  observed 160 successful requests in its two-minute query window. This is not sustained capacity
+  evidence.
 - [x] `make pilot-cloud-destroy` removed the active workload footprint on 2026-10-03. Direct AWS
   queries found EKS, RDS, ECR, pilot IAM roles, the tagged VPC, and pilot GitOps secret absent;
   the remote pilot Terraform state listed zero resources. Only the encrypted/versioned state bucket,

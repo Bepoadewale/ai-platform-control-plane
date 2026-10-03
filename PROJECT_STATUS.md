@@ -11,9 +11,10 @@ CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
 Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
 reconciliation, IRSA/External Secrets delivery, a themed Keycloak PKCE Console through a temporary
-Cloudflare tunnel, a bad-workload failure/cleanup drill, two-replica API/OPA/worker pod-loss
-recovery, a bounded authenticated availability sample, and a GitHub-hosted OIDC Terraform plan.
-It did not execute enterprise identity, quality rollback, sustained SLO/cost evidence, or a
+Cloudflare tunnel, a bad-workload regression/restore/cleanup drill, two-replica API/OPA/worker
+pod-loss recovery, a bounded authenticated availability sample, a firing Prometheus alert, a
+Cost Explorer query, and a GitHub-hosted OIDC Terraform apply.
+It did not execute enterprise identity, model/quality rollback, sustained SLO/cost evidence, or a
 sustained production workload.
 Those omissions prevent any production-certified claim.
 
@@ -77,9 +78,10 @@ Those omissions prevent any production-certified claim.
 
 ## Implemented but Not End-to-End Validated
 
-- Quality rollback, sustained-load certification, measured SLO/error-budget policy/alerts, and cost
-  evidence remain unexecuted in EKS. The bounded authenticated availability sample and HA pod-loss
-  recovery are executed evidence, not substitutes for those production operating proofs.
+- Model/quality rollback, sustained-load certification, measured error-budget policy, and settled
+  AWS billing evidence remain unexecuted. The bounded authenticated availability sample, firing
+  alert, Cost Explorer query, and HA pod-loss recovery are executed evidence, not substitutes for
+  those production operating proofs.
 
 ## Simulated
 
@@ -92,10 +94,10 @@ Those omissions prevent any production-certified claim.
 
 ## Explicitly Unexecuted Production Adapters
 
-- GitHub Actions OIDC hosted apply/destroy. The protected-main workflow successfully executed an
-  OIDC-authenticated Terraform plan; apply and destroy remain confirmation-gated and unexecuted.
-- Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
-- Multi-cluster placement, GPU nodes, and cloud billing evidence.
+- Enterprise OIDC issuer and trusted public AWS TLS ingress. GitHub Actions successfully executed
+  a short-lived OIDC Terraform apply; its confirmation-gated destroy workflow remains unexecuted.
+- Multi-cluster placement, GPU nodes, secret rotation, backup/restore, and settled cloud-billing
+  evidence.
 
 See [the production-pilot plan](docs/production-pilot.md) for scoped delivery gates and evidence
 requirements. These are not local-first completion blockers and have not been started.
@@ -108,11 +110,13 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The completed bounded cloud validation executed protected Git
+No open local-first P0 work. The active bounded cloud validation has executed protected Git
 publication → Argo → EKS workload readiness and deletion, External Secrets/workload identity,
-two-replica pod-loss recovery, bounded authenticated availability evidence, and a hosted GitHub
-OIDC Terraform plan. Cloud P1 remains quality rollback, sustained SLO/cost/load evidence, public
-TLS/enterprise OIDC, and GitHub-hosted apply/destroy execution. The 2026-10-03 pilot is torn down.
+two-replica pod-loss recovery, bounded authenticated availability evidence, alert firing,
+bad-image restore, Cost Explorer querying, and a hosted GitHub OIDC Terraform apply. The final
+guarded teardown and post-destroy verification remain the immediate cloud-pilot task. Cloud P1
+remains model-quality rollback, sustained SLO/cost/load evidence, public TLS/enterprise OIDC, and
+GitHub-hosted destroy execution.
 
 ## Last Validation
 
@@ -207,6 +211,6 @@ TLS/enterprise OIDC, and GitHub-hosted apply/destroy execution. The 2026-10-03 p
 
 ## Last Updated
 
-2026-10-03, local-first completion is unchanged. The completed production-shaped AWS validation,
-GitOps lifecycle/failure evidence, themed temporary Console review, and guarded teardown are
-recorded. This is not production certification.
+2026-10-04, local-first completion is unchanged. The active production-shaped AWS validation has
+executed GitOps lifecycle/failure/restore evidence, HA, bounded load, alert, hosted OIDC apply,
+and themed temporary Console review. This is not production certification.

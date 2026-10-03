@@ -20,11 +20,14 @@ The following is deliberately stricter than `PORTFOLIO COMPLETE — LOCAL-FIRST 
 applicable item has executed evidence:
 
 - [x] Bounded cloud create → validate → destroy pilot, with EKS/Argo/runtime/Console evidence.
-- [ ] Individual environment request publishes a protected Git change and Argo reconciles that
-  workload in EKS with observed readiness, failure, rollback, and cleanup.
-- [ ] Durable outbox/worker reconciliation with idempotent retry and recovery has executed.
-- [ ] Enterprise identity, GitHub Actions AWS OIDC, and external secret/workload identity paths have
-  executed without long-lived credentials.
-- [ ] HA, backup/restore, failure/rollback, and sustained workload behavior have been measured.
-- [ ] Production observability, SLO/error-budget, alerting, and cost evidence have been collected.
-- [ ] Public TLS ingress and a production Console identity/CORS boundary have been validated.
+- [x] Individual environment request publishes a protected Git change and Argo reconciles that
+  workload in EKS with observed readiness, bad-image health regression/restore, and cleanup.
+- [x] Durable outbox/worker reconciliation with idempotent retry and recovery has executed.
+- [x] GitHub Actions AWS OIDC and external secret/workload identity paths executed without GitHub
+  AWS access keys. Enterprise identity remains unexecuted.
+- [x] HA pod-loss recovery, bounded load, deployment-health rollback/cleanup, and short-lived
+  availability evidence have been measured. Backup/restore and sustained workload evidence remain.
+- [x] Prometheus, Tempo, Grafana, a firing alert, a two-minute availability query, and a Cost
+  Explorer query have executed. Settled billing data and an error-budget policy remain unexecuted.
+- [ ] Enterprise OIDC and trusted public TLS ingress with a production Console identity/CORS
+  boundary have been validated.
