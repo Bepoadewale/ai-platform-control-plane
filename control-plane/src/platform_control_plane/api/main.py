@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from time import perf_counter
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Response
@@ -11,7 +12,12 @@ from platform_control_plane.models.domain import (
     EnvironmentRequest,
     LifecycleState,
 )
-from platform_control_plane.observability.metrics import POLICY_DENIALS, REQUESTS
+from platform_control_plane.observability.metrics import (
+    HTTP_DURATION,
+    HTTP_REQUESTS,
+    POLICY_DENIALS,
+    REQUESTS,
+)
 from platform_control_plane.observability.tracing import configure_tracing
 from platform_control_plane.planner.service import Planner
 from platform_control_plane.policy.engine import OPAPolicyEngine
@@ -43,6 +49,21 @@ service = EnvironmentService(
     policy=OPAPolicyEngine.from_environment(require_live=True),
 )
 planner = Planner()
+
+
+@app.middleware("http")
+async def record_http_boundary_metrics(request, call_next):
+    """Record status and latency without high-cardinality URLs or bearer-token data."""
+    if request.url.path == "/metrics":
+        return await call_next(request)
+    started_at = perf_counter()
+    response = await call_next(request)
+    route = request.scope.get("route")
+    route_path = getattr(route, "path", request.url.path)
+    labels = {"method": request.method, "route": route_path}
+    HTTP_REQUESTS.labels(**labels, status_code=str(response.status_code)).inc()
+    HTTP_DURATION.labels(**labels).observe(perf_counter() - started_at)
+    return response
 
 
 @app.get("/healthz")
