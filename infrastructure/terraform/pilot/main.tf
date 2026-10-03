@@ -205,7 +205,7 @@ data "aws_iam_policy_document" "external_secrets_assume_role" {
       variable = "${local.eks_oidc_issuer}:sub"
       # Only the External Secrets controller can assume this role. Its attached
       # policy is limited to the single GitHub App secret used by the worker.
-      values   = ["system:serviceaccount:external-secrets:external-secrets"]
+      values = ["system:serviceaccount:external-secrets:external-secrets"]
     }
   }
 }
