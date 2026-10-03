@@ -70,6 +70,17 @@ After the runtime smoke test passes, use a temporary public review URL if needed
 make pilot-cloud-public-demo
 ```
 
+For a short-lived, authenticated review of the real EKS-hosted Operator Console, use:
+
+```bash
+make pilot-cloud-console-public-demo
+```
+
+This starts only local port-forwards, a same-origin local proxy, and a Cloudflare Quick Tunnel. It
+temporarily adds that exact `trycloudflare.com` origin to the synthetic pilot Keycloak client, then
+restores the original client configuration when the command exits. It does not create AWS ingress,
+DNS, TLS, a load balancer, or a persistent public endpoint. Do not use it with non-synthetic data.
+
 It exposes only a local `kubectl port-forward` through an unauthenticated Cloudflare Quick Tunnel,
 prints a temporary `/docs` URL, and creates no AWS load balancer or DNS resource. Keep it open only
 while reviewing disposable pilot data. `Ctrl-C` closes the tunnel and local port-forward; it does

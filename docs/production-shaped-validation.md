@@ -35,20 +35,27 @@ kubectl in the cloud path.
   directories and uses the repository's golden-path Helm chart. The worker starts only after
   External Secrets materializes its scoped credential.
 - [x] A separately deployed, read-only Argo/Kubernetes observer has local unit coverage for Ready
-  and Degraded states; it cannot publish Git state or mutate workload resources. Its EKS execution
-  remains unvalidated.
+  and Degraded states; its EKS execution observed both a `1/1` Ready workload and a bad-image
+  `ProgressDeadlineExceeded` failure. It cannot publish Git state or mutate workload resources.
 - [x] Approved development request produced a protected Git change through the GitHub App in EKS.
 - [x] Argo ApplicationSet discovered the merged desired state and created a private environment
   workload in EKS.
-- [x] Readiness and destroy were observed through the durable API/audit state; the merged deletion
-  change pruned the generated Argo Application and namespace. Failure and rollback remain pending.
+- [x] Readiness and destroy were observed through the durable API/audit state; merged deletion
+  changes pruned generated Argo Applications and namespaces.
 - [x] EKS workloads retrieved the scoped GitHub App credential through the rendered IRSA + External Secrets path;
   no secret value is stored in Git, request payloads, or audit records.
+- [x] A Cloudflare Quick Tunnel exposed the real EKS-backed Operator Console through a local
+  same-origin proxy. Keycloak PKCE sign-in worked with an exact, session-only redirect origin and
+  a mounted AI Platform login theme; no AWS ingress, DNS, or load balancer was created.
+- [x] A disposable bad-image environment reached `ImagePullBackOff` then Kubernetes
+  `ProgressDeadlineExceeded`; the observer persisted `FAILED`, and GitOps deletion pruned its
+  Application and namespace. This is a safe failure-and-cleanup drill, not a quality rollback.
 - [ ] Control plane and worker run at more than one replica with probes, PDBs, bounded retries, and
   a deliberate pod-loss/recovery test.
 - [ ] Prometheus, Tempo, and Grafana show lifecycle metrics/traces; an alert and error-budget/SLO
   calculation consume generated workload evidence.
-- [ ] A bounded load and failure drill runs against disposable tenant workloads.
+- [ ] A bounded load drill runs against disposable tenant workloads. The bad-workload failure drill
+  executed; sustained load/capacity evidence remains pending.
 - [ ] `make pilot-cloud-destroy` removes the workload footprint; AWS API and Terraform state checks
   record the retained state bucket, lock table, and Budget only.
 

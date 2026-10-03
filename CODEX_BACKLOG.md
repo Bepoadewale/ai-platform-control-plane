@@ -8,12 +8,12 @@ validated primary-path regression is discovered.
 ## Production-shaped single-account validation
 
 - [x] Implement PostgreSQL/SQLite outbox job state and a durable desired-state publication worker
-  with restart and publication-failure tests. AWS GitHub publication remains unexecuted.
-- [ ] Publish an approved environment as a protected Git change and observe merge/Argo state.
-- [ ] Execute the rendered Argo ApplicationSet-driven private EKS environment workload path with
-  readiness, failure, rollback, and destroy evidence.
-- [ ] Execute the rendered IRSA + External Secrets path for the scoped GitHub App credential and
-  record a secret-rotation/recovery check.
+  with restart and publication-failure tests. AWS GitHub publication is executed.
+- [x] Publish an approved environment as a protected Git change and observe merge/Argo state.
+- [x] Execute the rendered Argo ApplicationSet-driven private EKS environment workload path with
+  readiness, bad-workload failure, and destroy evidence. Quality rollback remains separate.
+- [x] Execute the rendered IRSA + External Secrets path for the scoped GitHub App credential.
+- [ ] Record a secret-rotation/recovery check.
 - [ ] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.
 - [ ] Run and record one private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass.

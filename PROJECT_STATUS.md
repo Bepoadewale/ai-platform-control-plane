@@ -10,8 +10,9 @@ CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
 
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
 Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
-reconciliation, IRSA/External Secrets delivery, and guarded teardown. It did not execute enterprise
-identity, HA, measured SLO/cost evidence, failure/rollback, or a sustained production workload.
+reconciliation, IRSA/External Secrets delivery, a themed Keycloak PKCE Console through a temporary
+Cloudflare tunnel, and a bad-workload failure/cleanup drill. It did not execute enterprise identity,
+HA, measured SLO/cost evidence, quality rollback, or a sustained production workload.
 Those omissions prevent any production-certified claim.
 
 ## Executed and Verified
@@ -62,11 +63,20 @@ Those omissions prevent any production-certified claim.
   destroyed with its full audit timeline. A production request required the distinct operator role
   for both apply and destroy approvals; an unsafe privileged request was rejected by live OPA with
   no matching EKS workload.
+- A private EKS GitOps lifecycle published reviewed GitHub App pull requests for creation and
+  deletion. Argo ApplicationSet created a `1/1` Ready workload, then pruned its Application and
+  namespace after deletion. A disposable bad-image workload reached `ImagePullBackOff` and
+  `ProgressDeadlineExceeded`; the observer persisted `FAILED`, and GitOps cleanup returned the
+  environment to `DESTROYED` with an audit timeline.
+- The EKS Operator Console was additionally reviewed through a short-lived Cloudflare Quick Tunnel.
+  A local same-origin proxy kept API and Keycloak requests scoped to loopback port-forwards; the
+  Keycloak client received only the exact temporary origin for the session. No AWS public ingress,
+  DNS, or load balancer was created.
 
 ## Implemented but Not End-to-End Validated
 
-- HA-shaped replicas/PDBs, failure/rollback drills, sustained load, measured SLO/error-budget, and
-  cost evidence remain unexecuted in EKS.
+- HA-shaped replicas/PDBs, sustained load, measured SLO/error-budget, quality rollback, and cost
+  evidence remain unexecuted in EKS.
 
 ## Simulated
 
@@ -182,5 +192,6 @@ GitHub Actions OIDC execution, then guarded teardown.
 
 ## Last Updated
 
-2026-10-02, local-first completion is unchanged. The second bounded AWS runtime validation,
-governed-lifecycle evidence, and guarded teardown are recorded.
+2026-10-03, local-first completion is unchanged. The active production-shaped AWS validation,
+GitOps lifecycle/failure evidence, themed temporary Console review, and forthcoming guarded
+teardown are recorded.

@@ -22,6 +22,11 @@ The local Keycloak fixture includes `developer` and `operator` users. Their cred
 synthetic local-development fixtures in the realm file; they must never be reused outside the local
 stack.
 
+For the private AWS pilot, the same fixture has a small `ai-platform` Keycloak login theme. It is
+an executed presentation layer for the disposable pilot, not enterprise identity branding. A
+temporary Cloudflare review uses an exact session-only redirect origin and a local same-origin proxy;
+it creates no AWS ingress, domain, or public load balancer.
+
 ## Run locally
 
 ```bash

@@ -139,6 +139,24 @@ This is runtime/governance evidence, not a claim that an individual request reco
 workload. The cloud adapter is intentionally `render-only`; the local kind path remains the
 executed workload-readiness demonstration.
 
+## AWS production-shaped GitOps, Console, and failure evidence — 2026-10-03
+
+Environment: private, disposable EKS pilot in `us-east-1`; synthetic Keycloak identities and
+disposable tenant workloads only. No credentials, secret values, or temporary tunnel URL are
+recorded.
+
+| Evidence | Result |
+| --- | --- |
+| Successful GitOps lifecycle | An approved development request created a GitHub App pull request. After normal checks and merge, Argo ApplicationSet created a private workload whose Deployment reached `1/1` available. A merged deletion pull request removed the desired-state directory; Argo pruned the generated Application and namespace; the API reported `DESTROYED`. |
+| Earlier failed test cleanup | The older `cloud-gitops-demo` desired-state directory was removed in a dedicated reviewed GitOps PR after its durable record was found absent. Argo pruned the remaining Application and namespace; no direct `kubectl delete` was used. |
+| Authenticated Console review | `make pilot-cloud-console-validate` completed Keycloak Authorization Code + PKCE sign-in/logout and a signed API request. `make pilot-cloud-console-public-demo` exposed a temporary same-origin proxy through Cloudflare Quick Tunnel; Keycloak’s exact temporary client origin and login theme were verified. No AWS ingress, DNS, or load balancer was created. |
+| Failure drill | A development request with `registry.invalid/ai-platform-control-plane:missing` was published and merged through GitOps. Its Pod reached `ImagePullBackOff`; the Deployment reached `ProgressDeadlineExceeded` after a temporary 60-second deadline; the observer stored `FAILED` with the Kubernetes reason. |
+| Failure cleanup | The standard destroy request published a reviewed deletion PR. After merge and ApplicationSet refresh, Argo pruned the failure Application and namespace. The durable API state became `DESTROYED`; audit includes request, reconciliation failure, GitOps PR creation, destroy request, and destroy completion. |
+
+This is production-shaped single-account evidence, not production certification. HA/failover,
+enterprise identity, load/SLO/error-budget/cost measurement, secret rotation, and quality rollback
+remain explicitly unexecuted.
+
 ## AWS pilot Phase 0 — 2026-10-02
 
 Environment: dedicated AWS pilot account in `us-east-1`; Terraform 1.14.0; AWS provider 5.100.0;
