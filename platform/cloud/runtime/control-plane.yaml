@@ -14,7 +14,9 @@ metadata:
   labels:
     app.kubernetes.io/name: control-plane
 spec:
-  replicas: 1
+  # Stateless API replicas share durable PostgreSQL state. The worker remains separately
+  # single-active until a lease is implemented and exercised.
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: control-plane
@@ -33,8 +35,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: control-plane
-          # `pilot` is immutable in ECR. The pilot teardown deletes this project-scoped repository.
-          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-691e4d4
+          # Immutable ECR image built from the pilot revision. Bootstrap must target the same Git
+          # revision that declares this reference; teardown deletes this project-scoped repository.
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-3d01b41
           imagePullPolicy: Always
           ports:
             - name: http

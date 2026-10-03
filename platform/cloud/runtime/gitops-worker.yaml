@@ -1,6 +1,7 @@
 # The worker is intentionally separate from the API. It uses only the GitHub App credential
-# mounted by External Secrets in the later workload-identity slice; it has no Kubernetes API
-# credentials and never marks an environment Ready.
+# mounted by External Secrets; it has no Kubernetes API credentials and never marks an
+# environment Ready. Durable conditional job claims make multiple replicas safe: one job id
+# yields one GitHub change id, and an abandoned bounded lease is retried idempotently.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -15,7 +16,7 @@ metadata:
     app.kubernetes.io/name: gitops-worker
 spec:
   # Starts only after External Secrets materializes the scoped GitHub App credential.
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: gitops-worker
@@ -29,7 +30,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: worker
-          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-691e4d4
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-3d01b41
           imagePullPolicy: Always
           command: [python, -m, platform_control_plane.gitops.worker]
           env:
@@ -47,6 +48,8 @@ spec:
               value: Bepoadewale/ai-platform-control-plane
             - name: PLATFORM_GITHUB_APP_PRIVATE_KEY_PATH
               value: /var/run/github-app/private-key.pem
+            - name: PLATFORM_GITOPS_JOB_LEASE_SECONDS
+              value: "60"
           volumeMounts:
             - name: github-app
               mountPath: /var/run/github-app

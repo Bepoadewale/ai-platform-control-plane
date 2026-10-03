@@ -155,9 +155,43 @@ recorded.
 | Final cloud smoke | After restoring the declared GitOps runtime to `Synced/Healthy`, `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-smoke` passed for EKS, Argo, control plane, Operator Console, OPA, Prometheus, Grafana, and the metrics endpoint. |
 | Guarded teardown | `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-destroy` removed the active Terraform workload footprint. Direct post-destroy queries found EKS, RDS, ECR, five pilot IAM roles, project-tagged VPCs, and pilot GitOps secrets absent; the configured remote pilot Terraform state listed zero resources. The encrypted/versioned state bucket, active DynamoDB lock table, and USD 10 budget remain intentionally. |
 
-This is production-shaped single-account evidence, not production certification. HA/failover,
-enterprise identity, load/SLO/error-budget/cost measurement, secret rotation, and quality rollback
+This is production-shaped single-account evidence, not production certification. Enterprise identity,
+quality rollback, sustained-load/SLO/error-budget/alert policy, secret rotation, and cost measurement
 remain explicitly unexecuted.
+
+## AWS resilience and hosted-OIDC pilot — 2026-10-03
+
+| Evidence | Result |
+| --- | --- |
+| API, policy, and worker availability | EKS ran two `control-plane`, two `opa`, and two `gitops-worker` Pods. Project-scoped PDBs set `minAvailable: 1`. |
+| Scoped pod-loss recovery | `make pilot-cloud-ha-check` ran twice. Each pass deleted one ready API Pod and one ready worker Pod; health remained available and both Deployments returned to `2/2` available. |
+| Durable worker ownership | The worker now performs an atomic PostgreSQL `PENDING → PROCESSING` claim. A two-worker test passed, and a bounded abandoned lease can requeue safely with the same GitHub change id. |
+| Bounded authenticated load | `PILOT_LOAD_REQUESTS=20 PILOT_LOAD_CONCURRENCY=4 make pilot-cloud-load-slo` passed. Prometheus observed `44.97832` successful catalog requests in the two-minute query window, exceeding the requested sample. This is not a sustained-load or SLO certification. |
+| GitHub-hosted OIDC | [Run 37116545362](https://github.com/Bepoadewale/ai-platform-control-plane/actions/runs/37116545362) passed: GitHub Actions received short-lived AWS credentials, verified the expected account, initialized remote state, and completed Terraform plan. No GitHub AWS access key was used. |
+
+Hosted Terraform apply/destroy, a quality rollback, alert firing, measured error-budget policy, AWS
+Cost Explorer evidence, enterprise OIDC, and trusted public AWS TLS ingress remain unexecuted.
+
+## AWS resilience-pilot final teardown — 2026-10-03
+
+The live final sequence completed before teardown:
+
+```console
+AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
+AWS_PROFILE=<operator-profile> make pilot-cloud-ha-check
+AWS_PROFILE=<operator-profile> PILOT_LOAD_REQUESTS=20 PILOT_LOAD_CONCURRENCY=4 make pilot-cloud-load-slo
+AWS_PROFILE=<operator-profile> DESTROY_CLOUD_PILOT=<expected-account-id> make pilot-cloud-destroy
+```
+
+The account-guarded destroy removed the 40-resource Terraform workload footprint. Direct AWS API
+checks after completion returned `ResourceNotFound` for the pilot EKS cluster, RDS instance, ECR
+repository, pilot IAM roles, and project-tagged VPCs; no matching pilot Secrets Manager object was
+listed. Remote Terraform state contained zero workload resources. The encrypted/versioned state
+bucket, active DynamoDB lock table, and USD 10 Budget remain intentionally as Phase 0 guardrails.
+
+This records a private, ephemeral cloud-pilot teardown—not production certification. Quality
+rollback, sustained load/SLO/error-budget/alert policy, Cost Explorer evidence, enterprise OIDC,
+trusted public AWS TLS ingress, and GitHub-hosted Terraform apply/destroy remain unexecuted.
 
 ## AWS pilot Phase 0 — 2026-10-02
 

@@ -10,6 +10,7 @@ resources:
   - cloud/runtime/status-observer.yaml
   - cloud/runtime/operator-console.yaml
   - cloud/runtime/otel-collector.yaml
+  - cloud/runtime/availability.yaml
 
 configMapGenerator:
   - name: platform-policy

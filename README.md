@@ -150,9 +150,12 @@ The teardown verified EKS, RDS, ECR, pilot IAM roles, VPC, and pilot secrets abs
 encrypted/versioned Terraform state bucket, DynamoDB lock table, and USD 10 budget guardrail remain
 intentionally. This was realistic cloud validation, not a public SaaS or production certification.
 
-Unexecuted production controls include enterprise OIDC, HA/failover, quality rollback, sustained
-load, measured SLO/error-budget/cost evidence, public TLS ingress, and a GitHub-hosted OIDC run.
-See the [pilot plan](docs/production-pilot.md), [runbook](docs/cloud-pilot-runbook.md), and
+Unexecuted production controls include enterprise OIDC, quality rollback, sustained load,
+measured SLO/error-budget/cost evidence, public TLS ingress, and GitHub-hosted Terraform
+apply/destroy. The pilot did execute two-replica API/OPA/worker pod-loss recovery, a bounded
+authenticated availability sample, and a GitHub-hosted OIDC Terraform plan; those are not
+substitutes for full production certification. See the [pilot plan](docs/production-pilot.md),
+[runbook](docs/cloud-pilot-runbook.md), and
 [production-shaped evidence](docs/production-shaped-validation.md).
 
 ## Repository guide

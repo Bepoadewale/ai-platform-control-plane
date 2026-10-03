@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from threading import RLock
 from uuid import UUID
 
@@ -95,6 +96,45 @@ class PostgresStore:
                 (job.state.value, job.model_dump_json(), job.updated_at, job.id),
             )
         self.connection.commit()
+
+    def claim_job(self, job: ReconciliationJob) -> bool:
+        """Atomically claim a pending job for one of several worker replicas."""
+        with self.lock, self.connection.cursor() as cursor:
+            cursor.execute(
+                """UPDATE reconciliation_jobs
+                SET state = %s, payload = %s::jsonb, updated_at = %s
+                WHERE id = %s AND state = %s""",
+                (
+                    job.state.value,
+                    job.model_dump_json(),
+                    job.updated_at,
+                    job.id,
+                    ReconciliationJobState.PENDING.value,
+                ),
+            )
+            claimed = cursor.rowcount == 1
+        self.connection.commit()
+        return claimed
+
+    def requeue_stale_job(self, job: ReconciliationJob, stale_before: datetime) -> bool:
+        """Requeue work owned by a worker that exceeded its bounded lease."""
+        with self.lock, self.connection.cursor() as cursor:
+            cursor.execute(
+                """UPDATE reconciliation_jobs
+                SET state = %s, payload = %s::jsonb, updated_at = %s
+                WHERE id = %s AND state = %s AND updated_at <= %s""",
+                (
+                    job.state.value,
+                    job.model_dump_json(),
+                    job.updated_at,
+                    job.id,
+                    ReconciliationJobState.PROCESSING.value,
+                    stale_before,
+                ),
+            )
+            requeued = cursor.rowcount == 1
+        self.connection.commit()
+        return requeued
 
     def close(self) -> None:
         self.connection.close()

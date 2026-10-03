@@ -28,7 +28,7 @@ actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query
 [[ "$actual_account" == "$expected_account" ]] || { echo "Unexpected AWS account." >&2; exit 1; }
 AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region" >/dev/null
 
-kubectl -n platform-system get deployment/gitops-worker -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
+kubectl -n platform-system get deployment/gitops-worker -o jsonpath='{.status.availableReplicas}' | grep -qx '2'
 kubectl -n platform-system get deployment/status-observer -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-system port-forward service/control-plane "$api_port:8000" >"$tmp_dir/api.log" 2>&1 & api_pid=$!
 for _ in {1..45}; do

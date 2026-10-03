@@ -1,0 +1,32 @@
+# Disruption budgets protect the stateless request, policy, and durable Git publication paths during
+# a voluntary node drain. The GitOps worker's atomic Postgres claim and bounded retry lease prevent
+# a second worker from publishing the same job concurrently.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: control-plane
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-plane
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: opa
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opa
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gitops-worker
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gitops-worker
