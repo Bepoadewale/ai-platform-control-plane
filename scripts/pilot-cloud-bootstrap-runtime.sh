@@ -82,11 +82,17 @@ database_url="postgresql://${db_username}:${db_password}@${db_host}:5432/platfor
 # Runtime values remain only in the Kubernetes API for this one-hour pilot. They are not committed
 # and Terraform never reads them. EKS Pod Identity + External Secrets is a subsequent hardening gate.
 kubectl create namespace platform-system --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n platform-system create secret generic platform-runtime-secrets \
-  --from-literal=database-url="$database_url" \
-  --from-literal=keycloak-admin-username=pilot-admin \
-  --from-literal=keycloak-admin-password="$(openssl rand -base64 24)" \
-  --dry-run=client -o yaml | kubectl apply -f -
+# Keycloak reads bootstrap credentials only when its Pod starts. Preserve a previously created
+# pilot secret across an idempotent bootstrap instead of silently changing the stored password
+# beneath a healthy Keycloak instance.
+if ! kubectl -n platform-system get secret platform-runtime-secrets >/dev/null 2>&1; then
+  kubectl -n platform-system create secret generic platform-runtime-secrets \
+    --from-literal=database-url="$database_url" \
+    --from-literal=keycloak-admin-username=pilot-admin \
+    --from-literal=keycloak-admin-password="$(openssl rand -base64 24)"
+else
+  echo "Runtime bootstrap secret already exists; preserving its Keycloak bootstrap credential."
+fi
 
 kubectl apply -f "$project_root/platform/cloud/runtime/external-secrets.yaml"
 kubectl -n platform-system wait --for=condition=Ready externalsecret/github-app-credentials --timeout=5m
