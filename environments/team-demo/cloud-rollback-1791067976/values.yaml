@@ -8,5 +8,5 @@ postgresql: false
 redis: false
 objectStorage: false
 serviceExposure: ingress
-image: nginxinc/nginx-unprivileged:1.27-alpine
+image: registry.invalid/ai-platform-control-plane:rollback-drill
 observability: true
