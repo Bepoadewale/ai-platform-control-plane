@@ -287,6 +287,10 @@ resource "aws_db_subnet_group" "pilot" {
   subnet_ids = values(aws_subnet.private)[*].id
 }
 
+data "aws_kms_alias" "rds" {
+  name = "alias/aws/rds"
+}
+
 resource "aws_db_instance" "postgres" {
   identifier                  = "${local.prefix}-postgres"
   engine                      = "postgres"
@@ -305,7 +309,7 @@ resource "aws_db_instance" "postgres" {
   storage_encrypted           = true
   # Make the pilot's encryption dependency explicit. This avoids relying on RDS
   # implicitly selecting an account default key during a fresh-account bootstrap.
-  kms_key_id                 = "alias/aws/rds"
+  kms_key_id                 = data.aws_kms_alias.rds.target_key_arn
   db_subnet_group_name       = aws_db_subnet_group.pilot.name
   vpc_security_group_ids     = [aws_security_group.rds.id]
   auto_minor_version_upgrade = true
