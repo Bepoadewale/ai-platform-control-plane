@@ -35,7 +35,7 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: operator-console
-          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:console-pilot-1248f4d
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:console-pilot-f0cf28a
           imagePullPolicy: Always
           ports:
             - name: http

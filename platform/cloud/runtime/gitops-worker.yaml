@@ -30,7 +30,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
         - name: worker
-          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-1248f4d
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-f0cf28a
           imagePullPolicy: Always
           command: [python, -m, platform_control_plane.gitops.worker]
           env:

@@ -37,7 +37,7 @@ spec:
         - name: control-plane
           # Immutable ECR image built from the pilot revision. Bootstrap must target the same Git
           # revision that declares this reference; teardown deletes this project-scoped repository.
-          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-1248f4d
+          image: 654654474502.dkr.ecr.us-east-1.amazonaws.com/ai-platform-control-plane:pilot-f0cf28a
           imagePullPolicy: Always
           ports:
             - name: http
