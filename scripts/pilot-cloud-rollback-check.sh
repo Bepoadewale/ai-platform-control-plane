@@ -29,7 +29,15 @@ for command in aws kubectl curl jq gh base64 python3; do
 done
 actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query Account --output text)"
 [[ "$actual_account" == "$expected_account" ]] || { echo "Unexpected AWS account." >&2; exit 1; }
-AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region" >/dev/null
+aws eks update-kubeconfig --profile "$aws_profile" --name "$cluster_name" --region "$aws_region" >/dev/null
+
+merge_when_checks_pass() {
+  local pull_request="$1"
+  # GitOps mutations obey the same protected-main checks as application code.
+  # Waiting here prevents a race between PR creation and branch protection.
+  gh pr checks "$pull_request" --repo "$repository" --watch --interval 10
+  gh pr merge "$pull_request" --repo "$repository" --merge --delete-branch
+}
 
 # The initial release is the known-good state and is created only through the control plane's
 # durable worker and GitHub App publication path.
@@ -51,7 +59,7 @@ write_pr() {
   gh api --method PUT "repos/$repository/contents/$values_path" \
     -f "message=$title" -f "content=$encoded" -f "branch=$branch" >/dev/null
   pr="$(gh pr create --repo "$repository" --base main --head "$branch" --title "$title" --body 'Disposable, reviewed cloud-pilot rollback drill.')"
-  gh pr merge "$pr" --repo "$repository" --merge --delete-branch
+  merge_when_checks_pass "$pr"
 }
 
 get_values >"$tmp_dir/known-good-values.yaml"
@@ -107,7 +115,7 @@ for _ in {1..60}; do
   sleep 2
 done
 destroy_pr="$(jq -er 'map(select(.action == "DESTROY" and .state == "PUBLISHED")) | sort_by(.created_at) | last.publication_url' <<<"$jobs")"
-gh pr merge "$destroy_pr" --repo "$repository" --merge --delete-branch
+merge_when_checks_pass "$destroy_pr"
 for _ in {1..90}; do ! kubectl get namespace "$namespace" >/dev/null 2>&1 && break; sleep 2; done
 ! kubectl get namespace "$namespace" >/dev/null 2>&1
 echo "GitOps rollback drill passed: known-good Ready → reviewed bad-image regression → observed failure → reviewed restore → Ready → governed destroy/prune."
