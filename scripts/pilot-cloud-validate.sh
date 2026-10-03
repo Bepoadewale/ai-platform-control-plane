@@ -38,7 +38,7 @@ for command in aws kubectl curl jq python3; do
 done
 actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query Account --output text)"
 [[ "$actual_account" == "$expected_account" ]] || { echo "Unexpected AWS account." >&2; exit 1; }
-AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region" >/dev/null
+aws eks update-kubeconfig --profile "$aws_profile" --name "$cluster_name" --region "$aws_region" >/dev/null
 
 wait_http() {
   local url="$1"
@@ -60,7 +60,8 @@ kubectl -n argocd get application ai-platform-control-plane-runtime \
   -o jsonpath='{.status.sync.status}{"\n"}' | grep -qx 'Synced'
 kubectl -n platform-system get externalsecret github-app-credentials \
   -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}{"\n"}' | grep -qx 'True'
-kubectl -n platform-system get deployment control-plane -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
+kubectl -n platform-system get deployment control-plane -o json | jq -e '.status.availableReplicas >= 2' >/dev/null
+kubectl -n platform-system get deployment gitops-worker -o json | jq -e '.status.availableReplicas >= 2' >/dev/null
 kubectl -n platform-system get deployment opa -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-observability get deployment prometheus-server -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 kubectl -n platform-observability get deployment grafana -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
