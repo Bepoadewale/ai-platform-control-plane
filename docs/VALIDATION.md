@@ -191,6 +191,26 @@ At the time of this record, enterprise identity, trusted public TLS ingress, mod
 sustained-load/error-budget evidence, backup/restore, settled AWS billing data, and the hosted
 Terraform destroy action remain unexecuted.
 
+## Final AWS cloud-pilot teardown — 2026-10-04
+
+After the temporary Console tunnel was closed, the account-guarded command below completed:
+
+```console
+AWS_PROFILE=<operator-profile> EXPECTED_AWS_ACCOUNT_ID=<pilot-account-id> \
+  DESTROY_CLOUD_PILOT=<pilot-account-id> make pilot-cloud-destroy
+```
+
+Post-destroy, direct AWS API queries returned `ResourceNotFound` for the pilot EKS cluster, RDS
+instance, and ECR repository. The `ai-platform-control-plane-pilot/` Secrets Manager list, pilot
+IAM-role list, and project-tagged VPC list were empty. Remote pilot Terraform state listed zero
+workload resources. The encrypted/versioned state bucket, DynamoDB lock table, and USD 10 Budget
+remain intentionally as Phase 0 guardrails.
+
+The GitHub-hosted Terraform **destroy** action was not used; the local, account-guarded Terraform
+destroy was the executed teardown authority. Enterprise OIDC, trusted public TLS ingress,
+model/quality rollback, sustained-load/error-budget evidence, backup/restore, and settled AWS
+billing data remain unexecuted.
+
 ## AWS resilience-pilot final teardown — 2026-10-03
 
 The live final sequence completed before teardown:

@@ -59,10 +59,11 @@ kubectl in the cloud path.
 - [x] A bounded authenticated load drill completed 20 catalog requests at concurrency 4. Prometheus
   observed 160 successful requests in its two-minute query window. This is not sustained capacity
   evidence.
-- [x] `make pilot-cloud-destroy` removed the active workload footprint on 2026-10-03. Direct AWS
-  queries found EKS, RDS, ECR, pilot IAM roles, the tagged VPC, and pilot GitOps secret absent;
-  the remote pilot Terraform state listed zero resources. Only the encrypted/versioned state bucket,
-  active DynamoDB lock table, and USD 10 Budget remain intentionally.
+- [x] `DESTROY_CLOUD_PILOT=654654474502 make pilot-cloud-destroy` removed the active workload
+  footprint on 2026-10-04. Direct AWS queries found EKS, RDS, ECR, pilot IAM roles, the tagged
+  VPC, and pilot GitOps secret absent; remote pilot Terraform state listed zero resources. Only the
+  encrypted/versioned state bucket, active DynamoDB lock table, and USD 10 Budget remain
+  intentionally.
 
 ## Intentional deviations from a public production service
 

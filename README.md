@@ -146,7 +146,8 @@ Secrets Manager, IAM/IRSA, GitHub OIDC roles, and the observability/runtime stac
 Console review used loopback port-forwards plus a Cloudflare Quick Tunnel—no public AWS ingress,
 DNS, load balancer, or permanent Cloudflare credential.
 
-The teardown verified EKS, RDS, ECR, pilot IAM roles, VPC, and pilot secrets absent. Only the
+The final 2026-10-04 guarded Terraform teardown verified EKS, RDS, ECR, pilot IAM roles, VPC, and
+pilot secrets absent; remote pilot Terraform state was empty. Only the
 encrypted/versioned Terraform state bucket, DynamoDB lock table, and USD 10 budget guardrail remain
 intentionally. This was realistic cloud validation, not a public SaaS or production certification.
 
