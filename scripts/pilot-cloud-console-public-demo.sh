@@ -33,7 +33,8 @@ done
 actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query Account --output text)"
 [[ "$actual_account" == "$expected_account" ]] || { echo "Unexpected AWS account." >&2; exit 1; }
 AWS_PROFILE="$aws_profile" aws eks update-kubeconfig --name "$cluster_name" --region "$aws_region" >/dev/null
-for deployment in control-plane keycloak operator-console; do
+kubectl -n platform-system get deployment control-plane -o jsonpath='{.status.availableReplicas}' | grep -Eq '^[2-9][0-9]*$'
+for deployment in keycloak operator-console; do
   kubectl -n platform-system get deployment "$deployment" -o jsonpath='{.status.availableReplicas}' | grep -qx '1'
 done
 
