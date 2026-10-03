@@ -305,11 +305,11 @@ resource "aws_db_instance" "postgres" {
   storage_encrypted           = true
   # Make the pilot's encryption dependency explicit. This avoids relying on RDS
   # implicitly selecting an account default key during a fresh-account bootstrap.
-  kms_key_id                  = "alias/aws/rds"
-  db_subnet_group_name        = aws_db_subnet_group.pilot.name
-  vpc_security_group_ids      = [aws_security_group.rds.id]
-  auto_minor_version_upgrade  = true
-  apply_immediately           = true
+  kms_key_id                 = "alias/aws/rds"
+  db_subnet_group_name       = aws_db_subnet_group.pilot.name
+  vpc_security_group_ids     = [aws_security_group.rds.id]
+  auto_minor_version_upgrade = true
+  apply_immediately          = true
 }
 
 # This container deliberately has no Terraform-managed secret value. An operator places the
