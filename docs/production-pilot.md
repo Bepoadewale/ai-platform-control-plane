@@ -39,7 +39,7 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 | --- | --- | --- |
 | 0. Pilot guardrails | Dedicated AWS account, budget alarms, tags, remote Terraform state, break-glass process, destroy plan | **Executed 2026-10-02:** account guard, encrypted/versioned state, lock table, tags, and USD 10 alerts. No workload deployed; see `docs/VALIDATION.md`. |
 | 1. Identity and CI | GitHub Actions OIDC roles with least privilege; no long-lived AWS keys | **Executed 2026-10-03:** a manually dispatched workflow from protected `main` exchanged GitHub OIDC for a short-lived Terraform role, verified the expected AWS account, initialized the remote backend, and completed `terraform plan`. The trust condition is bound to GitHub's immutable owner/repository IDs and `main`; hosted apply/destroy remain confirmation-gated and unexecuted. |
-| 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Executed and torn down 2026-10-02:** two bounded pilots applied the foundation and ran two Ready CPU nodes. The first EKS cluster was manually deleted during owner review; the second used the guarded Terraform destroy. Post-destroy checks found zero Terraform workload resources. Observed cost remains unrecorded. |
+| 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Executed and torn down 2026-10-02/03:** three bounded pilots applied the foundation and ran two Ready CPU nodes. The first EKS cluster was manually deleted during owner review; later pilots used the guarded Terraform destroy. Post-destroy checks found zero Terraform workload resources. Observed cost remains unrecorded. |
 | 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | **Executed 2026-10-03:** Argo-synchronized control plane, OPA, Keycloak, hardened Operator Console, OTel, Prometheus, Grafana, Tempo, IRSA-backed External Secrets, and a scoped GitHub App credential ran in EKS. The Console's loopback-only port-forward completed Keycloak PKCE login/logout and a signed API request. |
 | 4. GitOps lifecycle | Desired state becomes a protected Git commit/PR; Argo CD reconciles it | **Executed 2026-10-03:** durable worker published a GitHub App pull request; after merge, the Argo ApplicationSet created a private EKS workload that reached `1/1` Ready. A second GitHub App pull request removed desired state; Argo pruned the generated Application and namespace. |
 | 5. Reliability | Worker/reconciler separation, retries, idempotency, failure/rollback and recovery tests | **Partially executed 2026-10-03:** durable job restart/publication-failure tests exist; EKS observed a bad-image `ImagePullBackOff` becoming `ProgressDeadlineExceeded`, persisted `FAILED`, then completed GitOps cleanup to `DESTROYED`. The API and durable GitOps worker each ran two replicas with PDBs; two scoped API/worker pod-loss drills returned both deployments to two available replicas. Atomic Postgres job claiming prevents duplicate publication, and a bounded lease requeues abandoned jobs. Quality rollback and backup/restore remain unexecuted. |
@@ -97,10 +97,9 @@ Record a separate pilot validation in `docs/VALIDATION.md` with:
 - cost estimate and observed pilot spend; and
 - verified Terraform teardown and remaining-resource check.
 
-Only label an AWS component **EXECUTED** after this evidence exists. The 2026-10-03 pilot is
-currently active only for the final guarded teardown; after it is destroyed, record the exact
-post-destroy AWS and Terraform-state evidence. Until evidence exists, a component remains
-**ARCHITECTURE / CONTRACT ONLY** or **PLANNED**.
+Only label an AWS component **EXECUTED** after this evidence exists. The final 2026-10-03 pilot
+was destroyed with direct post-destroy AWS queries and an empty Terraform workload state. Until
+evidence exists, a component remains **ARCHITECTURE / CONTRACT ONLY** or **PLANNED**.
 
 The exact guarded commands, GitHub Actions dropdown workflow, runtime boundary, and teardown
 procedure are in [the AWS pilot runbook](cloud-pilot-runbook.md).

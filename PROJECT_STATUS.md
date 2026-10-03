@@ -11,8 +11,10 @@ CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
 Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
 reconciliation, IRSA/External Secrets delivery, a themed Keycloak PKCE Console through a temporary
-Cloudflare tunnel, and a bad-workload failure/cleanup drill. It did not execute enterprise identity,
-HA, measured SLO/cost evidence, quality rollback, or a sustained production workload.
+Cloudflare tunnel, a bad-workload failure/cleanup drill, two-replica API/OPA/worker pod-loss
+recovery, a bounded authenticated availability sample, and a GitHub-hosted OIDC Terraform plan.
+It did not execute enterprise identity, quality rollback, sustained SLO/cost evidence, or a
+sustained production workload.
 Those omissions prevent any production-certified claim.
 
 ## Executed and Verified
@@ -76,7 +78,7 @@ Those omissions prevent any production-certified claim.
 ## Implemented but Not End-to-End Validated
 
 - Quality rollback, sustained-load certification, measured SLO/error-budget policy/alerts, and cost
-  evidence remain unexecuted in EKS. A bounded authenticated availability sample and HA pod-loss
+  evidence remain unexecuted in EKS. The bounded authenticated availability sample and HA pod-loss
   recovery are executed evidence, not substitutes for those production operating proofs.
 
 ## Simulated
@@ -93,7 +95,7 @@ Those omissions prevent any production-certified claim.
 - GitHub Actions OIDC hosted apply/destroy. The protected-main workflow successfully executed an
   OIDC-authenticated Terraform plan; apply and destroy remain confirmation-gated and unexecuted.
 - Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
-- Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
+- Multi-cluster placement, GPU nodes, and cloud billing evidence.
 
 See [the production-pilot plan](docs/production-pilot.md) for scoped delivery gates and evidence
 requirements. These are not local-first completion blockers and have not been started.
@@ -106,10 +108,11 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The active bounded cloud validation has executed protected Git
-publication → Argo → EKS workload readiness and deletion, plus External Secrets/workload identity.
-Cloud P1 remains HA/recovery, quality rollback, SLO/cost/load evidence, public TLS/enterprise OIDC,
-and GitHub Actions OIDC execution. The active 2026-10-03 pilot has been torn down.
+No open local-first P0 work. The completed bounded cloud validation executed protected Git
+publication → Argo → EKS workload readiness and deletion, External Secrets/workload identity,
+two-replica pod-loss recovery, bounded authenticated availability evidence, and a hosted GitHub
+OIDC Terraform plan. Cloud P1 remains quality rollback, sustained SLO/cost/load evidence, public
+TLS/enterprise OIDC, and GitHub-hosted apply/destroy execution. The 2026-10-03 pilot is torn down.
 
 ## Last Validation
 
@@ -195,6 +198,12 @@ and GitHub Actions OIDC execution. The active 2026-10-03 pilot has been torn dow
   queries found EKS, RDS, ECR, pilot IAM roles, project-tagged VPCs, and pilot GitOps secrets absent;
   the configured remote pilot Terraform state listed zero resources. The encrypted/versioned state
   bucket, active lock table, and USD 10 Budget remain intentionally.
+- AWS resilience-pilot teardown: the final `make pilot-cloud-smoke` → `make
+  pilot-cloud-ha-check` → bounded-load sequence completed before the account-guarded
+  `make pilot-cloud-destroy`. Direct AWS checks then returned `ResourceNotFound` for EKS, RDS, ECR,
+  pilot IAM roles, project-tagged VPCs, and pilot Secrets Manager objects; the remote Terraform
+  state listed zero workload resources. The encrypted/versioned state bucket, active lock table,
+  and USD 10 Budget remain intentionally.
 
 ## Last Updated
 
