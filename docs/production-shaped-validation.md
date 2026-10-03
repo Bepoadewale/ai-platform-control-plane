@@ -37,11 +37,12 @@ kubectl in the cloud path.
 - [x] A separately deployed, read-only Argo/Kubernetes observer has local unit coverage for Ready
   and Degraded states; it cannot publish Git state or mutate workload resources. Its EKS execution
   remains unvalidated.
-- [ ] Approved development request produces a protected Git change through the GitHub App.
-- [ ] Argo ApplicationSet discovers the merged desired state and creates a private environment
+- [x] Approved development request produced a protected Git change through the GitHub App in EKS.
+- [x] Argo ApplicationSet discovered the merged desired state and created a private environment
   workload in EKS.
-- [ ] Readiness, failure, rollback, and destroy are observed and written to the audit timeline.
-- [ ] EKS workloads retrieve a synthetic secret through the rendered IRSA + External Secrets path;
+- [x] Readiness and destroy were observed through the durable API/audit state; the merged deletion
+  change pruned the generated Argo Application and namespace. Failure and rollback remain pending.
+- [x] EKS workloads retrieved the scoped GitHub App credential through the rendered IRSA + External Secrets path;
   no secret value is stored in Git, request payloads, or audit records.
 - [ ] Control plane and worker run at more than one replica with probes, PDBs, bounded retries, and
   a deliberate pod-loss/recovery test.

@@ -6,7 +6,7 @@ Its bounded AWS pilot is **CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED**.
 constitute an AWS production deployment or certify the unexecuted controls in the production gate.
 
 This document defines the separate, budget-bounded AWS pilot and records its current evidence
-boundary. The foundation and runtime validation below ran on 2026-10-02; unfinished phases remain
+boundary. The foundation and runtime validation below ran on 2026-10-02 and 2026-10-03; unfinished phases remain
 plans, not implied production capability.
 
 ## Pilot outcome
@@ -40,10 +40,10 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 | 0. Pilot guardrails | Dedicated AWS account, budget alarms, tags, remote Terraform state, break-glass process, destroy plan | **Executed 2026-10-02:** account guard, encrypted/versioned state, lock table, tags, and USD 10 alerts. No workload deployed; see `docs/VALIDATION.md`. |
 | 1. Identity and CI | GitHub Actions OIDC roles with least privilege; no long-lived AWS keys | **Implemented, not executed:** manual `plan`/`apply`/`destroy` workflow is branch-bound and confirmation-gated; record a real OIDC run before claiming it executed. |
 | 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Executed and torn down 2026-10-02:** two bounded pilots applied the foundation and ran two Ready CPU nodes. The first EKS cluster was manually deleted during owner review; the second used the guarded Terraform destroy. Post-destroy checks found zero Terraform workload resources. Observed cost remains unrecorded. |
-| 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | **Partially executed and torn down 2026-10-02:** Argo-synchronized control plane, OPA, Keycloak, hardened Operator Console, OTel, Prometheus, Grafana, and Tempo passed health/policy/restart/telemetry checks. The Console's loopback-only port-forward completed Keycloak PKCE login/logout and a signed API request. IRSA/External Secrets is now implemented but not yet executed. |
-| 4. GitOps lifecycle | Desired state becomes a protected Git commit/PR; Argo CD reconciles it | **Implemented and locally tested:** durable worker, GitHub App publication/deletion, ApplicationSet, and read-only readiness observer. Execute the private EKS lifecycle before claiming it validated. |
+| 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | **Executed 2026-10-03:** Argo-synchronized control plane, OPA, Keycloak, hardened Operator Console, OTel, Prometheus, Grafana, Tempo, IRSA-backed External Secrets, and a scoped GitHub App credential ran in EKS. The Console's loopback-only port-forward completed Keycloak PKCE login/logout and a signed API request. |
+| 4. GitOps lifecycle | Desired state becomes a protected Git commit/PR; Argo CD reconciles it | **Executed 2026-10-03:** durable worker published a GitHub App pull request; after merge, the Argo ApplicationSet created a private EKS workload that reached `1/1` Ready. A second GitHub App pull request removed desired state; Argo pruned the generated Application and namespace. |
 | 5. Reliability | Worker/reconciler separation, retries, idempotency, failure/rollback and recovery tests | **Partially implemented:** durable job restart and publication failure tests exist; EKS retry/failure/rollback/HA evidence remains pending. |
-| 6. Operations | Release/merge integration CI, dashboards, alerts, SLO measurement, and cost review | Measured pilot data, alert exercise, documented teardown, and post-pilot cost review |
+| 6. Operations | Release/merge integration CI, dashboards, alerts, SLO measurement, and cost review | **Partially executed:** Prometheus, Tempo, Grafana, and cloud smoke were observed; alert, measured SLO/error-budget, load, and cost evidence remain pending. |
 
 ## Non-negotiable cloud security boundaries
 

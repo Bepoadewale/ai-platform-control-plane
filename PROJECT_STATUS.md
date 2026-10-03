@@ -9,10 +9,10 @@ PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
 CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
 
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
-Grafana, Tempo, governance scenarios, and guarded teardown. It did not execute real
-per-environment Git publication/Argo reconciliation, durable asynchronous reconciliation,
-enterprise identity, external secrets/workload identity, HA, measured SLO/cost evidence, or a
-sustained production workload. Those omissions prevent any production-certified claim.
+Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
+reconciliation, IRSA/External Secrets delivery, and guarded teardown. It did not execute enterprise
+identity, HA, measured SLO/cost evidence, failure/rollback, or a sustained production workload.
+Those omissions prevent any production-certified claim.
 
 ## Executed and Verified
 
@@ -65,10 +65,8 @@ sustained production workload. Those omissions prevent any production-certified 
 
 ## Implemented but Not End-to-End Validated
 
-- A PostgreSQL/SQLite-backed reconciliation-job outbox and GitHub-publication worker are covered by
-  local restart and failure tests. The worker creates a protected desired-state pull request and
-  intentionally leaves the environment `APPLYING`; it does not yet have executed EKS/Argo
-  publication, readiness, rollback, or destroy evidence.
+- HA-shaped replicas/PDBs, failure/rollback drills, sustained load, measured SLO/error-budget, and
+  cost evidence remain unexecuted in EKS.
 
 ## Simulated
 
@@ -97,11 +95,10 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The second bounded cloud validation was destroyed through the guarded
-Terraform command; its observed cost is not recorded. The durable GitOps publication worker is
-implemented and unit/restart-tested, but protected Git publication → Argo → EKS workload evidence,
-external secrets/workload identity, public TLS/enterprise OIDC, and GitHub Actions OIDC execution
-remain later P1 work.
+No open local-first P0 work. The active bounded cloud validation has executed protected Git
+publication → Argo → EKS workload readiness and deletion, plus External Secrets/workload identity.
+Cloud P1 remains HA/recovery, failure/rollback, SLO/cost/load evidence, public TLS/enterprise OIDC,
+GitHub Actions OIDC execution, then guarded teardown.
 
 ## Last Validation
 
