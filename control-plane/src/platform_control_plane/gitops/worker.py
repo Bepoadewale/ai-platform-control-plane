@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Protocol
 
@@ -43,13 +43,34 @@ class GitOpsWorker:
 
     def run_once(self) -> list[ReconciliationJob]:
         self.service.refresh_from_store()
+        self._recover_abandoned_jobs()
         processed: list[ReconciliationJob] = []
         for job in self.service.pending_reconciliation_jobs():
-            processed.append(self._publish(job))
+            job.state = ReconciliationJobState.PROCESSING
+            job.attempts += 1
+            job.updated_at = datetime.now(UTC)
+            if self.service.repository.claim_job(job):
+                processed.append(self._publish_claimed(job))
         RECONCILIATION_QUEUE_DEPTH.set(len(self.service.pending_reconciliation_jobs()))
         return processed
 
-    def _publish(self, job: ReconciliationJob) -> ReconciliationJob:
+    def _recover_abandoned_jobs(self) -> None:
+        """Recover a job after its worker dies without publishing a final state.
+
+        The publisher uses the job id as its GitHub change id, so a recovered attempt
+        remains idempotent at the Git boundary.  The lease is intentionally bounded
+        and only applies to persisted `PROCESSING` jobs.
+        """
+        lease_seconds = max(10, int(os.getenv("PLATFORM_GITOPS_JOB_LEASE_SECONDS", "60")))
+        stale_before = datetime.now(UTC) - timedelta(seconds=lease_seconds)
+        for job in self.service.repository.load_jobs({ReconciliationJobState.PROCESSING}):
+            if job.updated_at > stale_before:
+                continue
+            job.state = ReconciliationJobState.PENDING
+            job.updated_at = datetime.now(UTC)
+            self.service.repository.requeue_stale_job(job, stale_before)
+
+    def _publish_claimed(self, job: ReconciliationJob) -> ReconciliationJob:
         environment = self.service._environments.get(job.environment_id)
         if environment is None or environment.gitops_path is None:
             return self._failed(job, "environment or rendered desired state is unavailable")
@@ -58,10 +79,6 @@ class GitOpsWorker:
         )
         if environment.state is not expected_state:
             return self._failed(job, f"environment is not {expected_state.value.lower()}: {environment.state.value}")
-        job.state = ReconciliationJobState.PROCESSING
-        job.attempts += 1
-        job.updated_at = datetime.now(UTC)
-        self.service.repository.update_job(job)
         try:
             if job.action is ReconciliationAction.APPLY:
                 # API and worker pods do not share a mutable filesystem. Re-rendering is deterministic

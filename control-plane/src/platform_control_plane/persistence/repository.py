@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from threading import RLock
 
@@ -85,6 +86,48 @@ class EnvironmentRepository:
                 (job.state.value, job.model_dump_json(), job.updated_at.isoformat(), str(job.id)),
             )
             self.connection.commit()
+
+    def claim_job(self, job: ReconciliationJob) -> bool:
+        """Atomically move one pending job to processing.
+
+        Multiple GitOps worker replicas may see the same pending job.  The conditional
+        state transition is the ownership boundary: only one worker is allowed to
+        publish the GitHub change for a job id.
+        """
+        with self.lock:
+            cursor = self.connection.execute(
+                """UPDATE reconciliation_jobs
+                SET state = ?, payload = ?, updated_at = ?
+                WHERE id = ? AND state = ?""",
+                (
+                    job.state.value,
+                    job.model_dump_json(),
+                    job.updated_at.isoformat(),
+                    str(job.id),
+                    ReconciliationJobState.PENDING.value,
+                ),
+            )
+            self.connection.commit()
+        return cursor.rowcount == 1
+
+    def requeue_stale_job(self, job: ReconciliationJob, stale_before: datetime) -> bool:
+        """Return an abandoned processing job to the durable queue exactly once."""
+        with self.lock:
+            cursor = self.connection.execute(
+                """UPDATE reconciliation_jobs
+                SET state = ?, payload = ?, updated_at = ?
+                WHERE id = ? AND state = ? AND updated_at <= ?""",
+                (
+                    job.state.value,
+                    job.model_dump_json(),
+                    job.updated_at.isoformat(),
+                    str(job.id),
+                    ReconciliationJobState.PROCESSING.value,
+                    stale_before.isoformat(),
+                ),
+            )
+            self.connection.commit()
+        return cursor.rowcount == 1
 
     def close(self) -> None:
         with self.lock:

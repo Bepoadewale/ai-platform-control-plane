@@ -85,3 +85,22 @@ def test_worker_records_failed_publication_without_direct_reconciliation(tmp_pat
         for event in service.audit_events(environment.request.request_id)
     )
     service.close()
+
+
+def test_two_workers_claim_one_durable_job_once(tmp_path: Path) -> None:
+    """A second replica must not create a second GitHub publication for one job."""
+    database = tmp_path / "state.db"
+    first = EnvironmentService(tmp_path / "environments", database, reconciliation_mode="gitops-worker")
+    environment = first.create(developer(), request())
+    second = EnvironmentService(tmp_path / "environments", database, reconciliation_mode="gitops-worker")
+    first_publisher = RecordingPublisher()
+    second_publisher = RecordingPublisher()
+
+    first_processed = GitOpsWorker(first, first_publisher).run_once()
+    second_processed = GitOpsWorker(second, second_publisher).run_once()
+
+    assert len(first_processed) + len(second_processed) == 1
+    assert len(first_publisher.calls) + len(second_publisher.calls) == 1
+    assert first.get(developer(), environment.id).state is LifecycleState.APPLYING
+    first.close()
+    second.close()
