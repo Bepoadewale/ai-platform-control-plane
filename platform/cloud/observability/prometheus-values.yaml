@@ -1,5 +1,13 @@
 alertmanager:
-  enabled: false
+  enabled: true
+  # The disposable pilot deliberately has no external receiver. The alert drill queries
+  # Prometheus' firing state instead of sending synthetic alerts to people.
+  config:
+    global: {}
+    route:
+      receiver: discard
+    receivers:
+      - name: discard
 pushgateway:
   enabled: false
 server:
@@ -23,3 +31,30 @@ extraScrapeConfigs: |
   - job_name: otel-collector
     static_configs:
       - targets: [otel-collector.platform-system.svc.cluster.local:8889]
+serverFiles:
+  alerting_rules.yml:
+    groups:
+      - name: ai-platform-control-plane-pilot
+        rules:
+          - alert: PilotCatalogAvailabilityErrorBudgetBurn
+            expr: |
+              (
+                sum(rate(platform_http_requests_total{route="/api/v1/catalog",status_code=~"5.."}[2m]))
+                /
+                clamp_min(sum(rate(platform_http_requests_total{route="/api/v1/catalog"}[2m])), 1)
+              ) > 0.01
+            for: 30s
+            labels:
+              severity: page
+              scope: pilot
+            annotations:
+              summary: Catalog availability error-budget burn in pilot
+          - alert: PilotUnauthorizedRequestBurst
+            expr: |
+              sum(increase(platform_http_requests_total{route="/api/v1/catalog",status_code=~"401|403"}[1m])) >= 5
+            for: 15s
+            labels:
+              severity: warning
+              scope: pilot
+            annotations:
+              summary: Bounded unauthorized-request security drill detected
