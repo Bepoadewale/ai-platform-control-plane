@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-demo pilot-cloud-console-public-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-demo pilot-cloud-console-public-demo
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -84,6 +84,9 @@ pilot-cloud-smoke:
 
 pilot-cloud-ha-check:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-ha-check.sh
+
+pilot-cloud-load-slo:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-load-slo.sh
 
 pilot-cloud-validate:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-validate.sh
