@@ -1,5 +1,9 @@
 alertmanager:
   enabled: true
+  persistence:
+    # The disposable pilot has no EBS CSI driver or default StorageClass. Alert
+    # history is intentionally ephemeral for this bounded validation run.
+    enabled: false
   # The disposable pilot deliberately has no external receiver. The alert drill queries
   # Prometheus' firing state instead of sending synthetic alerts to people.
   config:
@@ -26,8 +30,23 @@ server:
 extraScrapeConfigs: |
   - job_name: control-plane
     metrics_path: /metrics
-    static_configs:
-      - targets: [control-plane.platform-system.svc.cluster.local:8000]
+    # Discover every ready API Pod rather than a single load-balanced Service
+    # endpoint. This preserves tenant/auth/error evidence during HA failover.
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: platform-system
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        action: keep
+        regex: control-plane
+      - source_labels: [__meta_kubernetes_pod_phase]
+        action: keep
+        regex: Running
+      - source_labels: [__meta_kubernetes_pod_ip]
+        target_label: __address__
+        replacement: $1:8000
   - job_name: otel-collector
     static_configs:
       - targets: [otel-collector.platform-system.svc.cluster.local:8889]
@@ -35,6 +54,9 @@ serverFiles:
   alerting_rules.yml:
     groups:
       - name: ai-platform-control-plane-pilot
+        # Keep this bounded pilot's security/SLO feedback cadence aligned with
+        # the 15-second scrape interval used by its reproducible drill.
+        interval: 15s
         rules:
           - alert: PilotCatalogAvailabilityErrorBudgetBurn
             expr: |

@@ -14,7 +14,7 @@ validated primary-path regression is discovered.
   readiness, bad-workload failure, and destroy evidence. Quality rollback remains separate.
 - [x] Execute the rendered IRSA + External Secrets path for the scoped GitHub App credential.
 - [ ] Record a secret-rotation/recovery check.
-- [ ] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
+- [x] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.
 - [x] Complete the private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass with
   guarded teardown and post-destroy AWS/Terraform evidence.
@@ -36,7 +36,8 @@ cloud-pilot hardening, not a production-certification claim.
 - [x] Execute a protected Git change → Argo reconciliation before claiming bounded-pilot GitOps.
 - [x] Add protected Git desired-state publication and Argo status observation; the cloud API does not invoke Helm/kubectl directly.
 - [x] Separate reconciliation from the API process with durable job state and idempotent recovery.
-- Add lifecycle metrics/child spans and measured SLO/alert evidence; External Secrets/workload identity is executed.
+- Collect sustained-load/error-budget and settled AWS billing evidence; bounded load, alert firing,
+  and a delayed Cost Explorer query are executed.
 - Replace development MCP identity environment variables with trusted delegated OIDC identity.
 
 # P2 — Enhancements
