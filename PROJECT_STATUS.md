@@ -107,8 +107,8 @@ requirements. These are not local-first completion blockers and have not been st
 
 No open local-first P0 work. The active bounded cloud validation has executed protected Git
 publication → Argo → EKS workload readiness and deletion, plus External Secrets/workload identity.
-Cloud P1 remains HA/recovery, failure/rollback, SLO/cost/load evidence, public TLS/enterprise OIDC,
-GitHub Actions OIDC execution, then guarded teardown.
+Cloud P1 remains HA/recovery, quality rollback, SLO/cost/load evidence, public TLS/enterprise OIDC,
+and GitHub Actions OIDC execution. The active 2026-10-03 pilot has been torn down.
 
 ## Last Validation
 
@@ -189,9 +189,14 @@ GitHub Actions OIDC execution, then guarded teardown.
   resources. The project-tagged NAT gateway is retained by AWS only as a historical record in
   `deleted` state. The encrypted state bucket, active lock table, and USD 10 Budget remain by
   design.
+- Final production-shaped pilot teardown: after the GitOps success, failure, Console, and smoke
+  evidence, the guarded destroy removed the active 40-resource workload footprint. Direct AWS
+  queries found EKS, RDS, ECR, pilot IAM roles, project-tagged VPCs, and pilot GitOps secrets absent;
+  the configured remote pilot Terraform state listed zero resources. The encrypted/versioned state
+  bucket, active lock table, and USD 10 Budget remain intentionally.
 
 ## Last Updated
 
-2026-10-03, local-first completion is unchanged. The active production-shaped AWS validation,
-GitOps lifecycle/failure evidence, themed temporary Console review, and forthcoming guarded
-teardown are recorded.
+2026-10-03, local-first completion is unchanged. The completed production-shaped AWS validation,
+GitOps lifecycle/failure evidence, themed temporary Console review, and guarded teardown are
+recorded. This is not production certification.

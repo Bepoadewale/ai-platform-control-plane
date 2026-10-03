@@ -56,9 +56,10 @@ kubectl in the cloud path.
   calculation consume generated workload evidence.
 - [ ] A bounded load drill runs against disposable tenant workloads. The bad-workload failure drill
   executed; sustained load/capacity evidence remains pending.
-- [ ] `make pilot-cloud-destroy` removes the active workload footprint; AWS API and Terraform state
-  checks must record the retained state bucket, lock table, and Budget only. This remains the final
-  step of the current 2026-10-03 run.
+- [x] `make pilot-cloud-destroy` removed the active workload footprint on 2026-10-03. Direct AWS
+  queries found EKS, RDS, ECR, pilot IAM roles, the tagged VPC, and pilot GitOps secret absent;
+  the remote pilot Terraform state listed zero resources. Only the encrypted/versioned state bucket,
+  active DynamoDB lock table, and USD 10 Budget remain intentionally.
 
 ## Intentional deviations from a public production service
 

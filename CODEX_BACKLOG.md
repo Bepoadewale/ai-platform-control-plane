@@ -16,8 +16,8 @@ validated primary-path regression is discovered.
 - [ ] Record a secret-rotation/recovery check.
 - [ ] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.
-- [ ] Complete the active private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass
-  with guarded teardown and post-destroy evidence.
+- [x] Complete the private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass with
+  guarded teardown and post-destroy AWS/Terraform evidence.
 
 See [production-shaped validation](docs/production-shaped-validation.md). This target is
 cloud-pilot hardening, not a production-certification claim.
