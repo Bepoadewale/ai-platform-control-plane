@@ -75,8 +75,9 @@ Those omissions prevent any production-certified claim.
 
 ## Implemented but Not End-to-End Validated
 
-- HA-shaped replicas/PDBs, sustained load, measured SLO/error-budget, quality rollback, and cost
-  evidence remain unexecuted in EKS.
+- Quality rollback, sustained-load certification, measured SLO/error-budget policy/alerts, and cost
+  evidence remain unexecuted in EKS. A bounded authenticated availability sample and HA pod-loss
+  recovery are executed evidence, not substitutes for those production operating proofs.
 
 ## Simulated
 
@@ -89,8 +90,8 @@ Those omissions prevent any production-certified claim.
 
 ## Explicitly Unexecuted Production Adapters
 
-- GitHub Actions OIDC federation. The manual plan/apply/destroy workflow and role are implemented,
-  but no GitHub-hosted OIDC workflow run has yet been executed.
+- GitHub Actions OIDC hosted apply/destroy. The protected-main workflow successfully executed an
+  OIDC-authenticated Terraform plan; apply and destroy remain confirmation-gated and unexecuted.
 - Enterprise OIDC issuer, protected environment repository, and production GitOps commit/PR flow.
 - Multi-cluster placement, HA/failover validation, GPU nodes, and cloud billing evidence.
 
