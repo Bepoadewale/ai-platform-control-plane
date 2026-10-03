@@ -14,7 +14,9 @@ metadata:
   labels:
     app.kubernetes.io/name: control-plane
 spec:
-  replicas: 1
+  # Stateless API replicas share durable PostgreSQL state. The worker remains separately
+  # single-active until a lease is implemented and exercised.
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: control-plane

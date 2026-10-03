@@ -1,0 +1,22 @@
+# Disruption budgets protect the stateless request and policy paths during a voluntary node drain.
+# The worker is deliberately excluded: its single-active ownership/lease work is a separate safety
+# prerequisite for horizontal scaling.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: control-plane
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: control-plane
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: opa
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opa
