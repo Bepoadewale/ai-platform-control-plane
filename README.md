@@ -1,184 +1,164 @@
 # AI Platform Control Plane
 
-A governed internal developer platform that lets engineers and AI agents request environments through a policy-enforced API—without receiving AWS administrator credentials.
+```mermaid
+flowchart TB
+  classDef local fill:#e8f1fb,stroke:#3b82c4,color:#102a43;
+  classDef aws fill:#fff3e0,stroke:#d97706,color:#4a2900;
+  classDef guard fill:#ecfdf3,stroke:#15803d,color:#123b24;
+  classDef evidence fill:#f4f4f5,stroke:#52525b,color:#18181b;
 
-It is deliberately a **control plane**, not an AI demo app. A request is authenticated, authorized, policy-checked, planned with a cost estimate, persisted as an auditable lifecycle, rendered to GitOps desired state, and then reconciled by Kubernetes tooling.
+  subgraph callers[Humans and governed agents]
+    Dev[Developer] --> Entry[Operator Console / CLI / MCP / API]
+    Agent[AI agent] --> Entry
+    Operator[Independent platform operator] --> Entry
+  end
 
-> **Evidence boundary:** **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE.** A separate AWS pilot is
-> **CLOUD-PILOT VALIDATED**: its EKS runtime, Console, identity, policy, observability, and guarded
-> teardown were executed. It is **not production-certified**: per-environment AWS GitOps,
-> durable reconciliation, enterprise identity/secrets, HA, measured SLOs/cost, and sustained
-> workload evidence remain unexecuted.
+  subgraph identity[Identity and governance]
+    Keycloak[Keycloak / OIDC\nRS256 JWT + JWKS] --> API[FastAPI control plane]
+    Entry --> Keycloak
+    API --> RBAC[Tenant + RBAC\nIdempotency]
+    API --> OPA[OPA / Rego\nallow · deny · approval required]
+    API --> Plans[Immutable plans\nindependent approval]
+    API --> Audit[Audit + lifecycle state]
+  end
 
-## What this repository demonstrates
+  subgraph local[Local-first executed stack]
+    SQLite[(SQLite)]
+    PostgresLocal[(PostgreSQL)]
+    Kind[kind + Helm]
+    ArgoLocal[Argo CD]
+    OTelLocal[OpenTelemetry Collector]
+    PromLocal[Prometheus] --> GrafanaLocal[Grafana]
+    TempoLocal[Tempo]
+  end
 
-It turns an infrastructure request into a governed lifecycle instead of handing a person or an AI
-agent unrestricted cloud, Kubernetes, Terraform, or Git credentials.
+  API --> SQLite
+  API --> PostgresLocal
+  API --> Kind
+  API --> ArgoLocal
+  API --> OTelLocal --> TempoLocal
+  API --> PromLocal
+
+  subgraph cloud[AWS pilot: private, ephemeral, executed then torn down]
+    Actions[GitHub Actions manual workflow] -. implemented—not executed .-> OIDC[GitHub OIDC role]
+    OIDC -.-> Terraform
+    Terraform[Terraform] --> VPC[Tagged VPC\nprivate EKS subnets]
+    VPC --> EKS[Amazon EKS\nCPU node group]
+    Terraform --> RDS[(Amazon RDS PostgreSQL)]
+    Terraform --> ECR[Amazon ECR]
+    Terraform --> Secrets[AWS Secrets Manager]
+    EKS --> Runtime[Argo-managed runtime\nAPI · worker · observer\nKeycloak · OPA · Console]
+    Secrets --> ESO[External Secrets + IRSA]
+    ESO --> Worker[Durable GitOps worker]
+    Worker --> GitHub[GitHub App\nprotected desired-state PR]
+    GitHub --> ArgoCloud[Argo ApplicationSet]
+    ArgoCloud --> Workload[Private tenant namespace\ngolden-path Deployment]
+    Observer[Read-only Argo/Kubernetes observer] --> API
+    EKS --> CloudOTel[OTel Collector] --> CloudTempo[Tempo]
+    EKS --> CloudProm[Prometheus] --> CloudGrafana[Grafana]
+  end
+
+  Plans --> Worker
+  Workload --> Observer
+  Runtime --> RDS
+  Runtime --> ECR
+  class API,RBAC,OPA,Plans,Audit guard;
+  class SQLite,PostgresLocal,Kind,ArgoLocal,OTelLocal,PromLocal,GrafanaLocal,TempoLocal local;
+  class Terraform,VPC,EKS,RDS,ECR,Secrets,ESO,Worker,GitHub,ArgoCloud,Workload,Observer,Runtime,CloudOTel,CloudTempo,CloudProm,CloudGrafana aws;
+  class Entry,Dev,Agent,Operator,Keycloak evidence;
+```
+
+A governed internal platform for requesting environments without handing developers or AI agents
+AWS administrator, Kubernetes, Terraform, Git, or secret credentials.
+
+**Evidence boundary:** **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE**. A private, single-account AWS
+pilot also executed the cloud path above—including EKS GitOps creation, failure, cleanup, Console,
+observability, and Terraform teardown. It is **CLOUD-PILOT VALIDATED — NOT
+PRODUCTION-CERTIFIED**. See [implementation status](docs/IMPLEMENTATION_STATUS.md).
+
+## The control loop
 
 ```text
-request → signed identity → tenant/RBAC → OPA policy → immutable plan
-        → approval where required → desired state → reconciliation → readiness → audit
+signed identity → tenant/RBAC → OPA → immutable plan → approval when required
+→ durable desired-state publication → Argo CD → Kubernetes readiness or failure
+→ persistent audit, metrics, and traces → safe destroy / TTL cleanup
 ```
 
-The platform is intentionally opinionated: a caller selects an approved environment shape and a few
-business inputs (name, team, environment class, TTL, data services, cost centre). The platform owns
-the Kubernetes details: namespace, service account, quotas, limits, probes, non-root settings,
-network policy, desired-state rendering, readiness observation, and cleanup.
+The API owns governance and intent. Argo CD owns cloud reconciliation. The cloud API does not shell
+out to `helm`, `kubectl`, or Terraform.
 
-### Who can do what
+## What callers can and cannot do
 
-| Caller | Allowed locally | Explicitly not allowed |
+| Caller | Can do | Cannot do |
 | --- | --- | --- |
-| Viewer | Read catalog, environment status, audit and estimated cost for its tenant | Create, approve, or destroy environments |
-| Developer | Plan and request tenant-scoped development environments; request production changes | Read or mutate another tenant; self-approve protected production changes; receive cluster/cloud admin credentials |
-| Platform operator | Review and independently approve an exact protected plan | Approve a materially changed/stale plan; bypass tenant or policy checks |
-| AI agent (`agent-requester`) | Discover platform capabilities, estimate cost, plan approved work, and request permitted tenant-scoped environments through MCP/API | Grant itself approval; make autonomous protected-production changes; execute arbitrary Terraform, `kubectl`, or obtain AWS/Kubernetes credentials |
+| Viewer | Read tenant-scoped catalog, state, audit, and estimated cost | Create, approve, or destroy |
+| Developer | Plan/request tenant development work; request production work | Access another tenant, self-approve protected work, receive cluster/cloud credentials |
+| Platform operator | Independently approve the exact protected plan | Approve a stale/changed plan or bypass policy |
+| AI agent | Discover capabilities, estimate cost, plan and request permitted tenant work through MCP/API | Self-approve, mutate protected production autonomously, execute arbitrary Terraform/`kubectl`, receive AWS/Kubernetes credentials |
 
-The API remains the enforcement point for every path—HTTP, CLI, and MCP tools. An MCP tool does
-not receive a side door around identity, OPA, approval, idempotency, audit, or reconciliation.
+HTTP, CLI, Console, and MCP all call the same API boundary. No client gets a side door around
+identity, policy, approval, idempotency, audit, or reconciliation.
 
-### Real scenarios to discuss or run
+## Executed scenarios
 
-1. **Developer creates a short-lived development environment.** A signed developer identity requests
-   `demo-api`; OPA permits it, the API creates a plan, Helm reconciles into kind, the API observes
-   the Deployment as Ready, and the audit timeline records each transition. Destruction verifies the
-   namespace is gone.
-2. **AI agent requests a production environment.** OPA rejects autonomous production mutation before
-   any Kubernetes resource is created. The denial is auditable; the agent cannot approve itself.
-3. **Developer requests production.** The request becomes `APPROVAL_REQUIRED`. A different platform
-   operator approves the exact plan hash, after which reconciliation may proceed. A changed or stale
-   plan invalidates that approval.
-4. **A workload cannot become healthy.** The reconciler times out, persists `FAILED`, emits a
-   `reconciliation.failed` audit event, and never falsely reports `READY`.
-5. **A temporary environment expires.** The TTL reaper plans and verifies cleanup; protected
-   production environments are not silently TTL-deleted.
+- **Development lifecycle:** signed request → OPA allow → plan → ready workload → audit → verified
+  destroy.
+- **Protected production change:** policy returns `APPROVAL_REQUIRED`; a distinct operator approves
+  the exact plan hash. Stale changes invalidate that approval.
+- **Unsafe or failed work:** an autonomous production agent is denied before mutation; a bad image
+  reaches `ImagePullBackOff`/`ProgressDeadlineExceeded`, becomes `FAILED`, and is cleaned up through
+  GitOps without ever becoming `READY`.
+- **Recovery and cleanup:** durable state survives restart; short-lived environments are TTL-reaped
+  with resource deletion verified.
 
-Each scenario above has executed local evidence; see [demo scenarios](docs/demo.md),
-[security model](docs/security.md), and [agent safety](docs/agent-safety.md).
+## Run locally
 
-```mermaid
-flowchart LR
-  U[Developer / AI agent] --> M[MCP gateway / CLI / API]
-  M --> A[Identity + RBAC]
-  A --> P[Policy decision]
-  P -->|allowed| C[Control plane]
-  C --> G[Git desired state]
-  G --> R[Argo CD reconciliation]
-  R --> K[Kubernetes workload]
-  C --> O[Audit, cost, metrics]
-  P -->|denied| O
-```
-
-## What works now
-
-- FastAPI `/api/v1` control plane with tenant boundaries, lifecycle transitions, idempotency keys, plans, audit events, approval workflow, safe dev destruction, and Prometheus metrics.
-- SQLite-backed local lifecycle and audit state survives a control-plane restart; it is covered by a restart-recovery test.
-- RS256 JWT/JWKS bearer-token validation is exercised through the API; development headers require an explicit insecure opt-in.
-- A local OPA container evaluates live Rego decisions and fails closed when unavailable. The live path has denied an autonomous production-agent request.
-- Golden-path desired state is reconciled into a local kind cluster with Helm. The API waits for Deployment readiness and API destroy verifies resource cleanup.
-- The same chart is reconciled by local Argo CD; the Application reaches `Synced/Healthy` and its
-  managed Deployment reaches `1/1` available replicas.
-
-## What this repository deliberately does not do
-
-- It does not create cloud workload spend by default or claim production HA validation. A bounded,
-  owner-authorized AWS pilot executed VPC/EKS/RDS/ECR/Argo/telemetry validation and a verified
-  teardown; it is not a production-certification claim.
-- It does not expose raw Kubernetes credentials, Docker sockets, Terraform execution, long-lived
-  cloud credentials, or secret values to callers or agents.
-- It does not treat a rendered Helm chart, a Terraform module, or a mocked unit test as proof of a
-  deployment. The implementation-status table separates local execution from static-only adapters.
-- It does not let availability silently override policy: an unavailable policy decision fails closed
-  for protected writes; protected destruction and production changes require independent approval.
-
-See [implementation status](docs/IMPLEMENTATION_STATUS.md) and [project status](PROJECT_STATUS.md) for the evidence boundary and current maturity.
-
-## Quick start
-
-Requires Python 3.12+.
+Prerequisites: Python 3.12+, Docker Desktop, `kind`, `kubectl`, and Helm.
 
 ```console
 git clone https://github.com/bepoadewale/ai-platform-control-plane.git
 cd ai-platform-control-plane
 make install
-make test
-make demo
-make run
-```
-
-For the complete local integration demo (Docker Desktop, kind, kubectl, and Helm required):
-
-```console
 make bootstrap-local
 make compose-smoke
 make demo-local
 make argocd-demo
 ```
 
-This bootstraps kind, Metrics Server, and Argo CD; validates the Keycloak/PostgreSQL/OTel/Prometheus/Grafana Compose stack; and proves signed identity → OPA → FastAPI → kind readiness → audit/metrics → destroy, autonomous production-agent denial, production apply/destroy with an independent operator approving exact plan hashes, and Argo CD `Synced/Healthy`. No cloud credentials are used.
+This creates only local project resources: kind, Metrics Server, Argo CD, Keycloak, PostgreSQL,
+OPA, OpenTelemetry Collector, Prometheus, Grafana, Tempo, and the control-plane stack. API docs:
+`http://127.0.0.1:8000/docs`. Local Console: run `make console-local`, then open
+`http://localhost:4173`.
 
-Open `http://127.0.0.1:8000/docs` for the API. Bearer JWT validation is the default. Header identity is a development-only escape hatch and requires both `PLATFORM_AUTH_MODE=headers` and `PLATFORM_ALLOW_INSECURE_HEADERS=true`.
-
-### Operator Console
-
-Run `make console-local`, then open `http://localhost:4173`. The separate browser console uses
-Keycloak Authorization Code + PKCE and calls the same signed-JWT, tenant-aware API; it does not
-receive Kubernetes, Terraform, cloud, or secret authority. See [Operator Console](docs/operator-console.md)
-for the local fixture boundary and exact validation status. In the bounded AWS pilot, `make
-pilot-cloud-console` serves the EKS-hosted Console only through `http://localhost:18083` local
-port-forwards; it is not a public endpoint.
-
-### Temporary public demo URL
-
-Run `make public-demo` to bootstrap the local stack and print a temporary Cloudflare Quick Tunnel URL for the provisioned Grafana dashboard. It uses no Cloudflare account, named tunnel, or persistent credential; the URL changes every run and must never be committed. Anyone with the URL can reach that local dashboard, so use only disposable demonstration data. Keep the command running while sharing it; `Ctrl-C` stops only the tunnel and `make clean-local` removes project-owned local resources.
+Remove project-owned local resources with:
 
 ```console
-PLATFORM_AUTH_MODE=headers PLATFORM_ALLOW_INSECURE_HEADERS=true make run
-
-curl -X POST http://127.0.0.1:8000/api/v1/environments \
-  -H 'content-type: application/json' \
-  -H 'x-platform-subject: demo-agent' \
-  -H 'x-platform-tenant: team-demo' \
-  -H 'x-platform-roles: agent-requester' -H 'x-platform-agent: true' \
-  -d '{"name":"demo-api","team":"team-demo","environment_type":"development","ttl_hours":12,"postgresql":true,"redis":true,"cost_center":"DEMO","idempotency_key":"demo-agent-001"}'
+make clean-local
 ```
 
-## Execution boundary
+The local workflow has passed clean-room bootstrap → demo → failure/security checks → cleanup →
+second bootstrap evidence. Full commands and results: [validation evidence](docs/VALIDATION.md).
 
-The verified local kind/OPA demo uses signed, temporary RS256 JWT/JWKS material through FastAPI. The Compose stack executes synthetic Keycloak OIDC, PostgreSQL-backed API persistence, OTLP export, Prometheus scraping, and a provisioned Grafana dashboard through `make compose-smoke`. `make argocd-demo` synchronizes the golden path with local Argo CD and waits for `Synced/Healthy`. The curl example above is explicitly development-only. A separate bounded AWS pilot has also executed the cloud runtime; see [implementation status](docs/IMPLEMENTATION_STATUS.md) for its narrower evidence boundary.
+## AWS pilot boundary
 
-The local demo has also passed a clean-room reset: `make clean-local` removes only this repository's
-Compose resources, local image, named volumes, and `ai-platform-local` kind cluster. Re-running the
-documented bootstrap, smoke, lifecycle, and Argo commands recreated the stack and validated it;
-`make clean-local` then returned the machine to a Project-1-clean state.
+Terraform provisioned and then destroyed a tagged VPC, private EKS cluster, RDS PostgreSQL, ECR,
+Secrets Manager, IAM/IRSA, GitHub OIDC roles, and the observability/runtime stack. The temporary
+Console review used loopback port-forwards plus a Cloudflare Quick Tunnel—no public AWS ingress,
+DNS, load balancer, or permanent Cloudflare credential.
 
-## Technology choices
+The teardown verified EKS, RDS, ECR, pilot IAM roles, VPC, and pilot secrets absent. Only the
+encrypted/versioned Terraform state bucket, DynamoDB lock table, and USD 10 budget guardrail remain
+intentionally. This was realistic cloud validation, not a public SaaS or production certification.
 
-FastAPI/Pydantic provide the typed infrastructure API. Kubernetes Helm templates establish workload defaults. The local direct reconciler and Argo CD GitOps synchronization are executed against kind. OPA/Rego is the live policy evaluator. Terraform modules are opt-in AWS infrastructure foundations. Prometheus metrics and OpenTelemetry spans are emitted through the local Compose stack.
+Unexecuted production controls include enterprise OIDC, HA/failover, quality rollback, sustained
+load, measured SLO/error-budget/cost evidence, public TLS ingress, and a GitHub-hosted OIDC run.
+See the [pilot plan](docs/production-pilot.md), [runbook](docs/cloud-pilot-runbook.md), and
+[production-shaped evidence](docs/production-shaped-validation.md).
 
-See [architecture](docs/architecture.md), [local development](docs/local-development.md), [demo](docs/demo.md), [agent safety](docs/agent-safety.md), [failure modes](docs/failure-modes.md), and the [interview guide](docs/interview-guide.md). To capture portfolio screenshots, run the demo/API then capture `/docs`, `/metrics`, `kubectl get all -n team-demo-demo-api`, and the Grafana dashboard after Prometheus is installed.
+## Repository guide
 
-## Production boundary
+- [Architecture](docs/architecture.md) · [security model](docs/security.md) · [agent safety](docs/agent-safety.md)
+- [Demo scenarios](docs/demo.md) · [failure modes](docs/failure-modes.md) · [operator console](docs/operator-console.md)
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md) · [project status](PROJECT_STATUS.md) · [interview guide](docs/interview-guide.md)
 
-This portfolio implementation is **portfolio complete locally** and **cloud-pilot validated**, not
-production-certified. Local PostgreSQL, OIDC/JWKS validation, OPA, Argo CD, and telemetry are
-executed; the bounded AWS pilot also executed its runtime and teardown. Production certification
-would additionally require real per-environment GitOps/reconciliation, HA/managed persistence,
-enterprise identity, signed Git commits and protected branches, external secrets/workload identity,
-managed database operations, durable job/reconciliation, measured SLO/cost evidence, and sustained
-workload failure/rollback validation. AWS is intentionally opt-in; no expensive resources or GPUs
-are created by default.
-
-The AWS pilot is deliberately separate from the local-first completion claim. It used guarded
-Terraform create/destroy scripts, a tagged VPC/EKS/RDS/ECR foundation, an Argo-managed runtime,
-Keycloak JWT validation, OPA policy denial, RDS restart recovery, Prometheus, Tempo, Grafana, and a
-temporary Cloudflare review tunnel. The GitHub Actions manual plan/apply/destroy dropdown workflow
-and GitHub App publisher remain implemented but unexecuted production adapters. The runtime’s
-environment reconciler is explicitly `render-only`; it does not yet publish an individual request
-as a protected Git change and wait for Argo to create that workload. See the
-[production-pilot plan](docs/production-pilot.md), [cloud pilot runbook](docs/cloud-pilot-runbook.md),
-and [AWS validation evidence](docs/VALIDATION.md#aws-workload-pilot--2026-10-02-createvalidatedestroy).
-The next cloud-hardening target is [production-shaped single-account validation](docs/production-shaped-validation.md):
-private, ephemeral, and tunnel-reviewed—not a public SaaS claim.
-
-Next: run `make test`, then follow [the local setup](docs/local-development.md) or review the [roadmap](ROADMAP.md).
+The project is intentionally local-first: cloud resources are never created by default.
