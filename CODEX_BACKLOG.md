@@ -16,7 +16,8 @@ validated primary-path regression is discovered.
 - [ ] Record a secret-rotation/recovery check.
 - [ ] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.
-- [ ] Run and record one private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass.
+- [ ] Complete the active private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass
+  with guarded teardown and post-destroy evidence.
 
 See [production-shaped validation](docs/production-shaped-validation.md). This target is
 cloud-pilot hardening, not a production-certification claim.
@@ -32,10 +33,10 @@ cloud-pilot hardening, not a production-certification claim.
 - [x] Replace validate-only AWS Terraform contracts with a reviewed, minimal non-production foundation and execute the bounded runtime/policy/restart/telemetry pilot.
 - [x] Add a GitHub App desired-state publication boundary and a GitHub Actions plan/apply/destroy workflow.
 - [x] Wire GitHub App publication to a durable worker with local restart/failure tests.
-- Execute a protected Git change → Argo reconciliation before claiming production GitOps.
-- Add protected Git desired-state publication and Argo status observation; do not let the production API invoke Helm/kubectl directly.
-- Separate reconciliation from the API process with durable job state and idempotent recovery.
-- Add external secret references/workload identity, lifecycle metrics/child spans, and measured SLO/alert evidence.
+- [x] Execute a protected Git change → Argo reconciliation before claiming bounded-pilot GitOps.
+- [x] Add protected Git desired-state publication and Argo status observation; the cloud API does not invoke Helm/kubectl directly.
+- [x] Separate reconciliation from the API process with durable job state and idempotent recovery.
+- Add lifecycle metrics/child spans and measured SLO/alert evidence; External Secrets/workload identity is executed.
 - Replace development MCP identity environment variables with trusted delegated OIDC identity.
 
 # P2 — Enhancements

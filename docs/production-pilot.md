@@ -42,7 +42,7 @@ The API owns intent and governance. Argo CD owns production reconciliation. The 
 | 2. Foundation | Terraform creates VPC, private EKS subnets, EKS, ECR, RDS PostgreSQL, ECR, and narrowly scoped IAM | **Executed and torn down 2026-10-02:** two bounded pilots applied the foundation and ran two Ready CPU nodes. The first EKS cluster was manually deleted during owner review; the second used the guarded Terraform destroy. Post-destroy checks found zero Terraform workload resources. Observed cost remains unrecorded. |
 | 3. Platform runtime | Control plane, OPA, Argo CD, observability, and external-secret delivery run in EKS | **Executed 2026-10-03:** Argo-synchronized control plane, OPA, Keycloak, hardened Operator Console, OTel, Prometheus, Grafana, Tempo, IRSA-backed External Secrets, and a scoped GitHub App credential ran in EKS. The Console's loopback-only port-forward completed Keycloak PKCE login/logout and a signed API request. |
 | 4. GitOps lifecycle | Desired state becomes a protected Git commit/PR; Argo CD reconciles it | **Executed 2026-10-03:** durable worker published a GitHub App pull request; after merge, the Argo ApplicationSet created a private EKS workload that reached `1/1` Ready. A second GitHub App pull request removed desired state; Argo pruned the generated Application and namespace. |
-| 5. Reliability | Worker/reconciler separation, retries, idempotency, failure/rollback and recovery tests | **Partially implemented:** durable job restart and publication failure tests exist; EKS retry/failure/rollback/HA evidence remains pending. |
+| 5. Reliability | Worker/reconciler separation, retries, idempotency, failure/rollback and recovery tests | **Partially executed 2026-10-03:** durable job restart/publication-failure tests exist; EKS observed a bad-image `ImagePullBackOff` becoming `ProgressDeadlineExceeded`, persisted `FAILED`, then completed GitOps cleanup to `DESTROYED`. Quality rollback, retries, HA, and pod-loss recovery remain unexecuted. |
 | 6. Operations | Release/merge integration CI, dashboards, alerts, SLO measurement, and cost review | **Partially executed:** Prometheus, Tempo, Grafana, and cloud smoke were observed; alert, measured SLO/error-budget, load, and cost evidence remain pending. |
 
 ## Non-negotiable cloud security boundaries
@@ -97,7 +97,9 @@ Record a separate pilot validation in `docs/VALIDATION.md` with:
 - cost estimate and observed pilot spend; and
 - verified Terraform teardown and remaining-resource check.
 
-Only label an AWS component **EXECUTED** after this evidence exists. Until then it remains
+Only label an AWS component **EXECUTED** after this evidence exists. The 2026-10-03 pilot is
+currently active only for the final guarded teardown; after it is destroyed, record the exact
+post-destroy AWS and Terraform-state evidence. Until evidence exists, a component remains
 **ARCHITECTURE / CONTRACT ONLY** or **PLANNED**.
 
 The exact guarded commands, GitHub Actions dropdown workflow, runtime boundary, and teardown
