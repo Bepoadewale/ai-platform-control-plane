@@ -1,6 +1,8 @@
 # Cloud Reference Demonstration
 
-The completed reference scenario was:
+In the main demonstration, a developer asked for an environment. The platform checked identity and
+permission, recorded the plan, created a reviewable GitHub change, let Argo CD deploy it, and then
+recorded whether it became healthy.
 
 ```text
 developer request → OIDC → tenant/RBAC → OPA → plan/approval
@@ -8,14 +10,14 @@ developer request → OIDC → tenant/RBAC → OPA → plan/approval
 → audit + Prometheus + Tempo + Grafana
 ```
 
-The failure scenario was equally important:
+The failure demonstration was equally important. A deliberately broken image never became ready:
 
 ```text
 reviewed bad image → ImagePullBackOff → ProgressDeadlineExceeded → FAILED audit
 → reviewed known-good restore → Ready → governed deletion PR → Argo prune → DESTROYED
 ```
 
-The operational scenario deleted one API and one worker Pod while replicas/PDBs were active, ran a
-bounded authenticated load sample, fired a Prometheus alert, reviewed the Console through a
+The operational demonstration deleted one API and one worker Pod while backup replicas were active,
+ran a small authenticated load sample, fired a Prometheus alert, reviewed the Console through a
 temporary tunnel, and then ran account-guarded Terraform destroy. See
 [Cloud Operations](cloud-operations.md) and [Validation](VALIDATION.md).

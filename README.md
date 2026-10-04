@@ -45,24 +45,32 @@ signed identity → tenant/RBAC → OPA → immutable plan → independent appro
 The API owns intent and governance. Argo CD owns cloud reconciliation. The API does not shell out
 to Helm, `kubectl`, or Terraform against EKS.
 
-## Cloud reference evidence
+## What the AWS pilot proved
 
-The private AWS pilot executed:
+The private AWS pilot proved the platform can safely manage a cloud environment from request to
+cleanup.
 
-- Terraform VPC, private EKS, RDS PostgreSQL, ECR, Secrets Manager, IAM/IRSA, GitHub OIDC and
-  remote state guardrails.
-- Keycloak-issued signed JWT, tenant/RBAC, live OPA denial, plans, independent approvals, durable
-  PostgreSQL state, audit, and restart recovery.
-- GitHub App desired-state PR → protected merge → Argo ApplicationSet → private workload `Ready`.
-- Bad image → `ImagePullBackOff` / `ProgressDeadlineExceeded` → reviewed known-good restore →
-  governed GitOps deletion and namespace prune.
-- Two API/OPA/worker replicas with PDBs; deliberate API and worker Pod loss restored `2/2`.
-- Prometheus, Tempo, Grafana, a firing alert, bounded authenticated load, and temporary
-  Cloudflare-tunnel Console review.
-- Account-guarded Terraform teardown with EKS, RDS, ECR, pilot secrets, pilot IAM roles, tagged
-  VPCs, and remote workload state verified absent.
+- Terraform created a private AWS environment: networking, Kubernetes, database, container
+  registry, secrets, and access controls.
+- Users signed in with secure tokens. The platform checked their team, role, and permissions
+  before accepting a request.
+- Policy rules could allow, deny, or require an independent approval before a sensitive change.
+- Every request, plan, approval, result, and restart-safe record was stored in PostgreSQL for an
+  audit trail.
+- After approval, the platform created a reviewed GitHub change. Argo CD deployed it into private
+  Kubernetes and confirmed that the workload became healthy.
+- A deliberately broken container image was detected as unhealthy. The platform restored the
+  previous working version, then safely removed the failed environment.
+- Deliberately deleting platform Pods did not take the service down: Kubernetes restored the API
+  and worker replicas while disruption protections preserved availability.
+- Prometheus, Grafana, Tempo, and OpenTelemetry provided dashboards, traces, metrics, and a real
+  alert during controlled traffic.
+- The Operator Console was reviewed privately through a temporary Cloudflare Tunnel; no public AWS
+  endpoint was created.
+- Terraform then removed the pilot infrastructure. Checks confirmed that the cluster, database,
+  registry, secrets, roles, network, and Terraform-managed workload state were gone.
 
-Exact evidence: [validation record](docs/VALIDATION.md) and
+Technical evidence: [validation record](docs/VALIDATION.md) and
 [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Cloud operations

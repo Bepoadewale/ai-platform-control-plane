@@ -39,3 +39,9 @@ Evidence-label rule: the repository has completed its **Production-pilot** scope
 single-account AWS create → validate → destroy reference environment. Do not call this
 enterprise/public-SaaS certified. The seven explicit improvements in `docs/production-evolution.md`
 require their own cloud evidence before those narrower claims can be made.
+
+Plain-language documentation rule: write the README and top sections of user-facing documents for
+readers who do not already know AWS, Kubernetes, GitOps, or OPA. Start with what the platform lets
+people do, what it prevents, and what actually happened. Define or link unfamiliar terms, then put
+the implementation names, commands, diagrams, and raw evidence in the technical sections. Never
+replace precise evidence with marketing language or claim a component was executed when it was not.

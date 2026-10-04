@@ -5,6 +5,9 @@ single-account**. It is not started by default. The executed pilot used two CPU-
 RDS PostgreSQL, ECR, Argo CD, Keycloak, OPA, Prometheus, Grafana, Tempo, OpenTelemetry, IRSA, and
 External Secrets.
 
+In practical terms: Terraform builds a small private test environment, the platform is checked
+there, and Terraform removes it again. It is not a permanent public website.
+
 ## Guardrails
 
 - Terraform remote state: encrypted/versioned S3 plus DynamoDB locking.
@@ -53,12 +56,13 @@ AWS_PROFILE=<operator-profile> EXPECTED_AWS_ACCOUNT_ID=<pilot-account-id> \
 Verify EKS, RDS, ECR, pilot Secrets Manager entries, pilot IAM roles, tagged VPCs, and remote
 Terraform state are absent. Retain only the intentional state bucket, lock table, and Budget.
 
-## Evidence already executed
+## What was checked
 
-The cloud pilot executed Terraform create/validate/destroy, GitHub OIDC Terraform apply, EKS
-runtime reconciliation, GitHub PR → Argo workload creation and prune, bad-image failure/restore,
-two-replica pod-loss recovery, bounded load, a firing Prometheus alert, Tempo/Grafana evidence, and
-temporary authenticated Console review. Exact commands/results are in [Validation](VALIDATION.md).
+The pilot proved that Terraform could build and remove the AWS environment; GitHub Actions could
+use short-lived AWS access; a reviewed Git change could create and remove a Kubernetes workload;
+the platform could detect a broken image and restore a known-good version; and dashboards, traces,
+metrics, alerts, and the authenticated Console worked during controlled tests. Exact commands and
+technical results are in [Validation](VALIDATION.md).
 
 ## Cost and observability
 

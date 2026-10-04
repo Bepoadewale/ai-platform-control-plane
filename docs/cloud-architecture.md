@@ -5,6 +5,16 @@ created with Terraform, validated through governed GitOps lifecycle scenarios, a
 Terraform. It is the repository's primary architecture; the local harness is retained only for
 fast developer verification.
 
+## In plain English
+
+Someone asks the platform for an environment instead of receiving powerful cloud credentials. The
+platform checks who they are and what they are allowed to do, records a reviewable plan, and asks
+for a separate approval when the change is sensitive. It then creates a GitHub change; Argo CD is
+the component that applies that approved change to Kubernetes. The platform watches the result,
+records what happened, and can safely remove the environment later.
+
+The diagram below names the products that performed those jobs during the AWS pilot.
+
 ## System context
 
 ```mermaid
