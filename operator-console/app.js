@@ -8,14 +8,30 @@
   const byId = (id) => document.getElementById(id);
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#039;", '"': "&quot;" })[char]);
   const tell = (message, error = false) => { const el = byId("notice"); el.textContent = message; el.className = `show${error ? " error" : ""}`; window.setTimeout(() => { el.className = ""; }, 5500); };
+  const browserCrypto = window.crypto;
+  const secureBytes = (size) => {
+    if (!browserCrypto || typeof browserCrypto.getRandomValues !== "function") throw new Error("This browser does not provide secure random values required for sign-in.");
+    return browserCrypto.getRandomValues(new Uint8Array(size));
+  };
   const base64Url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-  const verifier = () => base64Url(crypto.getRandomValues(new Uint8Array(48)));
-  const challenge = async (value) => base64Url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
+  const verifier = () => base64Url(secureBytes(48));
+  const randomUuid = () => {
+    if (browserCrypto && typeof browserCrypto.randomUUID === "function") return browserCrypto.randomUUID();
+    const bytes = secureBytes(16);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  };
+  const challenge = async (value) => {
+    if (!browserCrypto || !browserCrypto.subtle) throw new Error("This browser does not provide secure PKCE hashing required for sign-in.");
+    return base64Url(await browserCrypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
+  };
   const redirectUri = () => `${window.location.origin}/`;
   const getToken = () => store.getItem(tokenKey);
 
   async function login() {
-    const state = crypto.randomUUID(); const codeVerifier = verifier();
+    const state = randomUuid(); const codeVerifier = verifier();
     store.setItem(stateKey, state); store.setItem(verifierKey, codeVerifier);
     const query = new URLSearchParams({ client_id: config.clientId, redirect_uri: redirectUri(), response_type: "code", scope: "openid profile", state, code_challenge: await challenge(codeVerifier), code_challenge_method: "S256" });
     window.location.assign(`${config.issuer}/protocol/openid-connect/auth?${query}`);
@@ -43,7 +59,7 @@
   }
 
   const payloadFrom = (form) => ({
-    idempotency_key: `${form.name.value}-${crypto.randomUUID()}`.slice(0, 120), name: form.name.value, team: form.team.value, environment_type: form.environment_type.value, ttl_hours: Number(form.ttl_hours.value), services: ["api"], postgresql: form.postgresql.checked, redis: form.redis.checked, object_storage: false, secret_refs: [], service_exposure: "ingress", image: "nginxinc/nginx-unprivileged:1.27-alpine", observability: true, workload: { size: form.size.value, replicas: 1, privileged: false, gpu_count: 0, min_replicas: 1, max_replicas: 3, scaling_policy: "cpu" }, cost_center: form.cost_center.value,
+    idempotency_key: `${form.name.value}-${randomUuid()}`.slice(0, 120), name: form.name.value, team: form.team.value, environment_type: form.environment_type.value, ttl_hours: Number(form.ttl_hours.value), services: ["api"], postgresql: form.postgresql.checked, redis: form.redis.checked, object_storage: false, secret_refs: [], service_exposure: "ingress", image: "nginxinc/nginx-unprivileged:1.27-alpine", observability: true, workload: { size: form.size.value, replicas: 1, privileged: false, gpu_count: 0, min_replicas: 1, max_replicas: 3, scaling_policy: "cpu" }, cost_center: form.cost_center.value,
   });
   const showResult = (targetId, data) => { const target = byId(targetId); target.hidden = false; target.textContent = JSON.stringify(data, null, 2); };
   const showView = (name) => { document.querySelectorAll(".view").forEach((item) => item.classList.toggle("active", item.id === name)); document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item.dataset.view === name)); };
