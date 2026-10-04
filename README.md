@@ -3,25 +3,17 @@
 A cloud-first, governed control plane for humans and AI agents to request Kubernetes environments
 without receiving AWS administrator, Kubernetes, Terraform, Git, or secret credentials.
 
-**Delivery state:** **Production-pilot complete — ephemeral single-account scope.** The AWS
-reference environment was created with Terraform, validated through real EKS GitOps workflows, and
-destroyed with Terraform. It is not enterprise/public-SaaS certified.
+**Delivery state:** **Production-pilot complete — ephemeral single-account scope.** The baseline
+AWS reference environment was created with Terraform, validated through real EKS GitOps workflows,
+and destroyed with Terraform. The optional ALB owner-review path is a separate, temporary
+deployment capability—not a claim of a permanent public service or enterprise/public-SaaS
+certification.
 
-```mermaid
-flowchart LR
-  C[Developer / governed agent] --> I[OIDC identity]
-  I --> A[Control-plane API]
-  A --> P[tenant RBAC + OPA]
-  P --> L[immutable plan + approval]
-  L --> D[(RDS lifecycle + audit)]
-  D --> W[durable GitOps worker]
-  W --> G[protected GitHub PR]
-  G --> R[Argo CD]
-  R --> K[private EKS workload]
-  K --> O[readiness/failure observer]
-  O --> D
-  K --> T[Prometheus · Tempo · Grafana]
-```
+![Executed AWS pilot architecture](docs/assets/cloud-pilot-architecture.svg)
+
+The diagram is generated from selected [official AWS Architecture Icons](docs/assets/AWS_ICON_ATTRIBUTION.md)
+and kept with its source in this repository. It shows topology; the lifecycle sequence is described
+in the [cloud architecture](docs/cloud-architecture.md).
 
 See the detailed [cloud architecture](docs/cloud-architecture.md), including AWS resources, trust
 boundaries, and lifecycle sequence.

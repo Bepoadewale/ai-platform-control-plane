@@ -18,6 +18,6 @@ reviewed bad image → ImagePullBackOff → ProgressDeadlineExceeded → FAILED 
 ```
 
 The operational demonstration deleted one API and one worker Pod while backup replicas were active,
-ran a small authenticated load sample, fired a Prometheus alert, reviewed the Console through a
-private owner-review path, and then ran account-guarded Terraform destroy. See
+ran a small authenticated load sample, fired a Prometheus alert, reviewed the Console through the
+optional AWS ALB owner-review path, and then ran account-guarded Terraform destroy. See
 [Cloud Operations](cloud-operations.md) and [Validation](VALIDATION.md).

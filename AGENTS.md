@@ -45,3 +45,9 @@ readers who do not already know AWS, Kubernetes, GitOps, or OPA. Start with what
 people do, what it prevents, and what actually happened. Define or link unfamiliar terms, then put
 the implementation names, commands, diagrams, and raw evidence in the technical sections. Never
 replace precise evidence with marketing language or claim a component was executed when it was not.
+
+Architecture-documentation rule: keep the primary cloud topology as the checked-in, icon-based SVG
+at `docs/assets/cloud-pilot-architecture.svg`. Regenerate it with
+`node scripts/generate-cloud-architecture.mjs` whenever its named components change, inspect the
+rendered SVG before committing, and retain the official AWS-icon attribution. Use lifecycle text or
+sequence diagrams for behavior; do not replace the topology with generic Mermaid boxes.
