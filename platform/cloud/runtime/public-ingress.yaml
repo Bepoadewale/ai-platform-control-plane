@@ -5,6 +5,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: platform-public-api
+  namespace: platform-system
   annotations:
     alb.ingress.kubernetes.io/group.name: ai-platform-public
     alb.ingress.kubernetes.io/group.order: "10"
@@ -32,6 +33,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: platform-public-keycloak
+  namespace: platform-system
   annotations:
     alb.ingress.kubernetes.io/group.name: ai-platform-public
     alb.ingress.kubernetes.io/group.order: "20"
@@ -59,6 +61,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: platform-public-console
+  namespace: platform-system
   annotations:
     alb.ingress.kubernetes.io/group.name: ai-platform-public
     alb.ingress.kubernetes.io/group.order: "30"
