@@ -18,6 +18,11 @@
 
 ## Demonstrated Behavior
 
+## Plain-language summary
+
+Explain what changed and why it matters without assuming the reader knows the implementation
+products. Keep technical evidence in the sections above and below.
+
 ## Failure Cases Tested
 
 ## Remaining Gaps

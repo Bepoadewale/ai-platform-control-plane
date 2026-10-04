@@ -1,21 +1,22 @@
 # Security Model
 
-The control plane applies identity, authorization, policy, approval, and audit before it publishes
-cloud intent. No client receives direct AWS, Terraform, Kubernetes, GitHub App, or secret authority.
+The platform checks identity, permissions, policy, approval, and audit before it asks the cloud to
+change anything. Developers and AI agents can request work, but they do not receive direct AWS,
+Terraform, Kubernetes, GitHub App, or secret credentials.
 
 ```text
 OIDC JWT/JWKS → tenant and role checks → OPA → immutable plan → independent approval
 → durable audit → scoped GitOps publication → Argo reconciliation
 ```
 
-| Control | Cloud-pilot evidence |
+| Protection | What the pilot proved |
 | --- | --- |
-| Signed identity | Keycloak RS256 JWT accepted by FastAPI/JWKS validation |
-| Tenant isolation | cross-tenant request denied through live OPA and persisted audit |
-| Protected changes | exact plan plus independent operator approval required |
-| Cloud credentials | GitHub Actions used short-lived AWS OIDC; workloads used IRSA/External Secrets |
-| Workload defaults | non-root, dropped capabilities, no privilege escalation, read-only filesystem, probes, limits, namespace/network boundaries |
-| GitOps boundary | scoped GitHub App credential; protected PR is the cloud desired-state mutation |
+| Secure sign-in | A Keycloak-issued signed token was accepted only after validation by the API. |
+| Team separation | A request for another team's environment was denied and recorded. |
+| Sensitive changes | The exact plan needed approval from a different operator. |
+| Cloud access | GitHub Actions used short-lived AWS access; workloads received only their scoped secret through IRSA and External Secrets. |
+| Safer workloads | Containers ran as non-root with restricted privileges, probes, limits, and namespace/network boundaries. |
+| Change control | A scoped GitHub App created the desired-state change; Argo CD applied only reviewed, merged changes. |
 
 Keycloak is a validated standards-compatible fixture—not enterprise OIDC. The reference pilot had
 no public AWS ingress; its Cloudflare review tunnel was temporary and served synthetic data only.
