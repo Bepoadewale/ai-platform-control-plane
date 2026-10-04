@@ -12,6 +12,7 @@ state_bucket="ai-platform-control-plane-tfstate-${expected_account}"
 lock_table="ai-platform-control-plane-pilot-terraform-locks"
 plan_dir="$project_root/.pilot"
 plan_file="$plan_dir/cloud-pilot.tfplan"
+public_alb_enabled="${PUBLIC_ALB_ENABLED:-false}"
 
 if [[ "${APPLY_CLOUD_PILOT:-}" != "$expected_account" ]]; then
   echo "Refusing apply. Set APPLY_CLOUD_PILOT=$expected_account after reviewing make pilot-cloud-plan." >&2
@@ -37,7 +38,11 @@ AWS_PROFILE="$aws_profile" AWS_SDK_LOAD_CONFIG=1 terraform init -reconfigure \
   -backend-config="dynamodb_table=$lock_table" \
   -backend-config="encrypt=true"
 AWS_PROFILE="$aws_profile" AWS_SDK_LOAD_CONFIG=1 TF_VAR_expected_account_id="$expected_account" \
-  terraform plan -out="$plan_file"
+  TF_VAR_public_alb_enabled="$public_alb_enabled" terraform plan -out="$plan_file"
 AWS_PROFILE="$aws_profile" AWS_SDK_LOAD_CONFIG=1 terraform apply "$plan_file"
 
-echo "Cloud foundation applied. Next: make pilot-cloud-push-image, make pilot-cloud-bootstrap-runtime, make pilot-cloud-smoke."
+if [[ "$public_alb_enabled" == "true" ]]; then
+  echo "Public-ALB foundation applied. Next: make pilot-cloud-push-image, then PILOT_PUBLIC_ALB_ENABLED=true make pilot-cloud-bootstrap-runtime, then make pilot-cloud-public-smoke."
+else
+  echo "Cloud foundation applied. Next: make pilot-cloud-push-image, make pilot-cloud-bootstrap-runtime, make pilot-cloud-smoke."
+fi

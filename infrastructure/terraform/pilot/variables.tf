@@ -51,6 +51,12 @@ variable "node_max_size" {
   default = 2
 }
 
+variable "public_alb_enabled" {
+  type        = bool
+  default     = false
+  description = "Create the IRSA role required for an internet-facing HTTP Application Load Balancer. The ALB itself is created by the version-pinned AWS Load Balancer Controller when the public Ingress is applied."
+}
+
 variable "github_app_id" {
   type        = string
   description = "GitHub App ID used by the runtime GitOps publisher. The private key is supplied outside Terraform."

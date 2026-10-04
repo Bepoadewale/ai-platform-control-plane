@@ -48,15 +48,15 @@ spec:
             - name: PLATFORM_OPA_DECISION_URL
               value: http://opa.platform-system.svc.cluster.local:8181/v1/data/platform/environment
             - name: PLATFORM_JWT_ISSUER
-              # Pilot-only: Keycloak is reached through a local port-forward by the
-              # browser console; the API keeps its JWKS fetch on the cluster network.
-              value: http://localhost:18081/realms/platform
+              valueFrom:
+                configMapKeyRef: {name: platform-public-runtime, key: jwt-issuer}
             - name: PLATFORM_JWT_AUDIENCE
               value: ai-platform-control-plane
             - name: PLATFORM_JWKS_URL
               value: http://keycloak.platform-system.svc.cluster.local:8080/realms/platform/protocol/openid-connect/certs
             - name: PLATFORM_CORS_ORIGINS
-              value: http://localhost:18083,http://127.0.0.1:18083
+              valueFrom:
+                configMapKeyRef: {name: platform-public-runtime, key: cors-origins}
             - name: PLATFORM_DESIRED_STATE_ROOT
               value: /app/environments
             - name: OTEL_SERVICE_NAME

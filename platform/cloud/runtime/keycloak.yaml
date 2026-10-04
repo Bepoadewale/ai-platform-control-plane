@@ -40,12 +40,11 @@ spec:
               value: "true"
             - name: KC_PROXY_HEADERS
               value: xforwarded
-            # Pilot-only local-review hostname. The Console reaches Keycloak over a
-            # local port-forward; FastAPI verifies this issuer but fetches JWKS via
-            # the in-cluster service URL. A production deployment needs TLS and a
-            # real enterprise OIDC hostname instead.
+            # Bootstrap supplies either the local contributor origin or the generated ALB origin.
+            # The public-ALB slice never uses a wildcard redirect URI.
             - name: KC_HOSTNAME
-              value: http://localhost:18081
+              valueFrom:
+                configMapKeyRef: {name: platform-public-runtime, key: keycloak-hostname}
           resources:
             requests: {cpu: 250m, memory: 512Mi}
             limits: {cpu: "1", memory: 1Gi}

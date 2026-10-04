@@ -247,6 +247,45 @@ resource "aws_iam_role_policy" "external_secrets" {
   policy = data.aws_iam_policy_document.external_secrets.json
 }
 
+# The controller role exists only when public ingress is explicitly enabled. Its policy is the
+# version-pinned upstream AWS Load Balancer Controller policy; controller-created resources carry
+# the controller's cluster tag and disappear when the Ingress is removed before Terraform destroy.
+data "aws_iam_policy_document" "aws_load_balancer_controller_assume_role" {
+  count = var.public_alb_enabled ? 1 : 0
+
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.eks_oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.eks_oidc_issuer}:sub"
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
+    }
+  }
+}
+
+resource "aws_iam_role" "aws_load_balancer_controller" {
+  count              = var.public_alb_enabled ? 1 : 0
+  name               = "${local.prefix}-aws-load-balancer-controller"
+  assume_role_policy = data.aws_iam_policy_document.aws_load_balancer_controller_assume_role[0].json
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy" "aws_load_balancer_controller" {
+  count  = var.public_alb_enabled ? 1 : 0
+  name   = "aws-load-balancer-controller-v3-5-0"
+  role   = aws_iam_role.aws_load_balancer_controller[0].id
+  policy = file("${path.module}/aws-load-balancer-controller-policy-v3.5.0.json")
+}
+
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.pilot.name
   addon_name   = "vpc-cni"

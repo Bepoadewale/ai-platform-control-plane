@@ -11,7 +11,7 @@ PRODUCTION-PILOT COMPLETE — NOT ENTERPRISE/PUBLIC-SAAS CERTIFIED.
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
 Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
 reconciliation, IRSA/External Secrets delivery, a themed Keycloak PKCE Console through a temporary
-Cloudflare tunnel, a bad-workload regression/restore/cleanup drill, two-replica API/OPA/worker
+private owner-review proxy, a bad-workload regression/restore/cleanup drill, two-replica API/OPA/worker
 pod-loss recovery, a bounded authenticated availability sample, a firing Prometheus alert, a
 Cost Explorer query, and a GitHub-hosted OIDC Terraform apply.
 It did not execute enterprise identity, model/quality rollback, sustained SLO/cost evidence, or a
@@ -71,7 +71,7 @@ Those omissions prevent an enterprise/public-SaaS certification claim.
   namespace after deletion. A disposable bad-image workload reached `ImagePullBackOff` and
   `ProgressDeadlineExceeded`; the observer persisted `FAILED`, and GitOps cleanup returned the
   environment to `DESTROYED` with an audit timeline.
-- The EKS Operator Console was additionally reviewed through a short-lived Cloudflare Quick Tunnel.
+- The EKS Operator Console was additionally reviewed through a short-lived private owner-review proxy.
   A local same-origin proxy kept API and Keycloak requests scoped to loopback port-forwards; the
   Keycloak client received only the exact temporary origin for the session. No AWS public ingress,
   DNS, or load balancer was created.

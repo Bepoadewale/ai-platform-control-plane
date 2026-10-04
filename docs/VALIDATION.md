@@ -68,7 +68,7 @@ Environment: macOS; AWS CLI v2; Terraform 1.14.0; AWS provider 5.100.0; EKS Kube
 Argo CD chart 10.9.6 / application 3.5.3; Prometheus chart 29.35.0 / application 3.15.0; Grafana
 chart 10.5.15 / application 12.3.1; Tempo chart 1.24.4. The pilot ran only in the dedicated,
 budget-alerted account and region. No credentials, token values, database password, or public
-tunnel URL are recorded here.
+temporary review URL are recorded here.
 
 Commands executed:
 
@@ -79,7 +79,6 @@ AWS_PROFILE=<operator-profile> make pilot-cloud-push-image
 AWS_PROFILE=<operator-profile> make pilot-cloud-bootstrap-runtime
 AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
 AWS_PROFILE=<operator-profile> make pilot-cloud-validate
-AWS_PROFILE=<operator-profile> make pilot-cloud-public-demo
 AWS_PROFILE=<operator-profile> make pilot-cloud-destroy
 ```
 
@@ -98,7 +97,7 @@ Observed evidence:
 | Signed identity / policy denial | in-cluster Keycloak issued an RS256 JWT accepted by FastAPI; a cross-tenant create reached live OPA, returned `REJECTED`, and persisted `policy.rejected` audit evidence |
 | Restart or recovery scenario | control-plane Deployment restarted; the rejected environment and its audit timeline were retrieved afterward from RDS |
 | Prometheus / Grafana / Tempo | Prometheus `control-plane` target reported `up` and query returned `platform_requests_total`; Grafana returned Prometheus and Tempo datasources plus the `AI Platform Control Plane` dashboard; Tempo search returned FastAPI `GET /api/v1/catalog` traces |
-| Public review | temporary Cloudflare Quick Tunnel exposed only a local `kubectl port-forward`; no public AWS load balancer or DNS record was created |
+| Public review | a temporary owner-review proxy exposed only a local `kubectl port-forward`; no public AWS load balancer or DNS record was created |
 | Environment workload success / GitOps publication | Not executed: the cloud runtime intentionally uses `render-only`; individual API environment requests do not yet become protected Git changes or Argo-managed workloads |
 | Observed cost during pilot | Not recorded in real time; the USD 10 Budget remains an alert, not a hard cap |
 | Terraform destroy / post-destroy query | The EKS cluster was manually deleted during owner review. `make pilot-cloud-destroy` completed the remaining Terraform cleanup: 38 resources destroyed. Post-destroy AWS API checks found EKS, RDS, ECR, the GitOps secret, pilot IAM roles, tagged VPC resources absent; Terraform pilot state contained zero resources. |
@@ -144,14 +143,14 @@ executed workload-readiness demonstration.
 ## AWS production-shaped GitOps, Console, and failure evidence — 2026-10-03
 
 Environment: private, disposable EKS pilot in `us-east-1`; synthetic Keycloak identities and
-disposable tenant workloads only. No credentials, secret values, or temporary tunnel URL are
+disposable tenant workloads only. No credentials, secret values, or temporary review URL are
 recorded.
 
 | Evidence | Result |
 | --- | --- |
 | Successful GitOps lifecycle | An approved development request created a GitHub App pull request. After normal checks and merge, Argo ApplicationSet created a private workload whose Deployment reached `1/1` available. A merged deletion pull request removed the desired-state directory; Argo pruned the generated Application and namespace; the API reported `DESTROYED`. |
 | Earlier failed test cleanup | The older `cloud-gitops-demo` desired-state directory was removed in a dedicated reviewed GitOps PR after its durable record was found absent. Argo pruned the remaining Application and namespace; no direct `kubectl delete` was used. |
-| Authenticated Console review | `make pilot-cloud-console-validate` completed Keycloak Authorization Code + PKCE sign-in/logout and a signed API request. `make pilot-cloud-console-public-demo` exposed a temporary same-origin proxy through Cloudflare Quick Tunnel; Keycloak’s exact temporary client origin and login theme were verified. No AWS ingress, DNS, or load balancer was created. |
+| Authenticated Console review | `make pilot-cloud-console-validate` completed Keycloak Authorization Code + PKCE sign-in/logout and a signed API request. A temporary same-origin owner-review proxy was used; Keycloak’s exact temporary client origin and login theme were verified. No AWS ingress, DNS, or load balancer was created. |
 | Failure drill | A development request with `registry.invalid/ai-platform-control-plane:missing` was published and merged through GitOps. Its Pod reached `ImagePullBackOff`; the Deployment reached `ProgressDeadlineExceeded` after a temporary 60-second deadline; the observer stored `FAILED` with the Kubernetes reason. |
 | Failure cleanup | The standard destroy request published a reviewed deletion PR. After merge and ApplicationSet refresh, Argo pruned the failure Application and namespace. The durable API state became `DESTROYED`; audit includes request, reconciliation failure, GitOps PR creation, destroy request, and destroy completion. |
 | Final cloud smoke | After restoring the declared GitOps runtime to `Synced/Healthy`, `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-smoke` passed for EKS, Argo, control plane, Operator Console, OPA, Prometheus, Grafana, and the metrics endpoint. |
@@ -187,7 +186,7 @@ enterprise/public-SaaS certification or a claim of a public service.
 | Alert / availability signal | `make pilot-cloud-slo-alert-check` issued 20 invalid bearer requests, observed the firing `PilotUnauthorizedRequestBurst` alert, and returned catalog two-minute availability `1`. No external alert receiver or error-budget policy was configured. |
 | GitOps rollback | `make pilot-cloud-rollback-check` published reviewed create, bad-image, restore, and destroy changes. Kubernetes recorded `ProgressDeadlineExceeded` for the bad image; the reviewed restore reached Ready; governed deletion then pruned the namespace. This is deployment-health rollback/cleanup, not model-quality rollback. |
 | Cost Explorer | `make pilot-cloud-cost-evidence` queried 2026-10-01 through 2026-10-03. It returned estimated zero/empty groups while AWS billing remained within its documented 24–48-hour delay. This is not a zero-cost claim or settled cost evidence. |
-| Temporary Console review | The EKS Operator Console was exposed only via a short-lived Cloudflare Quick Tunnel to a local same-origin proxy over `kubectl port-forward`. Keycloak allowed only the temporary origin for that session; no AWS public ingress, DNS, or load balancer was created. |
+| Historical Console review | The EKS Operator Console was exposed only through a short-lived local same-origin proxy over `kubectl port-forward`. Keycloak allowed only the temporary origin for that session; no AWS public ingress, DNS, or load balancer was created. |
 
 At the time of this record, enterprise identity, trusted public TLS ingress, model/quality rollback,
 sustained-load/error-budget evidence, backup/restore, settled AWS billing data, and the hosted
@@ -195,7 +194,7 @@ Terraform destroy action remain unexecuted.
 
 ## Final AWS cloud-pilot teardown — 2026-10-04
 
-After the temporary Console tunnel was closed, the account-guarded command below completed:
+After the temporary Console review path was closed, the account-guarded command below completed:
 
 ```console
 AWS_PROFILE=<operator-profile> EXPECTED_AWS_ACCOUNT_ID=<pilot-account-id> \

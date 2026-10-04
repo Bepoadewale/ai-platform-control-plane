@@ -18,6 +18,7 @@ OIDC JWT/JWKS → tenant and role checks → OPA → immutable plan → independ
 | Safer workloads | Containers ran as non-root with restricted privileges, probes, limits, and namespace/network boundaries. |
 | Change control | A scoped GitHub App created the desired-state change; Argo CD applied only reviewed, merged changes. |
 
-Keycloak is a validated standards-compatible fixture—not enterprise OIDC. The reference pilot had
-no public AWS ingress; its Cloudflare review tunnel was temporary and served synthetic data only.
-Enterprise federation and trusted public TLS remain deliberate follow-on work.
+Keycloak is a validated standards-compatible fixture—not enterprise OIDC. The optional public ALB
+path permits HTTP only and sets the generated ALB DNS name as the exact Console redirect/CORS
+origin. It does not expose observability or cluster administration services. Enterprise federation
+and trusted public TLS remain deliberate follow-on work.

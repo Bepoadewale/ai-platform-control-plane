@@ -63,6 +63,8 @@ flowchart TB
       Private[Private subnets]
       NAT[NAT gateway]
       Public --> NAT --> Private
+      ALB[Optional public HTTP ALB]
+      Internet[Internet] --> ALB
       subgraph eks[Amazon EKS]
         Argo[Argo CD + ApplicationSet]
         API[FastAPI control plane x2]
@@ -82,6 +84,9 @@ flowchart TB
         Argo --> Workload
         ESO --> Worker
       end
+      ALB --> Console
+      ALB --> API
+      ALB --> Keycloak
       RDS[(RDS PostgreSQL)]
       ECR[ECR image repository]
       Secrets[Secrets Manager]
@@ -150,4 +155,4 @@ sequenceDiagram
 | Worker → GitHub | scoped GitHub App credential delivered through IRSA/External Secrets |
 | GitHub → AWS | branch-bound GitHub OIDC role with short-lived credentials |
 | Desired state → cluster | protected PR merge → Argo ApplicationSet; observed readiness/failure |
-| Cloud review | temporary Cloudflare tunnel to local port-forwards only; no AWS public ingress |
+| Optional public review | version-pinned AWS Load Balancer Controller, exact ALB-origin OIDC redirect, HTTP listener only; no wildcard redirect or public observability endpoint |

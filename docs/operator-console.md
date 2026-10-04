@@ -12,9 +12,11 @@ Browser → OIDC Authorization Code + PKCE → bearer token → FastAPI
 The browser cannot choose its own team or role, create credentials, bypass policy, retrieve
 secrets, or call AWS, Kubernetes, Terraform, or Argo directly.
 
-During the pilot, the EKS-hosted Console used Keycloak sign-in/out, an explicit browser-origin
-allow-list, and signed API requests. A temporary Cloudflare Quick Tunnel let the owner review it
-privately. It did not create a public AWS website, DNS record, or load balancer.
+During the original pilot, the EKS-hosted Console used Keycloak sign-in/out, an explicit
+browser-origin allow-list, and signed API requests through a private owner-review path. The current
+optional public-review path uses an AWS ALB DNS name over HTTP. Its bootstrap writes that exact
+generated origin into Keycloak, API CORS, and Console configuration; it never permits wildcard
+redirects or browser-held cloud credentials.
 
 A trusted public Console requires enterprise OIDC, a controlled callback URL, public TLS ingress,
 and a reviewed production CORS policy. Those are intentionally tracked in

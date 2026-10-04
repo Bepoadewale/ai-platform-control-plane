@@ -13,7 +13,7 @@ that a continuously operated enterprise/public-SaaS service exists.
 | Priority | Improvement | Why it still needs a separate test |
 | --- | --- | --- |
 | 1 | Enterprise sign-in | Keycloak proved standard OIDC works. A real Entra ID, Okta, or Ping tenant is needed to prove company sign-in, group mapping, account lifecycle, and policy integration. |
-| 2 | Trusted public HTTPS | A public endpoint needs a controlled domain, certificate validation, public ingress/load balancer, WAF policy, and reviewed callback/CORS settings. The pilot intentionally used a private tunnel instead. |
+| 2 | Trusted public HTTPS | The optional ALB pilot can prove public HTTP routing with exact OIDC/CORS origins. Trusted HTTPS still needs a controlled domain, certificate validation, public ingress/load balancer, WAF policy, and reviewed callback/CORS settings. |
 | 3 | Model-quality rollback | The platform restored a broken deployment. Rolling back a model because its answers are worse needs model traffic, evaluation thresholds, and canary release controls. |
 | 4 | Sustained load and error budgets | The pilot ran a small sample and fired an alert. Capacity and reliability claims need longer traffic tests, alert routing, error-budget rules, and measured results. |
 | 5 | Backup and restore | Restart recovery is not disaster recovery. This needs a snapshot, simulated data loss, restore to an isolated database, integrity checks, and cleanup. |

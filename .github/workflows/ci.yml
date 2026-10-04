@@ -28,8 +28,21 @@ jobs:
       - run: terraform -chdir=infrastructure/terraform/environments/aws validate
       - run: terraform -chdir=infrastructure/terraform/pilot init -backend=false
       - run: terraform -chdir=infrastructure/terraform/pilot validate
+      - run: jq -e . infrastructure/terraform/pilot/aws-load-balancer-controller-policy-v3.5.0.json >/dev/null
+      - run: bash -n scripts/pilot-cloud-bootstrap-runtime.sh scripts/pilot-cloud-public-alb.sh scripts/pilot-cloud-public-alb-smoke.sh scripts/pilot-cloud-destroy.sh
       - uses: azure/setup-helm@v4
       - run: helm lint platform/helm/golden-path
+      - run: |
+          helm repo add eks https://aws.github.io/eks-charts
+          helm template aws-load-balancer-controller eks/aws-load-balancer-controller \
+            --namespace kube-system --version 3.5.0 \
+            --set clusterName=ai-platform-control-plane-pilot \
+            --set region=us-east-1 \
+            --set vpcId=vpc-0123456789abcdef0 \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=aws-load-balancer-controller \
+            --set serviceAccount.annotations."eks\\.amazonaws\\.com/role-arn"=arn:aws:iam::654654474502:role/ai-platform-control-plane-pilot-aws-load-balancer-controller \
+            >/dev/null
   supply-chain:
     runs-on: ubuntu-24.04
     steps:

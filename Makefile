@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-bootstrap-github-oidc pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-slo-alert-check pilot-cloud-rollback-check pilot-cloud-cost-evidence pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-demo pilot-cloud-console-public-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-bootstrap-github-oidc pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-public-bootstrap pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-slo-alert-check pilot-cloud-rollback-check pilot-cloud-cost-evidence pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-plan pilot-cloud-public-apply pilot-cloud-public-smoke pilot-cloud-public-url
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -64,6 +64,12 @@ pilot-cloud-plan:
 pilot-cloud-apply:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} APPLY_CLOUD_PILOT=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-apply.sh
 
+pilot-cloud-public-plan:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-plan.sh -var='public_alb_enabled=true'
+
+pilot-cloud-public-apply:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} APPLY_CLOUD_PILOT=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} PUBLIC_ALB_ENABLED=true ./scripts/pilot-cloud-apply.sh
+
 pilot-cloud-bootstrap-github-oidc:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} BOOTSTRAP_GITHUB_OIDC=$${EXPECTED_AWS_ACCOUNT_ID:-654654474502} ./scripts/pilot-cloud-bootstrap-github-oidc.sh
 
@@ -78,6 +84,15 @@ pilot-cloud-put-gitops-secret:
 
 pilot-cloud-bootstrap-runtime:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-bootstrap-runtime.sh
+
+pilot-cloud-public-bootstrap:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} PILOT_PUBLIC_ALB_ENABLED=true ./scripts/pilot-cloud-bootstrap-runtime.sh
+
+pilot-cloud-public-url:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-public-alb.sh
+
+pilot-cloud-public-smoke:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-public-alb-smoke.sh
 
 pilot-cloud-gitops-lifecycle:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-gitops-lifecycle.sh
@@ -108,9 +123,3 @@ pilot-cloud-console:
 
 pilot-cloud-console-validate:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-console-validate.sh
-
-pilot-cloud-public-demo:
-	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-public-demo.sh
-
-pilot-cloud-console-public-demo:
-	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-console-public-demo.sh

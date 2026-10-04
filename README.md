@@ -65,8 +65,8 @@ cleanup.
   and worker replicas while disruption protections preserved availability.
 - Prometheus, Grafana, Tempo, and OpenTelemetry provided dashboards, traces, metrics, and a real
   alert during controlled traffic.
-- The Operator Console was reviewed privately through a temporary Cloudflare Tunnel; no public AWS
-  endpoint was created.
+- The earlier pilot used a private owner review path. This branch adds an optional public HTTP ALB
+  path that is disabled by default and awaits its own AWS execution evidence.
 - Terraform then removed the pilot infrastructure. Checks confirmed that the cluster, database,
   registry, secrets, roles, network, and Terraform-managed workload state were gone.
 
@@ -98,6 +98,7 @@ gaps. See [Production Evolution](docs/production-evolution.md).
 ## Documentation
 
 - [Cloud architecture](docs/cloud-architecture.md) · [Cloud operations](docs/cloud-operations.md)
+- [Public ALB ingress](docs/public-ingress.md)
 - [Security model](docs/security.md) · [Agent safety](docs/agent-safety.md) · [GitOps](docs/gitops.md)
 - [Operator Console](docs/operator-console.md) · [Observability](docs/observability.md)
 - [Validation evidence](docs/VALIDATION.md) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)

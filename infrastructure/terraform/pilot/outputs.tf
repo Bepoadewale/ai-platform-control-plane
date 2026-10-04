@@ -41,3 +41,13 @@ output "external_secrets_role_arn" {
   value       = aws_iam_role.external_secrets.arn
   description = "IRSA role limited to the GitHub App secret used by External Secrets."
 }
+
+output "public_alb_enabled" {
+  value       = var.public_alb_enabled
+  description = "Whether the public-ALB controller role was created. The ALB DNS name is available only after the public Ingress is reconciled."
+}
+
+output "aws_load_balancer_controller_role_arn" {
+  value       = try(aws_iam_role.aws_load_balancer_controller[0].arn, null)
+  description = "IRSA role for the version-pinned AWS Load Balancer Controller when public ingress is enabled."
+}
