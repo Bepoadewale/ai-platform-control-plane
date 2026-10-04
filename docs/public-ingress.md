@@ -14,7 +14,7 @@ Internet → generated ALB HTTP address → Console, API, Keycloak → private E
 | Path | Destination | Purpose |
 | --- | --- | --- |
 | `/` | Operator Console | Browser interface |
-| `/api/*`, `/healthz`, `/metrics` | Control-plane API | Signed platform requests and health check |
+| `/api/*`, `/healthz` | Control-plane API | Signed platform requests and health check |
 | `/realms/*`, `/resources/*` | Keycloak | Browser sign-in and its static assets |
 
 Prometheus, Grafana, Tempo, Argo CD, PostgreSQL, Kubernetes APIs, and AWS credentials are not

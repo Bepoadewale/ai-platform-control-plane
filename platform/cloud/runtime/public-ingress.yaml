@@ -27,10 +27,6 @@ spec:
             pathType: Exact
             backend:
               service: {name: control-plane, port: {name: http}}
-          - path: /metrics
-            pathType: Exact
-            backend:
-              service: {name: control-plane, port: {name: http}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
