@@ -1,34 +1,22 @@
-# Security model
+# Security Model
 
-The platform verifies identity at its boundary and applies role plus tenant authorization in the control plane. Local execution validates RS256 JWT/JWKS signatures, issuer, audience, expiry, subject, tenant, and roles. Roles are `viewer`, `developer`, `platform-operator`, `platform-admin`, and `agent-requester`. An agent normally has only `agent-requester`.
+The control plane applies identity, authorization, policy, approval, and audit before it publishes
+cloud intent. No client receives direct AWS, Terraform, Kubernetes, GitHub App, or secret authority.
 
-Policy defaults deny privileged containers, disabled observability, cross-tenant requests, local-development GPUs, and autonomous agent production creation. Production changes await an independent operator approval bound to the immutable plan hash. Request ids and idempotency keys make retries auditable and prevent duplicate environment creation; reuse of a key with materially different input is rejected.
+```text
+OIDC JWT/JWKS → tenant and role checks → OPA → immutable plan → independent approval
+→ durable audit → scoped GitOps publication → Argo reconciliation
+```
 
-## Enforced decision examples
+| Control | Cloud-pilot evidence |
+| --- | --- |
+| Signed identity | Keycloak RS256 JWT accepted by FastAPI/JWKS validation |
+| Tenant isolation | cross-tenant request denied through live OPA and persisted audit |
+| Protected changes | exact plan plus independent operator approval required |
+| Cloud credentials | GitHub Actions used short-lived AWS OIDC; workloads used IRSA/External Secrets |
+| Workload defaults | non-root, dropped capabilities, no privilege escalation, read-only filesystem, probes, limits, namespace/network boundaries |
+| GitOps boundary | scoped GitHub App credential; protected PR is the cloud desired-state mutation |
 
-| Situation | Decision | Why |
-| --- | --- | --- |
-| Developer requests a tenant-scoped development environment | Allow | Standard golden path and low-risk lifecycle |
-| Agent requests production autonomously | Deny | An agent requester cannot independently mutate protected production |
-| Developer requests production | Approval required | A separate operator must approve the exact plan hash |
-| Requester tries to approve its own plan | Deny | Approval independence prevents self-authorization |
-| Approved plan changes before apply | Reject as stale | Approval is bound to the original plan state/hash |
-| Policy service is unavailable for protected write | Fail closed | Availability must not bypass policy |
-| Tenant A reads or mutates Tenant B | Deny | Tenant boundary is enforced by the API and policy input |
-
-These paths are covered by local API/policy tests and the `make demo-local` workflow. They do not
-mean the local fixture is an enterprise identity deployment; enterprise OIDC remains a production
-adapter.
-
-Kubernetes templates set non-root execution, drop Linux capabilities, disable privilege escalation, use read-only root filesystems, resource limits, namespace quotas, and default-deny ingress/egress. Secrets are references only; neither API responses nor audit events contain secret values.
-
-Local header identity is a development-only adapter. Production must use short-lived OIDC tokens, JWKS validation, workload identity, encrypted PostgreSQL, immutable central audit storage, rate limits, and protected/signed Git changes.
-
-## Browser console boundary
-
-The local Operator Console uses Authorization Code + PKCE against Keycloak and sends the resulting
-short-lived bearer token only to the explicitly allowed control-plane origin. Browser code is not an
-authorization authority: it cannot select its own tenant or roles, grant approval, or make direct
-Kubernetes/Terraform/cloud/secret calls. The local browser callback is intentionally limited to
-`localhost`; cloud use requires TLS, enterprise OIDC, a reviewed callback and CORS allow-list, and
-an authenticated ingress.
+Keycloak is a validated standards-compatible fixture—not enterprise OIDC. The reference pilot had
+no public AWS ingress; its Cloudflare review tunnel was temporary and served synthetic data only.
+Enterprise federation and trusted public TLS remain deliberate follow-on work.

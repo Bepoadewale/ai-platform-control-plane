@@ -1,9 +1,12 @@
 # Validation
 
-**Evidence boundary:** this document records both local-first execution and bounded AWS-pilot
-execution. The AWS entries establish **CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED**; consult
-[the production-certification gate](../DEFINITION_OF_DONE.md#production-certification-gate) for
-the unexecuted requirements.
+**Evidence boundary:** this document records historical local execution and the completed bounded
+AWS pilot. The cloud entries establish **PRODUCTION-PILOT COMPLETE — EPHEMERAL SINGLE-ACCOUNT
+SCOPE**; consult [Production Evolution](production-evolution.md) for unexecuted enterprise/public-
+SaaS improvements.
+
+The AWS pilot is the primary deployment evidence. Earlier local entries remain as historical
+contributor-harness reproducibility evidence and do not substitute for cloud validation.
 
 Baseline: `make test`, `make lint`, `make demo`; when tools exist, `make helm-lint` and `make terraform-validate`.
 
@@ -101,8 +104,7 @@ Observed evidence:
 | Terraform destroy / post-destroy query | The EKS cluster was manually deleted during owner review. `make pilot-cloud-destroy` completed the remaining Terraform cleanup: 38 resources destroyed. Post-destroy AWS API checks found EKS, RDS, ECR, the GitOps secret, pilot IAM roles, tagged VPC resources absent; Terraform pilot state contained zero resources. |
 | Retained Phase 0 guardrails | Encrypted/versioned remote-state bucket, active DynamoDB lock table, and `ai-platform-control-plane-pilot-monthly-cost` Budget intentionally retained. Their two DynamoDB MD5 entries are Terraform backend bookkeeping, not workload locks. |
 
-The required sequence and security boundaries are in [Production pilot plan](production-pilot.md) and
-[the AWS pilot runbook](cloud-pilot-runbook.md).
+The current cloud procedure and security boundaries are in [Cloud Operations](cloud-operations.md).
 
 ## AWS Operator Console and governed lifecycle — 2026-10-02 (create/validate/destroy)
 
@@ -155,7 +157,7 @@ recorded.
 | Final cloud smoke | After restoring the declared GitOps runtime to `Synced/Healthy`, `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-smoke` passed for EKS, Argo, control plane, Operator Console, OPA, Prometheus, Grafana, and the metrics endpoint. |
 | Guarded teardown | `AWS_PROFILE=ai-platform-pilot-key make pilot-cloud-destroy` removed the active Terraform workload footprint. Direct post-destroy queries found EKS, RDS, ECR, five pilot IAM roles, project-tagged VPCs, and pilot GitOps secrets absent; the configured remote pilot Terraform state listed zero resources. The encrypted/versioned state bucket, active DynamoDB lock table, and USD 10 budget remain intentionally. |
 
-This is production-shaped single-account evidence, not production certification. Enterprise identity,
+This is production-shaped single-account evidence, not enterprise/public-SaaS certification. Enterprise identity,
 quality rollback, sustained-load/SLO/error-budget/alert policy, secret rotation, and cost measurement
 remain explicitly unexecuted.
 
@@ -175,7 +177,7 @@ Cost Explorer evidence, enterprise OIDC, and trusted public AWS TLS ingress rema
 ## AWS HA, alert, rollback, and hosted-OIDC extension — 2026-10-04
 
 This extension reused the disposable private EKS pilot. It remains cloud-pilot evidence, not a
-production certification or a claim of a public service.
+enterprise/public-SaaS certification or a claim of a public service.
 
 | Evidence | Result |
 | --- | --- |
@@ -228,7 +230,7 @@ repository, pilot IAM roles, and project-tagged VPCs; no matching pilot Secrets 
 listed. Remote Terraform state contained zero workload resources. The encrypted/versioned state
 bucket, active DynamoDB lock table, and USD 10 Budget remain intentionally as Phase 0 guardrails.
 
-This records a private, ephemeral cloud-pilot teardown—not production certification. Quality
+This records a private, ephemeral cloud-pilot teardown—not enterprise/public-SaaS certification. Quality
 rollback, sustained load/SLO/error-budget/alert policy, Cost Explorer evidence, enterprise OIDC,
 trusted public AWS TLS ingress, and GitHub-hosted Terraform apply/destroy remain unexecuted.
 

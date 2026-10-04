@@ -1,16 +1,12 @@
-# Failure modes and recovery
+# Failure and Recovery
 
-| Failure | Control-plane behavior | Operator recovery |
+| Failure | Executed cloud behavior | Recovery boundary |
 | --- | --- | --- |
-| OPA/policy unavailable | Fail closed; no desired state is written. | Restore a signed policy bundle and retry with the same idempotency key. |
-| Desired-state publication unavailable | Keep request `PLANNED`/`FAILED`; do not apply directly to Kubernetes. | Restore the publication path, retry with the idempotency key, and inspect audit evidence. |
-| Argo CD/Kubernetes unavailable | The GitOps path remains unreconciled; direct local reconciliation reports a bounded failure rather than `READY`. | Repair control plane/data plane and inspect Argo or Kubernetes health. |
-| Duplicate agent retry | Return original request by tenant-scoped idempotency key. | No manual cleanup required. |
-| Partial provisioning | Record `FAILED`, preserve desired state and correlation id. | Reconcile or execute a reviewed compensation workflow. |
-| Terraform lock/cloud quota | Do not bypass locking or quotas. | Resolve owner/quota, then retry reviewed apply. |
-| Expired credentials | Reject authenticated call; no fallback identity. | Refresh OIDC credentials. |
+| Policy denial | OPA rejected an unsafe/cross-tenant request before mutation; audit persisted | Correct request/policy; retry with same idempotency key |
+| Bad workload image | Kubernetes reached `ImagePullBackOff` and `ProgressDeadlineExceeded`; observer persisted `FAILED` | Reviewed known-good desired-state restore, then governed deletion |
+| API/worker Pod loss | One API and one worker Pod were deliberately removed; PDBs retained availability and deployments returned to `2/2` | Kubernetes restarts stateless pods; PostgreSQL preserves durable lifecycle/jobs |
+| Desired-state deletion | Reviewed GitHub deletion PR merged; Argo pruned Application and namespace; lifecycle became `DESTROYED` | Re-request through normal plan/approval path |
+| OPA unavailable | Protected writes fail closed | Restore the policy service; do not bypass it |
 
-The local implementation has executed persisted lifecycle recovery through SQLite/PostgreSQL and
-kind reconciliation. A transactional outbox and durable Git publication workflow remain production
-hardening work; the local direct reconciler and local Argo CD demo do not claim distributed
-publication recovery semantics.
+Backup/restore, model-quality rollback, and multi-region disaster recovery are future production
+improvements, not completed evidence. See [Production Evolution](production-evolution.md).

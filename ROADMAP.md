@@ -1,18 +1,15 @@
 # Roadmap
 
-- [x] M1: modular control-plane API, domain lifecycle, plans, audit trail, tests, ADRs.
-- [x] M2: kind bootstrap plus Helm golden path (namespace, identity, policy, quotas, limits, ingress, HPA, PDB).
-- [x] M3: RBAC model, tenant boundary, audit trail, local policy adapter, and Rego policy contract/tests.
-- [x] M4: desired-state renderer and local Argo CD reconciliation. A GitHub App pull-request publisher is unit-tested; durable worker wiring and AWS Argo evidence remain pending.
-- [x] M5: runnable local MCP runtime and API-backed tool contract. Trusted delegated OIDC identity remains pending.
-- [x] M6: Prometheus endpoint, provisioned Grafana dashboard, and local OTLP HTTP tracing. Lifecycle-level metrics, child spans, measured SLOs, and alerting remain pending.
-- [x] M7: Terraform module contracts, provider lock, format/validate workflow, and a plan-validated minimal AWS foundation. No foundation resource has been applied.
-- [x] M8: cost metadata/plans and safe non-production TTL destruction.
-- [x] M9: AI workload schema with explicit CPU-local/GPU-cloud distinction.
-- [x] M10: local PostgreSQL, Keycloak OIDC/JWKS, and live OPA runtime.
-- [ ] M11: Phase 0 production-pilot guardrails are executed; a branch-bound GitHub OIDC workflow, reviewed 38-resource Terraform plan, cloud runtime manifests, and guarded lifecycle scripts are implemented. A real OIDC run, apply, smoke, and destroy remain.
-- [ ] M12: protected Git desired-state adapter → Argo CD → EKS lifecycle with readiness/audit evidence.
-- [ ] M13: durable asynchronous reconciler, external secret references/workload identity, and lifecycle observability/SLOs.
-- [ ] M14: trusted delegated MCP identity, developer self-service integration, and multi-cluster evaluation.
+## Delivered
 
-See [the production-pilot plan](docs/production-pilot.md). None of M11–M14 has been executed yet.
+- [x] Governed API: signed identity, tenant/RBAC, OPA, immutable plans, independent approval,
+  idempotency, audit, TTL, destruction, and restart recovery.
+- [x] Cloud-first delivery: durable worker → scoped GitHub App PR → Argo ApplicationSet → private
+  EKS workload → observed ready/failure/prune.
+- [x] AWS reference environment: Terraform VPC/EKS/RDS/ECR/Secrets/IAM, GitHub OIDC apply, IRSA,
+  External Secrets, observability, HA pod-loss, bounded load, alert, health rollback, and teardown.
+
+## Next
+
+The remaining cloud improvements are deliberately scoped in
+[Production Evolution](docs/production-evolution.md). They are not implied by the completed pilot.

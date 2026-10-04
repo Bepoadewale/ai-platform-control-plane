@@ -1,15 +1,13 @@
-# Week 1 Goal — Platform Control Plane
+# Cloud Evolution Goal — Platform Control Plane
 
-Starting maturity: PARTIALLY VALIDATED.
+Starting maturity: Production-pilot complete — ephemeral single-account scope.
 
-Outcome: make the request → policy → approval → desired state → local kind Ready → audit loop real.
+Outcome: improve one explicitly unexecuted enterprise/public-SaaS capability without weakening the
+validated Terraform → GitHub PR → Argo → EKS control loop.
 
-Completed: durable state, signed local identity, live OPA, kind bootstrap, Helm reconciliation/readiness,
-production approvals, policy denial, TTL cleanup, failed reconciliation, and interrupted-reconciliation recovery.
+Primary evidence: Terraform created/destroyed the AWS reference architecture; governed GitOps
+lifecycle, failure/restore, HA pod-loss, bounded load, alert, observability, and temporary Console
+review all executed.
 
-Failure demo: production request without approval or policy-allowed request with failed reconciliation is audited and not marked Ready.
-
-Acceptance: met. `make demo-local` proves signed request, OPA, kind readiness, denial, independently
-approved production apply/destroy, audit, metrics, and cleanup without AWS.
-
-Ending maturity: PORTFOLIO COMPLETE (local evidence boundary; cloud and observability-stack adapters remain P1/P3).
+Next objective: select one bounded item from `docs/production-evolution.md`, execute it in a
+disposable cloud environment, record evidence, and tear it down safely.

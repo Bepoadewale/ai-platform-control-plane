@@ -2,11 +2,11 @@
 
 ## Current Maturity
 
-PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE
+PRODUCTION-PILOT COMPLETE — EPHEMERAL SINGLE-ACCOUNT SCOPE
 
 ## Cloud Validation Boundary
 
-CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED.
+PRODUCTION-PILOT COMPLETE — NOT ENTERPRISE/PUBLIC-SAAS CERTIFIED.
 
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
 Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
@@ -16,7 +16,7 @@ pod-loss recovery, a bounded authenticated availability sample, a firing Prometh
 Cost Explorer query, and a GitHub-hosted OIDC Terraform apply.
 It did not execute enterprise identity, model/quality rollback, sustained SLO/cost evidence, or a
 sustained production workload.
-Those omissions prevent any production-certified claim.
+Those omissions prevent an enterprise/public-SaaS certification claim.
 
 ## Executed and Verified
 
@@ -99,8 +99,8 @@ Those omissions prevent any production-certified claim.
 - Multi-cluster placement, GPU nodes, secret rotation, backup/restore, and settled cloud-billing
   evidence.
 
-See [the production-pilot plan](docs/production-pilot.md) for scoped delivery gates and evidence
-requirements. These are not local-first completion blockers and have not been started.
+See [Production Evolution](docs/production-evolution.md) for the deliberately separate next cloud
+improvements and evidence gates.
 
 ## Known Failures
 
@@ -110,7 +110,7 @@ requirements. These are not local-first completion blockers and have not been st
 
 ## Current P0 Objective
 
-No open local-first P0 work. The completed bounded cloud validation executed protected Git
+No open cloud-pilot P0 work. The completed bounded cloud validation executed protected Git
 publication → Argo → EKS workload readiness and deletion, External Secrets/workload identity,
 two-replica pod-loss recovery, bounded authenticated availability evidence, alert firing,
 bad-image restore, Cost Explorer querying, a hosted GitHub OIDC Terraform apply, and final
@@ -211,7 +211,7 @@ destroy execution.
 
 ## Last Updated
 
-2026-10-04, local-first completion is unchanged. The completed production-shaped AWS validation
+2026-10-04, the original local harness remains intact. The completed production-shaped AWS validation
 executed GitOps lifecycle/failure/restore evidence, HA, bounded load, alert, hosted OIDC apply,
-themed temporary Console review, and guarded Terraform teardown. This is not production
+themed temporary Console review, and guarded Terraform teardown. This is not enterprise/public-SaaS
 certification.

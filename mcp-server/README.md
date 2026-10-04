@@ -1,6 +1,14 @@
 # MCP server contract
 
-The MCP server is a runnable FastMCP stdio server and intentionally a thin API client. It exposes `platform_catalog` (READ), `plan_environment` (PLAN), `request_environment` and `deploy_service` (WRITE), and `request_environment_destroy` (DESTRUCTIVE), plus status/list/cost/audit read tools. It must pass caller identity to the control plane and never executes Terraform, AWS CLI, or kubectl.
+The MCP server is a runnable FastMCP stdio client boundary. It exposes `platform_catalog` (READ),
+`plan_environment` (PLAN), `request_environment` and `deploy_service` (WRITE), and
+`request_environment_destroy` (DESTRUCTIVE), plus status/list/cost/audit read tools. It invokes
+the control-plane API only; it never executes Terraform, AWS CLI, Helm, or `kubectl`.
+
+The control plane remains the authorization boundary: it validates identity, tenant scope, role,
+OPA policy, approval, idempotency, audit, and GitOps publication. The environment variables below
+are a contributor-harness identity adapter, not delegated enterprise identity. Do not use them to
+claim enterprise/public-SaaS MCP authentication.
 
 Example Codex project configuration:
 

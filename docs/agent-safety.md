@@ -1,21 +1,15 @@
-# Agent safety
+# Agent Safety
 
-AI agents receive narrow, capability-oriented MCP tools, never arbitrary AWS credentials, `kubectl`, Terraform execution, or administrator APIs. Every write goes through the same API as a human request; the MCP server cannot bypass policy or GitOps.
+An AI agent is a governed caller, not a platform administrator.
 
-## What an agent may and may not do
+It can inspect tenant-visible catalog, status, audit, and cost estimates; create plans; and request
+permitted tenant work through MCP or the API. It cannot read secrets, obtain AWS/Kubernetes/Git
+credentials, cross tenant boundaries, alter policy, approve itself, or autonomously mutate protected
+production.
 
-An agent may inspect the platform catalog/status/audit, estimate cost, produce a plan, and request
-an approved tenant-scoped environment. It cannot create a new golden path, alter policy, change
-another tenant, read a secret, obtain direct infrastructure credentials, approve its own plan, or
-autonomously apply protected production changes. The locally executed production-agent scenario is
-rejected by OPA before any Kubernetes mutation.
+Every agent write traverses the same signed identity, tenant/RBAC, OPA, immutable plan, approval,
+durable audit, and GitOps path as a human write. Prompt content never grants a capability absent
+from the caller's authorization.
 
-Tools are classified as READ (`platform_catalog`, `get_environment_status`, `list_environments`, `estimate_cost`, `get_audit_events`), PLAN (`plan_environment`), WRITE (`request_environment`, `deploy_service`), and DESTRUCTIVE (`request_environment_destroy`). Authorization is checked by the API on every call. Destructive production operations require a human approval workflow.
-
-The local MCP runtime is runnable, but production identity is unfinished: environment variables must
-not be a source of authority. A production MCP gateway validates a trusted OIDC/delegated token,
-binds the downstream subject, tenant, scopes, expiry, and action hash, and cannot amplify a caller's
-authority. It still calls the control-plane API, which repeats tenant, RBAC, OPA, approval, and audit
-checks.
-
-Plan/apply separation makes actions reviewable. Idempotency keys make retries safe. Tenant-scoped identity restricts blast radius; audit events record actor, decision, plan hash, approval, and transition. Treat tool arguments as untrusted: prompt injection cannot grant a capability absent from the caller's token. Production should add nonce/replay controls, quotas, rate limits, approval expiry, and signed tool assertions.
+The current MCP runtime remains subordinate to the API. Replacing its development authority adapter
+with delegated enterprise OIDC is tracked in [Production Evolution](production-evolution.md).

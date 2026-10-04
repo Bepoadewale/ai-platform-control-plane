@@ -1,9 +1,12 @@
 # Implementation Status
 
-**Evidence boundary:** the repository is **PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE** and
-**CLOUD-PILOT VALIDATED — NOT PRODUCTION-CERTIFIED**. An executed AWS component below means it ran
-in the short-lived, guarded pilot and was torn down; it does not imply a long-running production
-service or that unexecuted production controls are present.
+**Evidence boundary:** the repository is **PRODUCTION-PILOT COMPLETE — EPHEMERAL
+SINGLE-ACCOUNT SCOPE**. An executed AWS component below ran in the guarded pilot and was torn down;
+it does not imply a long-running enterprise/public-SaaS service or that unexecuted enterprise
+controls are present.
+
+The AWS pilot is the primary deployment evidence. Rows marked **Executed locally** are retained as
+historical contributor-harness validation, not the current deployment claim.
 
 | Capability | Status | Validation |
 | --- | --- | --- |
