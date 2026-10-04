@@ -10,10 +10,10 @@ PRODUCTION-PILOT COMPLETE — NOT ENTERPRISE/PUBLIC-SAAS CERTIFIED.
 
 The bounded AWS pilot executed EKS, RDS, Argo CD, Keycloak, OPA, the Operator Console, Prometheus,
 Grafana, Tempo, governance scenarios, GitHub App publication, Argo ApplicationSet workload
-reconciliation, IRSA/External Secrets delivery, a themed Keycloak PKCE Console through a temporary
-private owner-review proxy, a bad-workload regression/restore/cleanup drill, two-replica API/OPA/worker
-pod-loss recovery, a bounded authenticated availability sample, a firing Prometheus alert, a
-Cost Explorer query, and a GitHub-hosted OIDC Terraform apply.
+reconciliation, IRSA/External Secrets delivery, Keycloak PKCE Console review, a bad-workload
+regression/restore/cleanup drill, two-replica API/OPA/worker pod-loss recovery, a bounded
+authenticated availability sample, a firing Prometheus alert, a Cost Explorer query, a GitHub-hosted
+OIDC Terraform apply, and an optional public ALB HTTP review path.
 It did not execute enterprise identity, model/quality rollback, sustained SLO/cost evidence, or a
 sustained production workload.
 Those omissions prevent an enterprise/public-SaaS certification claim.
@@ -71,10 +71,11 @@ Those omissions prevent an enterprise/public-SaaS certification claim.
   namespace after deletion. A disposable bad-image workload reached `ImagePullBackOff` and
   `ProgressDeadlineExceeded`; the observer persisted `FAILED`, and GitOps cleanup returned the
   environment to `DESTROYED` with an audit timeline.
-- The EKS Operator Console was additionally reviewed through a short-lived private owner-review proxy.
-  A local same-origin proxy kept API and Keycloak requests scoped to loopback port-forwards; the
-  Keycloak client received only the exact temporary origin for the session. No AWS public ingress,
-  DNS, or load balancer was created.
+- The EKS Operator Console was additionally reviewed through the optional AWS-generated ALB HTTP
+  address. The ALB routed only Console, signed API, and Keycloak browser paths; the Console completed
+  Keycloak PKCE login/logout, the API denied an unauthenticated request, and deleting one API Pod
+  preserved `/healthz` before the Deployment returned to `2/2`. Metrics and observability services
+  remained private. This is not trusted public TLS.
 
 ## Implemented but Not End-to-End Validated
 
@@ -94,7 +95,8 @@ Those omissions prevent an enterprise/public-SaaS certification claim.
 
 ## Explicitly Unexecuted Production Adapters
 
-- Enterprise OIDC issuer and trusted public AWS TLS ingress. GitHub Actions successfully executed
+- Enterprise OIDC issuer and trusted public AWS TLS ingress. The optional ALB HTTP path was executed;
+  it does not provide a trusted certificate. GitHub Actions successfully executed
   a short-lived OIDC Terraform apply; its confirmation-gated destroy workflow remains unexecuted.
 - Multi-cluster placement, GPU nodes, secret rotation, backup/restore, and settled cloud-billing
   evidence.

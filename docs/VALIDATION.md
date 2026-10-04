@@ -8,6 +8,39 @@ SaaS improvements.
 The AWS pilot is the primary deployment evidence. Earlier local entries remain as historical
 contributor-harness reproducibility evidence and do not substitute for cloud validation.
 
+## Optional public ALB ingress — 2026-10-04
+
+Environment: the disposable `us-east-1` AWS pilot, Terraform 1.14.0, EKS, AWS Load Balancer
+Controller chart `3.5.0`, and only synthetic Keycloak identities. The optional flag was enabled
+explicitly; no domain, certificate, or public HTTPS claim was involved.
+
+Commands executed:
+
+```console
+AWS_PROFILE=<operator-profile> make pilot-cloud-public-plan
+AWS_PROFILE=<operator-profile> make pilot-cloud-public-apply
+AWS_PROFILE=<operator-profile> make pilot-cloud-push-image
+AWS_PROFILE=<operator-profile> PILOT_RUNTIME_REVISION=codex/public-alb-ingress \
+  make pilot-cloud-public-bootstrap
+AWS_PROFILE=<operator-profile> make pilot-cloud-public-smoke
+```
+
+Observed evidence:
+
+| Evidence | Result |
+| --- | --- |
+| Terraform public option | The reviewed plan added the controller's namespace-bound IRSA role and version-pinned policy. `public_alb_enabled=true` was explicit; the default remains false. |
+| Public entry point | The AWS Load Balancer Controller created one named internet-facing ALB from three `platform-system` Ingresses. It routed `/` to the Console, `/api` and `/healthz` to the API, and `/realms`/`/resources` to Keycloak. |
+| Exact browser boundary | Bootstrap wrote the generated ALB HTTP origin into the project ConfigMap and Keycloak client. The issuer matched that exact origin; no wildcard redirect URI or CORS origin was used. |
+| Browser identity | The repeatable public smoke completed Keycloak Authorization Code + PKCE sign-in, token exchange, signed API request, and logout. It did not print a token or password. |
+| Public safety checks | `/healthz` returned 200; an unauthenticated `/api/v1/environments` request returned 401; `/metrics`, Prometheus, Grafana, Tempo, Argo CD, RDS, and Kubernetes APIs were not routed by the public Ingress. |
+| Failover | The smoke deleted one ready API Pod through Kubernetes. The ALB health endpoint remained available and the API Deployment returned to `2/2`. |
+| Scope | This is a temporary HTTP pilot with an AWS-generated DNS name. Trusted HTTPS requires a controlled domain and ACM/DNS validation; enterprise identity requires a real enterprise IdP. |
+
+The public ALB remains live only for owner review at the time of this record. The guarded destroy
+removes its three namespace-scoped Ingresses, waits for the named ALB, and then destroys the
+Terraform-managed EKS/VPC footprint.
+
 Baseline: `make test`, `make lint`, `make demo`; when tools exist, `make helm-lint` and `make terraform-validate`.
 
 ## Clean-room local validation — 2026-09-20

@@ -9,7 +9,7 @@ cluster_name="${PILOT_CLUSTER_NAME:-ai-platform-control-plane-pilot}"
 expected_account="${EXPECTED_AWS_ACCOUNT_ID:-654654474502}"
 namespace="platform-system"
 
-for command in aws kubectl curl jq; do
+for command in aws kubectl curl jq openssl perl python3; do
   command -v "$command" >/dev/null 2>&1 || { echo "$command is required." >&2; exit 1; }
 done
 actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query Account --output text)"
@@ -22,6 +22,10 @@ origin="http://${hostname}"
 curl -fsS "$origin/healthz" | jq -e '.status == "ok"' >/dev/null
 curl -fsS "$origin/realms/platform/.well-known/openid-configuration" | jq -e --arg issuer "$origin/realms/platform" '.issuer == $issuer' >/dev/null
 curl -fsS "$origin/" | grep -q 'AI Platform'
+CONSOLE_ISSUER="$origin/realms/platform" \
+  CONSOLE_ORIGIN="$origin" \
+  CONSOLE_API_BASE_URL="$origin" \
+  "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/console-browser-smoke.sh" >/dev/null
 unauthorized_status="$(curl -sS -o /dev/null -w '%{http_code}' "$origin/api/v1/environments")"
 [[ "$unauthorized_status" == "401" || "$unauthorized_status" == "403" ]] || { echo "Expected unauthorized API response, got $unauthorized_status." >&2; exit 1; }
 
@@ -34,4 +38,4 @@ done
 kubectl -n "$namespace" rollout status deployment/control-plane --timeout=5m
 ready_replicas="$(kubectl -n "$namespace" get deployment/control-plane -o jsonpath='{.status.availableReplicas}')"
 [[ "$ready_replicas" =~ ^[2-9][0-9]*$ ]] || { echo "Control-plane did not return to two available replicas." >&2; exit 1; }
-echo "Public ALB smoke passed: ${origin}; Console, signed API boundary, Keycloak issuer, and one-Pod API failover verified."
+echo "Public ALB smoke passed: ${origin}; Console PKCE sign-in/logout, signed API boundary, Keycloak issuer, and one-Pod API failover verified."

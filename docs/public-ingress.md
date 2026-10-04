@@ -37,8 +37,9 @@ AWS_PROFILE=<operator-profile> make pilot-cloud-public-bootstrap
 AWS_PROFILE=<operator-profile> make pilot-cloud-public-smoke
 ```
 
-The final command verifies the Console, API health endpoint, Keycloak issuer, unauthenticated API
-denial, and one API-Pod failover through the generated ALB URL.
+The final command verifies the Console, Keycloak PKCE sign-in/logout, API health endpoint, exact
+Keycloak issuer, unauthenticated API denial, and one API-Pod failover through the generated ALB
+URL.
 
 ## Boundaries
 

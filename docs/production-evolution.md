@@ -34,7 +34,8 @@ No item becomes an executed capability because a manifest, workflow, interface, 
 ## Explicit non-goals
 
 - Do not turn the reference account into a permanent public SaaS.
-- Do not add public ingress merely for a demo.
+- Do not operate public ingress outside a bounded, reviewed pilot without trusted TLS and a
+  deliberate public exposure policy.
 - Do not add cloud credentials to GitHub secrets.
 - Do not claim model-quality, enterprise identity, availability, or cost results without their
   corresponding evidence.

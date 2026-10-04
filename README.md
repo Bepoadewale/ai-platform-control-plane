@@ -65,8 +65,9 @@ cleanup.
   and worker replicas while disruption protections preserved availability.
 - Prometheus, Grafana, Tempo, and OpenTelemetry provided dashboards, traces, metrics, and a real
   alert during controlled traffic.
-- The earlier pilot used a private owner review path. This branch adds an optional public HTTP ALB
-  path that is disabled by default and awaits its own AWS execution evidence.
+- The optional public HTTP ALB path was executed in the bounded pilot: the Console completed
+  Keycloak PKCE login/logout, the API enforced signed identity, and one API-Pod loss preserved
+  `/healthz`. It remains disabled by default and is not a trusted HTTPS claim.
 - Terraform then removed the pilot infrastructure. Checks confirmed that the cluster, database,
   registry, secrets, roles, network, and Terraform-managed workload state were gone.
 

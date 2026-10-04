@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Configures the checked-in public HTTP Ingress after the AWS Load Balancer Controller has created
 # its generated DNS name. This is deliberately a no-domain pilot: the origin is exact, never a
-# wildcard, temporary tunnel, or TLS claim is involved.
+# wildcard redirect, proxy, or TLS claim is involved.
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 aws_profile="${AWS_PROFILE:-ai-platform-pilot-key}"
 aws_region="${AWS_REGION:-us-east-1}"

@@ -16,7 +16,9 @@ there, and Terraform removes it again. It is not a permanent public website.
 - No long-lived AWS key in GitHub; GitHub Actions uses short-lived OIDC credentials.
 - Public ingress is disabled by default. When explicitly enabled, the controller creates one
   HTTP-only ALB; it is removed before Terraform destroys the EKS/VPC footprint.
-- Terraform is the authority for creating and removing AWS infrastructure.
+- Terraform is the authority for the AWS foundation. The AWS Load Balancer Controller creates the
+  opt-in ALB from checked-in Ingress; the guarded destroy script removes that named ALB before
+  Terraform destroys EKS and the VPC.
 
 ## Recreate a disposable pilot
 
