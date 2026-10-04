@@ -18,6 +18,11 @@ optional public-review path uses an AWS ALB DNS name over HTTP. Its bootstrap wr
 generated origin into Keycloak, API CORS, and Console configuration; it never permits wildcard
 redirects or browser-held cloud credentials.
 
+The Console uses browser cryptography for PKCE and request identifiers. It uses
+`crypto.randomUUID()` when available and creates an equivalent version-4 UUID from
+`crypto.getRandomValues()` for browsers that do not implement `randomUUID()`. It refuses sign-in
+rather than using weak randomness when secure browser cryptography is unavailable.
+
 A trusted public Console requires enterprise OIDC, a controlled callback URL, public TLS ingress,
 and a reviewed production CORS policy. Those are intentionally tracked in
 [Production Evolution](production-evolution.md).
