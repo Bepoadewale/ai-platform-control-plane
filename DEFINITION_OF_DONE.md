@@ -3,21 +3,20 @@
 - **Level 1 — Foundation:** domain lifecycle/policy and unit tests exist.
 - **Level 2 — Partially Validated:** API and one local dependency are exercised with integration tests.
 - **Level 3 — Local End-to-End Validated:** signed identity → policy → plan/approval → kind workload Ready → audit; denial and destroy paths are exercised.
-- **Level 4 — Portfolio Complete:** Level 3 plus reproducible demo, accurate README/status, CI, failure recovery and no unlabelled simulated infrastructure claim. **Met 2026-09-19:** `make demo-local` validates the signed FastAPI/OPA/kind success, denial, approval, and cleanup paths; optional cloud and observability-stack adapters remain explicitly marked.
+- **Level 4 — Production-pilot complete:** cloud reference environment is Terraform-created,
+  cloud-validated through real external integrations and failure/recovery paths, accurately
+  documented, and Terraform-destroyed with post-destroy evidence. **Met 2026-10-04.**
 
-## Separate production-pilot gate
+## Completed production-pilot gate
 
-AWS or production-platform execution may only be claimed after a separate pilot completes the
-evidence gates in [docs/production-pilot.md](docs/production-pilot.md): GitHub OIDC, reviewed
-Terraform plan/apply/destroy, EKS/Argo lifecycle, external secret/workload identity boundary,
-failure/recovery evidence, and measured observability/cost evidence. Static Terraform validation,
-local kind, or a successful container build are not substitutes.
+The completed pilot created and removed the Terraform-managed AWS reference environment and
+executed GitHub OIDC apply, EKS/Argo lifecycle, external secret/workload identity, failure/recovery,
+HA, observability, and bounded cost/load checks. Static validation remains insufficient.
 
-## Production-certification gate
+## Enterprise/public-SaaS certification gate
 
-The following is deliberately stricter than `PORTFOLIO COMPLETE — LOCAL-FIRST SCOPE` and
-`CLOUD-PILOT VALIDATED`. Do not describe this repository as production-certified until every
-applicable item has executed evidence:
+The following is deliberately stricter than `PRODUCTION-PILOT COMPLETE`. Do not describe this
+repository as **enterprise/public-SaaS certified** until every applicable item has executed evidence:
 
 - [x] Bounded cloud create → validate → destroy pilot, with EKS/Argo/runtime/Console evidence.
 - [x] Individual environment request publishes a protected Git change and Argo reconciles that
