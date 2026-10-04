@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import vm from "node:vm";
@@ -30,7 +31,6 @@ test("uses secure getRandomValues UUID fallback when randomUUID is unavailable",
     },
     crypto: {
       getRandomValues(bytes) { for (let index = 0; index < bytes.length; index += 1) bytes[index] = index + 1; return bytes; },
-      subtle: { digest: async () => new Uint8Array(32).fill(7).buffer },
     },
     history: { replaceState() {} },
     location: {
@@ -72,4 +72,6 @@ test("uses secure getRandomValues UUID fallback when randomUUID is unavailable",
   assert.match(authorizationUrl.searchParams.get("state"), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.equal(storage.get("platform_console_oidc_state"), authorizationUrl.searchParams.get("state"));
   assert.ok(storage.get("platform_console_pkce_verifier"));
+  const expectedChallenge = createHash("sha256").update(storage.get("platform_console_pkce_verifier")).digest("base64url");
+  assert.equal(authorizationUrl.searchParams.get("code_challenge"), expectedChallenge);
 });

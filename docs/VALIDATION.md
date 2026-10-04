@@ -33,7 +33,7 @@ Observed evidence:
 | Public entry point | The AWS Load Balancer Controller created one named internet-facing ALB from three `platform-system` Ingresses. It routed `/` to the Console, `/api` and `/healthz` to the API, and `/realms`/`/resources` to Keycloak. |
 | Exact browser boundary | Bootstrap wrote the generated ALB HTTP origin into the project ConfigMap and Keycloak client. The issuer matched that exact origin; no wildcard redirect URI or CORS origin was used. |
 | Browser identity | The repeatable public smoke completed Keycloak Authorization Code + PKCE sign-in, token exchange, signed API request, and logout. It did not print a token or password. |
-| Browser compatibility | The Console no longer assumes `crypto.randomUUID()` exists. Its live ALB asset contains the secure `crypto.getRandomValues()` version-4 UUID fallback used by the affected browser. |
+| Browser compatibility | The Console does not assume `crypto.randomUUID()` or `crypto.subtle` exists. It retains `crypto.getRandomValues()` for verifier randomness and has a tested local SHA-256 fallback for the PKCE challenge at the HTTP-only pilot origin. |
 | Public safety checks | `/healthz` returned 200; an unauthenticated `/api/v1/environments` request returned 401; `/metrics`, Prometheus, Grafana, Tempo, Argo CD, RDS, and Kubernetes APIs were not routed by the public Ingress. |
 | Failover | The smoke deleted one ready API Pod through Kubernetes. The ALB health endpoint remained available and the API Deployment returned to `2/2`. |
 | Scope | This is a temporary HTTP pilot with an AWS-generated DNS name. Trusted HTTPS requires a controlled domain and ACM/DNS validation; enterprise identity requires a real enterprise IdP. |

@@ -21,7 +21,9 @@ redirects or browser-held cloud credentials.
 The Console uses browser cryptography for PKCE and request identifiers. It uses
 `crypto.randomUUID()` when available and creates an equivalent version-4 UUID from
 `crypto.getRandomValues()` for browsers that do not implement `randomUUID()`. It refuses sign-in
-rather than using weak randomness when secure browser cryptography is unavailable.
+rather than using weak randomness when secure browser cryptography is unavailable. For the
+HTTP-only pilot, it also has a tested local SHA-256 fallback for PKCE challenge calculation when a
+browser withholds `crypto.subtle` outside a secure context.
 
 A trusted public Console requires enterprise OIDC, a controlled callback URL, public TLS ingress,
 and a reviewed production CORS policy. Those are intentionally tracked in
