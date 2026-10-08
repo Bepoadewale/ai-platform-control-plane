@@ -40,4 +40,4 @@ AWS_PROFILE="$aws_profile" AWS_SDK_LOAD_CONFIG=1 TF_VAR_expected_account_id="$ex
   terraform plan -out="$plan_file"
 AWS_PROFILE="$aws_profile" AWS_SDK_LOAD_CONFIG=1 terraform apply "$plan_file"
 
-echo "Cloud foundation applied. Next: make pilot-cloud-push-image, make pilot-cloud-bootstrap-runtime, make pilot-cloud-smoke."
+echo "Cloud foundation with ALB support applied. Next: make pilot-cloud-push-image, make pilot-cloud-bootstrap-runtime, then make pilot-cloud-smoke."

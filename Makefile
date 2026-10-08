@@ -1,4 +1,4 @@
-.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-bootstrap-github-oidc pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-slo-alert-check pilot-cloud-rollback-check pilot-cloud-cost-evidence pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-public-demo pilot-cloud-console-public-demo
+.PHONY: install test lint run demo demo-local bootstrap-local clean-local terraform-validate helm-lint compose-up compose-smoke console-local console-smoke argocd-demo public-demo pilot-guardrails-bootstrap pilot-guardrails-apply pilot-cloud-bootstrap-github-oidc pilot-cloud-destroy pilot-cloud-push-image pilot-cloud-put-gitops-secret pilot-cloud-bootstrap-runtime pilot-cloud-smoke pilot-cloud-ha-check pilot-cloud-load-slo pilot-cloud-slo-alert-check pilot-cloud-rollback-check pilot-cloud-cost-evidence pilot-cloud-validate pilot-cloud-gitops-lifecycle pilot-cloud-console pilot-cloud-console-validate pilot-cloud-plan pilot-cloud-apply pilot-cloud-url
 
 PYTHON := $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
@@ -79,11 +79,15 @@ pilot-cloud-put-gitops-secret:
 pilot-cloud-bootstrap-runtime:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-bootstrap-runtime.sh
 
+pilot-cloud-url:
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-alb.sh
+
 pilot-cloud-gitops-lifecycle:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-gitops-lifecycle.sh
 
 pilot-cloud-smoke:
-	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-smoke.sh
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-runtime-smoke.sh
+	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-alb-smoke.sh
 
 pilot-cloud-ha-check:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-ha-check.sh
@@ -108,9 +112,3 @@ pilot-cloud-console:
 
 pilot-cloud-console-validate:
 	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-console-validate.sh
-
-pilot-cloud-public-demo:
-	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-public-demo.sh
-
-pilot-cloud-console-public-demo:
-	AWS_PROFILE=$${AWS_PROFILE:-ai-platform-pilot-key} ./scripts/pilot-cloud-console-public-demo.sh

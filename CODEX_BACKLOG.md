@@ -1,7 +1,8 @@
 # Production-pilot delivery state
 
-The cloud-first reference pilot is complete: Terraform created and removed the private AWS
-footprint after success, failure, recovery, HA, observability, and GitOps evidence. The next work
+The cloud-first reference pilot is complete: Terraform created and removed the AWS footprint,
+including its controlled ALB entry point, after success, failure, recovery, HA, observability, and
+GitOps evidence. The next work
 improves production posture; it must not rewrite the verified control loop.
 
 # P0 — Regression prevention
@@ -27,7 +28,7 @@ Re-open only when a validated cloud lifecycle, security, or teardown regression 
 - [ ] Recreate a disposable pilot and validate the confirmation-gated GitHub-hosted destroy path.
 - [x] Add HA-shaped API/worker deployment, recovery drills, lifecycle metrics/traces, SLO/alert,
   and bounded load/failure tests.
-- [x] Complete the private, ephemeral, tunnel-reviewed AWS create → validate → destroy pass with
+- [x] Complete the private, ephemeral, ALB-reviewed AWS create → validate → destroy pass with
   guarded teardown and post-destroy AWS/Terraform evidence.
 
 See [Production Evolution](docs/production-evolution.md). This target is production improvement,

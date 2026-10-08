@@ -1,12 +1,13 @@
 # Cloud Operations
 
-The AWS reference environment is deliberately **private, ephemeral, Terraform-managed, and
-single-account**. It is not started by default. The executed pilot used two CPU-only EKS nodes,
-RDS PostgreSQL, ECR, Argo CD, Keycloak, OPA, Prometheus, Grafana, Tempo, OpenTelemetry, IRSA, and
-External Secrets.
+The AWS reference environment is deliberately **ephemeral, Terraform-managed, and single-account**.
+It uses a private EKS runtime with one controlled public HTTP ALB entry point. It is not started by
+default. The executed pilot used two CPU-only EKS nodes, RDS PostgreSQL, ECR, Argo CD, Keycloak,
+OPA, Prometheus, Grafana, Tempo, OpenTelemetry, IRSA, and External Secrets.
 
-In practical terms: Terraform builds a small private test environment, the platform is checked
-there, and Terraform removes it again. It is not a permanent public website.
+In practical terms: Terraform builds a small cloud test environment, exposes only the Console, API,
+and Keycloak through an ALB, checks the platform, and removes it again. It is not a permanent public
+website.
 
 ## Guardrails
 
@@ -14,8 +15,9 @@ there, and Terraform removes it again. It is not a permanent public website.
 - Mandatory project tags and a USD 10 AWS Budget alert.
 - Account guard: every script rejects an unexpected account.
 - No long-lived AWS key in GitHub; GitHub Actions uses short-lived OIDC credentials.
-- No public load balancer, DNS, or AWS public ingress in the reference pilot.
-- Terraform is the authority for creating and removing AWS infrastructure.
+- Terraform is the authority for the AWS foundation. The AWS Load Balancer Controller creates the
+  required ALB from checked-in Ingress; the guarded destroy script removes that named ALB before
+  Terraform destroys EKS and the VPC.
 
 ## Recreate a disposable pilot
 
@@ -40,9 +42,10 @@ AWS_PROFILE=<operator-profile> make pilot-cloud-rollback-check
 AWS_PROFILE=<operator-profile> make pilot-cloud-cost-evidence
 ```
 
-For an authenticated temporary Console review, use `make pilot-cloud-console-public-demo`. It
-exposes only a local same-origin proxy through a short-lived Cloudflare Quick Tunnel. It creates no
-AWS public endpoint and must use disposable synthetic data.
+Runtime bootstrap prints an AWS-generated `http://...elb.amazonaws.com` URL. It exposes only the
+Console, API, and Keycloak endpoints required for browser sign-in. Prometheus, Grafana, Tempo, Argo
+CD, RDS, and Kubernetes remain private. The generated URL has no trusted TLS certificate; use a
+domain plus ACM before making any HTTPS claim.
 
 ## Teardown
 

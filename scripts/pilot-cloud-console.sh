@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Opens the cloud-hosted Console through three local port-forwards. It deliberately
-# creates no public load balancer, ingress, DNS record, or Cloudflare tunnel.
+# creates no public load balancer, ingress, DNS record, or temporary public proxy.
 cluster_name="${PILOT_CLUSTER_NAME:-ai-platform-control-plane-pilot}"
 aws_profile="${AWS_PROFILE:-ai-platform-pilot-key}"
 aws_region="${AWS_REGION:-us-east-1}"

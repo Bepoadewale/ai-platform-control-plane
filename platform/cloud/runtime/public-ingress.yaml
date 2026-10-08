@@ -1,0 +1,82 @@
+# This HTTP-only ingress is applied only by the public-ALB bootstrap path. It intentionally
+# exposes only the browser Console, signed API routes, and the Keycloak OIDC endpoints required by
+# that Console. Observability, Argo CD, PostgreSQL, and Kubernetes APIs remain private.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-public-api
+  namespace: platform-system
+  annotations:
+    alb.ingress.kubernetes.io/group.name: ai-platform-public
+    alb.ingress.kubernetes.io/group.order: "10"
+    alb.ingress.kubernetes.io/load-balancer-name: ai-platform-cp-pilot
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/tags: project=ai-platform-control-plane,environment=pilot,managed_by=aws-load-balancer-controller,cost_scope=pilot
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: {name: control-plane, port: {name: http}}
+          - path: /healthz
+            pathType: Exact
+            backend:
+              service: {name: control-plane, port: {name: http}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-public-keycloak
+  namespace: platform-system
+  annotations:
+    alb.ingress.kubernetes.io/group.name: ai-platform-public
+    alb.ingress.kubernetes.io/group.order: "20"
+    alb.ingress.kubernetes.io/load-balancer-name: ai-platform-cp-pilot
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /realms/platform/.well-known/openid-configuration
+    alb.ingress.kubernetes.io/tags: project=ai-platform-control-plane,environment=pilot,managed_by=aws-load-balancer-controller,cost_scope=pilot
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /realms
+            pathType: Prefix
+            backend:
+              service: {name: keycloak, port: {name: http}}
+          - path: /resources
+            pathType: Prefix
+            backend:
+              service: {name: keycloak, port: {name: http}}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: platform-public-console
+  namespace: platform-system
+  annotations:
+    alb.ingress.kubernetes.io/group.name: ai-platform-public
+    alb.ingress.kubernetes.io/group.order: "30"
+    alb.ingress.kubernetes.io/load-balancer-name: ai-platform-cp-pilot
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/tags: project=ai-platform-control-plane,environment=pilot,managed_by=aws-load-balancer-controller,cost_scope=pilot
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: operator-console, port: {name: http}}

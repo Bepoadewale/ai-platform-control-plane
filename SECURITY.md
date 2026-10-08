@@ -4,7 +4,7 @@ Please do not report vulnerabilities in public issues. Contact the repository ow
 reproduction details.
 
 Never commit AWS credentials, GitHub App keys, Terraform state, Keycloak exports containing
-credentials, generated bearer tokens, or Cloudflare tunnel URLs. The cloud reference uses
+credentials, generated bearer tokens, or temporary review URLs. The cloud reference uses
 GitHub Actions OIDC for AWS and IRSA-backed External Secrets for the worker's scoped GitHub App
 credential; secret values must not pass through Git, API payloads, or audit records.
 

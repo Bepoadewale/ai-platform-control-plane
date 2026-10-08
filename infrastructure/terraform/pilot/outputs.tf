@@ -41,3 +41,8 @@ output "external_secrets_role_arn" {
   value       = aws_iam_role.external_secrets.arn
   description = "IRSA role limited to the GitHub App secret used by External Secrets."
 }
+
+output "aws_load_balancer_controller_role_arn" {
+  value       = aws_iam_role.aws_load_balancer_controller.arn
+  description = "IRSA role for the version-pinned AWS Load Balancer Controller used by every cloud pilot."
+}

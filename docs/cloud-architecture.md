@@ -13,101 +13,23 @@ for a separate approval when the change is sensitive. It then creates a GitHub c
 the component that applies that approved change to Kubernetes. The platform watches the result,
 records what happened, and can safely remove the environment later.
 
-The diagram below names the products that performed those jobs during the AWS pilot.
+## Executed AWS topology
 
-## System context
+![AWS pilot topology](assets/cloud-pilot-architecture.svg)
 
-```mermaid
-flowchart LR
-  Human[Developer or operator] --> Console[Operator Console]
-  Agent[Governed AI agent] --> MCP[MCP / API client]
-  Console --> IdP[OIDC issuer]
-  MCP --> API
-  IdP --> API[Control-plane API]
-  API --> Policy[OPA policy]
-  API --> State[(RDS PostgreSQL)]
-  API --> Audit[Lifecycle and audit state]
-  API --> Worker[Durable GitOps worker]
-  Worker --> GitHub[Protected GitHub pull request]
-  GitHub --> Argo[Argo CD ApplicationSet]
-  Argo --> EKS[Private EKS workloads]
-  EKS --> Observe[Prometheus · Tempo · Grafana]
-  EKS --> Observer[Read-only status observer]
-  Observer --> API
-```
+This diagram uses selected official AWS Architecture Icons; the checked-in generator and attribution
+are in [`docs/assets/`](assets/AWS_ICON_ATTRIBUTION.md). It is deliberately a topology, not a claim
+that every line is a network connection. The rows inside EKS show the components that were deployed
+together; the next section defines the governed lifecycle between them.
 
-## AWS deployment topology
+### What each area means
 
-```mermaid
-flowchart TB
-  classDef control fill:#e7f0ff,stroke:#2563eb,color:#102a43;
-  classDef security fill:#ecfdf5,stroke:#15803d,color:#123b24;
-  classDef data fill:#fff7ed,stroke:#c2410c,color:#431407;
-  classDef observe fill:#f5f3ff,stroke:#7c3aed,color:#2e1065;
-  classDef external fill:#f4f4f5,stroke:#52525b,color:#18181b;
-
-  subgraph github[GitHub control boundary]
-    Actions[Manual Terraform workflow]
-    OIDC[GitHub OIDC federation]
-    Repo[Protected application and desired-state repository]
-    App[Scoped GitHub App credential]
-    Actions --> OIDC
-    App --> Repo
-  end
-
-  subgraph aws[AWS account / us-east-1]
-    TF[Terraform state: encrypted S3 + DynamoDB lock]
-    OIDC --> TF
-    subgraph vpc[Tagged VPC]
-      Public[Public subnets: NAT only]
-      Private[Private subnets]
-      NAT[NAT gateway]
-      Public --> NAT --> Private
-      subgraph eks[Amazon EKS]
-        Argo[Argo CD + ApplicationSet]
-        API[FastAPI control plane x2]
-        Worker[GitOps worker x2]
-        OPA[OPA x2]
-        Keycloak[Keycloak fixture]
-        Console[Hardened Operator Console]
-        Observer[Read-only status observer]
-        ESO[External Secrets + IRSA]
-        Workload[Tenant namespace / golden-path workload]
-        Argo --> API
-        Argo --> Worker
-        Argo --> OPA
-        Argo --> Keycloak
-        Argo --> Console
-        Argo --> Observer
-        Argo --> Workload
-        ESO --> Worker
-      end
-      RDS[(RDS PostgreSQL)]
-      ECR[ECR image repository]
-      Secrets[Secrets Manager]
-      Prom[Prometheus]
-      Tempo[Tempo]
-      Grafana[Grafana]
-      OTel[OpenTelemetry Collector]
-      API --> RDS
-      API --> OTel
-      OTel --> Tempo
-      Prom --> Grafana
-      Prom --> API
-      Secrets --> ESO
-      ECR --> API
-      ECR --> Worker
-    end
-  end
-
-  Worker --> Repo
-  Repo --> Argo
-  class API,Worker,Argo,Console,Observer control;
-  class OPA,Keycloak,ESO,OIDC,App security;
-  class RDS,ECR,Secrets,TF,NAT data;
-  class Prom,Tempo,Grafana,OTel observe;
-  class Human,Agent,Actions,Repo,Workload external;
-```
+| Area | Responsibility | Pilot evidence |
+| --- | --- | --- |
+| People and delivery boundary | Developers, agents, GitHub review, and short-lived CI access initiate governed work. | GitHub-hosted OIDC apply and scoped GitHub App publication were executed. |
+| Terraform foundation | State/lock guardrails, IAM/IRSA, ECR, Secrets Manager, VPC, and account tags create the bounded AWS foundation. | Terraform created and later removed the pilot footprint. |
+| Private EKS runtime | The Console, Keycloak, API, OPA, worker, Argo, observer, workloads, and telemetry run without direct user cloud credentials. | GitOps lifecycle, failure/restore, Pod-loss recovery, traces, metrics, and alert drills were executed. |
+| AWS ALB | The standard narrow browser path to the Console, API, and Keycloak only. | Executed with exact ALB OIDC/CORS origin; it is HTTP-only. |
 
 ## Governed environment lifecycle
 
@@ -150,4 +72,4 @@ sequenceDiagram
 | Worker → GitHub | scoped GitHub App credential delivered through IRSA/External Secrets |
 | GitHub → AWS | branch-bound GitHub OIDC role with short-lived credentials |
 | Desired state → cluster | protected PR merge → Argo ApplicationSet; observed readiness/failure |
-| Cloud review | temporary Cloudflare tunnel to local port-forwards only; no AWS public ingress |
+| Optional public review | version-pinned AWS Load Balancer Controller, exact ALB-origin OIDC redirect, HTTP listener only; no wildcard redirect or public observability endpoint |

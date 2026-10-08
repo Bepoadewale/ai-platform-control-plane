@@ -247,6 +247,41 @@ resource "aws_iam_role_policy" "external_secrets" {
   policy = data.aws_iam_policy_document.external_secrets.json
 }
 
+# Every cloud pilot installs the version-pinned AWS Load Balancer Controller. Controller-created
+# resources carry the cluster tag and the guarded destroy script removes the named ALB before
+# Terraform destroys the EKS/VPC footprint.
+data "aws_iam_policy_document" "aws_load_balancer_controller_assume_role" {
+  statement {
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.eks_oidc_issuer}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "${local.eks_oidc_issuer}:sub"
+      values   = ["system:serviceaccount:kube-system:aws-load-balancer-controller"]
+    }
+  }
+}
+
+resource "aws_iam_role" "aws_load_balancer_controller" {
+  name               = "${local.prefix}-aws-load-balancer-controller"
+  assume_role_policy = data.aws_iam_policy_document.aws_load_balancer_controller_assume_role.json
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy" "aws_load_balancer_controller" {
+  name   = "aws-load-balancer-controller-v3-5-0"
+  role   = aws_iam_role.aws_load_balancer_controller.id
+  policy = file("${path.module}/aws-load-balancer-controller-policy-v3.5.0.json")
+}
+
 resource "aws_eks_addon" "vpc_cni" {
   cluster_name = aws_eks_cluster.pilot.name
   addon_name   = "vpc-cni"
