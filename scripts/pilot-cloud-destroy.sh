@@ -25,9 +25,9 @@ actual_account="$(AWS_PROFILE="$aws_profile" aws sts get-caller-identity --query
   exit 1
 }
 
-# The AWS Load Balancer Controller owns the opt-in ALB rather than Terraform state. Remove only
-# this named, project-scoped load balancer before destroying the EKS/VPC footprint so no orphaned
-# public endpoint or VPC dependency remains. This is a no-op for the default private pilot.
+# The AWS Load Balancer Controller owns the project ALB rather than Terraform state. Remove only
+# this named resource before destroying the EKS/VPC footprint so no orphaned endpoint or VPC
+# dependency remains.
 alb_name="ai-platform-cp-pilot"
 alb_arn="$(AWS_PROFILE="$aws_profile" aws elbv2 describe-load-balancers --region "$aws_region" \
   --names "$alb_name" --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || true)"

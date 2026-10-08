@@ -111,8 +111,8 @@ const svg = `<?xml version="1.0" encoding="UTF-8"?>
 
   <rect x="400" y="395" width="1120" height="570" rx="16" fill="#f8fbff" stroke="#93c5fd" stroke-width="1.25"/>
   <text x="424" y="425" class="group">VPC runtime</text>
-  <text x="424" y="448" class="group-sub">Public subnet contains the optional ALB; application and data services run in private subnets.</text>
-  ${card(430, 475, 264, 82, 'Application Load Balancer', 'optional public HTTP review', alb, 'blue')}
+  <text x="424" y="448" class="group-sub">Public subnet contains the pilot ALB; application and data services run in private subnets.</text>
+  ${card(430, 475, 264, 82, 'Application Load Balancer', 'bounded HTTP owner review', alb, 'blue')}
   <rect x="716" y="475" width="776" height="412" rx="14" fill="#ffffff" stroke="#60a5fa" stroke-width="1.5"/>
   <text x="742" y="505" class="group">Amazon EKS — private worker nodes</text>
   <text x="742" y="528" class="group-sub">Two API, OPA, and worker replicas with PodDisruptionBudgets were exercised.</text>

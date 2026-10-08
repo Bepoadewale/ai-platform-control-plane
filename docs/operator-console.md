@@ -13,8 +13,8 @@ The browser cannot choose its own team or role, create credentials, bypass polic
 secrets, or call AWS, Kubernetes, Terraform, or Argo directly.
 
 During the original pilot, the EKS-hosted Console used Keycloak sign-in/out, an explicit
-browser-origin allow-list, and signed API requests through a private owner-review path. The current
-optional public-review path uses an AWS ALB DNS name over HTTP. Its bootstrap writes that exact
+browser-origin allow-list, and signed API requests. The standard cloud path uses an AWS ALB DNS
+name over HTTP. Its bootstrap writes that exact
 generated origin into Keycloak, API CORS, and Console configuration; it never permits wildcard
 redirects or browser-held cloud credentials.
 

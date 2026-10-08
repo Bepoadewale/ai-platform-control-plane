@@ -8,28 +8,44 @@ SaaS improvements.
 The AWS pilot is the primary deployment evidence. Earlier local entries remain as historical
 contributor-harness reproducibility evidence and do not substitute for cloud validation.
 
-## Optional public ALB ingress — 2026-10-04
+## ALB-default workflow refactor — 2026-10-08 (static verification)
+
+The cloud command surface was consolidated after the executed ALB review: every future cloud pilot
+now includes the ALB controller role, ALB bootstrap, and ALB browser-path smoke check. The previous
+`pilot-cloud-public-*` names and `public_alb_enabled` switch were removed. This was a static
+verification from an empty workload state; it did **not** recreate billable infrastructure.
+
+| Check | Result |
+| --- | --- |
+| Terraform format and pilot validation | Passed with the authenticated operator profile. |
+| Default cloud plan | `make pilot-cloud-plan` proposed 44 tagged resources, including `aws_load_balancer_controller`; no apply was run. |
+| Command surface | `make -n` confirmed standard plan, apply, bootstrap, smoke, and URL targets use the ALB workflow. |
+| Script and application checks | Renamed cloud scripts passed `bash -n`; `make lint` and `make test` passed (37 tests); Console browser-compatibility test passed (1 test). |
+| Documentation | Generated SVG, Markdown-link audit, and diff checks passed. |
+
+## AWS ALB ingress — 2026-10-04
 
 Environment: the disposable `us-east-1` AWS pilot, Terraform 1.14.0, EKS, AWS Load Balancer
-Controller chart `3.5.0`, and only synthetic Keycloak identities. The optional flag was enabled
-explicitly; no domain, certificate, or public HTTPS claim was involved.
+Controller chart `3.5.0`, and only synthetic Keycloak identities. This evidence predates the
+command consolidation that made the same ALB route standard; no domain, certificate, or public
+HTTPS claim was involved.
 
 Commands executed:
 
 ```console
-AWS_PROFILE=<operator-profile> make pilot-cloud-public-plan
-AWS_PROFILE=<operator-profile> make pilot-cloud-public-apply
+AWS_PROFILE=<operator-profile> make pilot-cloud-plan
+AWS_PROFILE=<operator-profile> make pilot-cloud-apply
 AWS_PROFILE=<operator-profile> make pilot-cloud-push-image
 AWS_PROFILE=<operator-profile> PILOT_RUNTIME_REVISION=codex/public-alb-ingress \
-  make pilot-cloud-public-bootstrap
-AWS_PROFILE=<operator-profile> make pilot-cloud-public-smoke
+  make pilot-cloud-bootstrap-runtime
+AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
 ```
 
 Observed evidence:
 
 | Evidence | Result |
 | --- | --- |
-| Terraform public option | The reviewed plan added the controller's namespace-bound IRSA role and version-pinned policy. `public_alb_enabled=true` was explicit; the default remains false. |
+| Terraform ALB foundation | The reviewed plan added the controller's namespace-bound IRSA role and version-pinned policy. The current standard cloud plan now includes the same foundation unconditionally. |
 | Public entry point | The AWS Load Balancer Controller created one named internet-facing ALB from three `platform-system` Ingresses. It routed `/` to the Console, `/api` and `/healthz` to the API, and `/realms`/`/resources` to Keycloak. |
 | Exact browser boundary | Bootstrap wrote the generated ALB HTTP origin into the project ConfigMap and Keycloak client. The issuer matched that exact origin; no wildcard redirect URI or CORS origin was used. |
 | Browser identity | The repeatable public smoke completed Keycloak Authorization Code + PKCE sign-in, token exchange, signed API request, and logout. It did not print a token or password. |
@@ -38,7 +54,7 @@ Observed evidence:
 | Failover | The smoke deleted one ready API Pod through Kubernetes. The ALB health endpoint remained available and the API Deployment returned to `2/2`. |
 | Scope | This is a temporary HTTP pilot with an AWS-generated DNS name. Trusted HTTPS requires a controlled domain and ACM/DNS validation; enterprise identity requires a real enterprise IdP. |
 
-The public ALB remains live only for owner review at the time of this record. The guarded destroy
+The ALB remained live only for owner review at the time of this record. The guarded destroy
 removes its three namespace-scoped Ingresses, waits for the named ALB, and then destroys the
 Terraform-managed EKS/VPC footprint.
 

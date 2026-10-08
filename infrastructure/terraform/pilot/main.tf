@@ -247,12 +247,10 @@ resource "aws_iam_role_policy" "external_secrets" {
   policy = data.aws_iam_policy_document.external_secrets.json
 }
 
-# The controller role exists only when public ingress is explicitly enabled. Its policy is the
-# version-pinned upstream AWS Load Balancer Controller policy; controller-created resources carry
-# the controller's cluster tag and disappear when the Ingress is removed before Terraform destroy.
+# Every cloud pilot installs the version-pinned AWS Load Balancer Controller. Controller-created
+# resources carry the cluster tag and the guarded destroy script removes the named ALB before
+# Terraform destroys the EKS/VPC footprint.
 data "aws_iam_policy_document" "aws_load_balancer_controller_assume_role" {
-  count = var.public_alb_enabled ? 1 : 0
-
   statement {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
@@ -273,16 +271,14 @@ data "aws_iam_policy_document" "aws_load_balancer_controller_assume_role" {
 }
 
 resource "aws_iam_role" "aws_load_balancer_controller" {
-  count              = var.public_alb_enabled ? 1 : 0
   name               = "${local.prefix}-aws-load-balancer-controller"
-  assume_role_policy = data.aws_iam_policy_document.aws_load_balancer_controller_assume_role[0].json
+  assume_role_policy = data.aws_iam_policy_document.aws_load_balancer_controller_assume_role.json
   tags               = local.tags
 }
 
 resource "aws_iam_role_policy" "aws_load_balancer_controller" {
-  count  = var.public_alb_enabled ? 1 : 0
   name   = "aws-load-balancer-controller-v3-5-0"
-  role   = aws_iam_role.aws_load_balancer_controller[0].id
+  role   = aws_iam_role.aws_load_balancer_controller.id
   policy = file("${path.module}/aws-load-balancer-controller-policy-v3.5.0.json")
 }
 

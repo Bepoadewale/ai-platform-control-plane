@@ -9,7 +9,6 @@ expected_account="${EXPECTED_AWS_ACCOUNT_ID:-654654474502}"
 aws_region="${AWS_REGION:-us-east-1}"
 cluster_name="${PILOT_CLUSTER_NAME:-ai-platform-control-plane-pilot}"
 runtime_revision="${PILOT_RUNTIME_REVISION:-main}"
-public_alb_enabled="${PILOT_PUBLIC_ALB_ENABLED:-false}"
 
 for command in aws kubectl helm jq openssl; do
   command -v "$command" >/dev/null 2>&1 || { echo "$command is required." >&2; exit 1; }
@@ -29,16 +28,14 @@ AWS_PROFILE="$aws_profile" aws secretsmanager get-secret-value \
 aws eks update-kubeconfig --profile "$aws_profile" --name "$cluster_name" --region "$aws_region"
 kubectl get nodes --request-timeout=30s >/dev/null
 
-# Public ingress is opt-in. When enabled, the controller creates one HTTP ALB from the checked-in
-# Ingress after the runtime is healthy; Terraform supplies its IRSA role but never a wildcard OIDC
-# redirect URI.
+# Every cloud pilot uses the checked-in ALB Ingress. Terraform supplies its IRSA role; the runtime
+# configures one generated HTTP origin after the workloads are healthy and never permits a wildcard
+# OIDC redirect URI.
 helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
 helm repo add external-secrets https://charts.external-secrets.io >/dev/null
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
 helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
-if [[ "$public_alb_enabled" == "true" ]]; then
-  helm repo add eks https://aws.github.io/eks-charts >/dev/null
-fi
+helm repo add eks https://aws.github.io/eks-charts >/dev/null
 helm repo update >/dev/null
 kubectl create namespace platform-observability --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n platform-observability create configmap ai-platform-control-plane-dashboard \
@@ -101,9 +98,9 @@ else
   echo "Runtime bootstrap secret already exists; preserving its Keycloak bootstrap credential."
 fi
 
-# This ConfigMap contains the generated public origin only when the opt-in ALB path is used. It is
-# created before Argo deploys runtime Pods so that the same manifests work for the local
-# port-forward contributor harness and the public HTTP pilot without a permissive redirect URI.
+# This ConfigMap starts with safe bootstrap values and is updated to the generated ALB origin once
+# the controller provisions it. It is created before Argo deploys runtime Pods so that the same
+# manifests work for the local contributor harness and cloud pilot without a permissive redirect URI.
 if ! kubectl -n platform-system get configmap platform-public-runtime >/dev/null 2>&1; then
   runtime_config="$(mktemp "${TMPDIR:-/tmp}/ai-platform-runtime-config.XXXXXX.js")"
   trap 'rm -f "${runtime_manifest:-}" "${runtime_config:-}"' EXIT
@@ -144,21 +141,19 @@ kubectl -n platform-system rollout status deployment/operator-console --timeout=
 kubectl -n platform-system rollout status deployment/otel-collector --timeout=5m
 kubectl -n platform-observability rollout status deployment/prometheus-server --timeout=5m
 kubectl -n platform-observability rollout status deployment/grafana --timeout=5m
-if [[ "$public_alb_enabled" == "true" ]]; then
-  alb_controller_role_arn="$(AWS_PROFILE="$aws_profile" aws iam get-role \
-    --role-name ai-platform-control-plane-pilot-aws-load-balancer-controller \
-    --query 'Role.Arn' --output text)"
-  helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
-    --namespace kube-system \
-    --version 3.5.0 \
-    --set clusterName="$cluster_name" \
-    --set region="$aws_region" \
-    --set vpcId="$(AWS_PROFILE="$aws_profile" aws eks describe-cluster --name "$cluster_name" --region "$aws_region" --query 'cluster.resourcesVpcConfig.vpcId' --output text)" \
-    --set serviceAccount.create=true \
-    --set serviceAccount.name=aws-load-balancer-controller \
-    --set serviceAccount.annotations."eks\\.amazonaws\\.com/role-arn"="$alb_controller_role_arn" \
-    --wait --timeout 10m
-  kubectl -n kube-system rollout status deployment/aws-load-balancer-controller --timeout=5m
-  PILOT_PUBLIC_ALB_ENABLED=true AWS_PROFILE="$aws_profile" "$project_root/scripts/pilot-cloud-public-alb.sh"
-fi
+alb_controller_role_arn="$(AWS_PROFILE="$aws_profile" aws iam get-role \
+  --role-name ai-platform-control-plane-pilot-aws-load-balancer-controller \
+  --query 'Role.Arn' --output text)"
+helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  --namespace kube-system \
+  --version 3.5.0 \
+  --set clusterName="$cluster_name" \
+  --set region="$aws_region" \
+  --set vpcId="$(AWS_PROFILE="$aws_profile" aws eks describe-cluster --name "$cluster_name" --region "$aws_region" --query 'cluster.resourcesVpcConfig.vpcId' --output text)" \
+  --set serviceAccount.create=true \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --set serviceAccount.annotations."eks\\.amazonaws\\.com/role-arn"="$alb_controller_role_arn" \
+  --wait --timeout 10m
+kubectl -n kube-system rollout status deployment/aws-load-balancer-controller --timeout=5m
+AWS_PROFILE="$aws_profile" "$project_root/scripts/pilot-cloud-alb.sh"
 echo "Runtime is Argo Synced from revision $runtime_revision and all project workload/secret readiness gates passed. Run make pilot-cloud-smoke for bounded API, policy and telemetry checks."

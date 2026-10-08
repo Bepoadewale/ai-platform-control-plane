@@ -36,7 +36,7 @@ jobs:
       - run: terraform -chdir=infrastructure/terraform/pilot init -backend=false
       - run: terraform -chdir=infrastructure/terraform/pilot validate
       - run: jq -e . infrastructure/terraform/pilot/aws-load-balancer-controller-policy-v3.5.0.json >/dev/null
-      - run: bash -n scripts/pilot-cloud-bootstrap-runtime.sh scripts/pilot-cloud-public-alb.sh scripts/pilot-cloud-public-alb-smoke.sh scripts/pilot-cloud-destroy.sh
+      - run: bash -n scripts/pilot-cloud-bootstrap-runtime.sh scripts/pilot-cloud-alb.sh scripts/pilot-cloud-alb-smoke.sh scripts/pilot-cloud-runtime-smoke.sh scripts/pilot-cloud-destroy.sh
       - uses: azure/setup-helm@v4
       - run: helm lint platform/helm/golden-path
       - run: |

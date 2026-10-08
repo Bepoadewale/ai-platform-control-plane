@@ -5,9 +5,8 @@ without receiving AWS administrator, Kubernetes, Terraform, Git, or secret crede
 
 **Delivery state:** **Production-pilot complete — ephemeral single-account scope.** The baseline
 AWS reference environment was created with Terraform, validated through real EKS GitOps workflows,
-and destroyed with Terraform. The optional ALB owner-review path is a separate, temporary
-deployment capability—not a claim of a permanent public service or enterprise/public-SaaS
-certification.
+and destroyed with Terraform. Every recreated cloud pilot includes the same temporary ALB
+owner-review path—not a claim of a permanent public service or enterprise/public-SaaS certification.
 
 ![Executed AWS pilot architecture](docs/assets/cloud-pilot-architecture.svg)
 
@@ -39,11 +38,10 @@ to Helm, `kubectl`, or Terraform against EKS.
 
 ## What the AWS pilot proved
 
-The private AWS pilot proved the platform can safely manage a cloud environment from request to
-cleanup.
+The AWS pilot proved the platform can safely manage a cloud environment from request to cleanup.
 
-- Terraform created a private AWS environment: networking, Kubernetes, database, container
-  registry, secrets, and access controls.
+- Terraform created the AWS environment: networking, Kubernetes, database, container registry,
+  secrets, access controls, and its narrow ALB entry point.
 - Users signed in with secure tokens. The platform checked their team, role, and permissions
   before accepting a request.
 - Policy rules could allow, deny, or require an independent approval before a sensitive change.
@@ -57,9 +55,9 @@ cleanup.
   and worker replicas while disruption protections preserved availability.
 - Prometheus, Grafana, Tempo, and OpenTelemetry provided dashboards, traces, metrics, and a real
   alert during controlled traffic.
-- The optional public HTTP ALB path was executed in the bounded pilot: the Console completed
+- The required HTTP ALB path was executed in the bounded pilot: the Console completed
   Keycloak PKCE login/logout, the API enforced signed identity, and one API-Pod loss preserved
-  `/healthz`. It remains disabled by default and is not a trusted HTTPS claim.
+  `/healthz`. It is not a trusted HTTPS claim.
 - Terraform then removed the pilot infrastructure. Checks confirmed that the cluster, database,
   registry, secrets, roles, network, and Terraform-managed workload state were gone.
 
@@ -74,6 +72,7 @@ Terraform and only after plan review.
 ```console
 AWS_PROFILE=<operator-profile> make pilot-cloud-plan
 AWS_PROFILE=<operator-profile> make pilot-cloud-apply
+AWS_PROFILE=<operator-profile> make pilot-cloud-push-image
 AWS_PROFILE=<operator-profile> make pilot-cloud-bootstrap-runtime
 AWS_PROFILE=<operator-profile> make pilot-cloud-smoke
 ```
@@ -91,7 +90,7 @@ gaps. See [Production Evolution](docs/production-evolution.md).
 ## Documentation
 
 - [Cloud architecture](docs/cloud-architecture.md) · [Cloud operations](docs/cloud-operations.md)
-- [Public ALB ingress](docs/public-ingress.md)
+- [AWS ALB ingress](docs/alb-ingress.md)
 - [Security model](docs/security.md) · [Agent safety](docs/agent-safety.md) · [GitOps](docs/gitops.md)
 - [Operator Console](docs/operator-console.md) · [Observability](docs/observability.md)
 - [Validation evidence](docs/VALIDATION.md) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)

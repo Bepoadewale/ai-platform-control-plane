@@ -29,7 +29,7 @@ together; the next section defines the governed lifecycle between them.
 | People and delivery boundary | Developers, agents, GitHub review, and short-lived CI access initiate governed work. | GitHub-hosted OIDC apply and scoped GitHub App publication were executed. |
 | Terraform foundation | State/lock guardrails, IAM/IRSA, ECR, Secrets Manager, VPC, and account tags create the bounded AWS foundation. | Terraform created and later removed the pilot footprint. |
 | Private EKS runtime | The Console, Keycloak, API, OPA, worker, Argo, observer, workloads, and telemetry run without direct user cloud credentials. | GitOps lifecycle, failure/restore, Pod-loss recovery, traces, metrics, and alert drills were executed. |
-| Optional ALB | A narrow browser-review path to the Console, API, and Keycloak only. | Executed with exact ALB OIDC/CORS origin; it is HTTP-only and disabled by default. |
+| AWS ALB | The standard narrow browser path to the Console, API, and Keycloak only. | Executed with exact ALB OIDC/CORS origin; it is HTTP-only. |
 
 ## Governed environment lifecycle
 

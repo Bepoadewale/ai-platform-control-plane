@@ -1,7 +1,8 @@
 # Production-pilot delivery state
 
-The cloud-first reference pilot is complete: Terraform created and removed the private AWS
-footprint after success, failure, recovery, HA, observability, and GitOps evidence. The next work
+The cloud-first reference pilot is complete: Terraform created and removed the AWS footprint,
+including its controlled ALB entry point, after success, failure, recovery, HA, observability, and
+GitOps evidence. The next work
 improves production posture; it must not rewrite the verified control loop.
 
 # P0 — Regression prevention
